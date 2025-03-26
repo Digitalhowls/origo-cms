@@ -1,6 +1,7 @@
 /**
  * Pruebas E2E para el módulo de autenticación
  */
+import { jest, describe, test, expect, beforeEach, afterEach, afterAll } from '@jest/globals';
 import { 
   BASE_URL,
   takeScreenshot,

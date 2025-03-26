@@ -1,6 +1,7 @@
 /**
  * Pruebas E2E para el módulo de blog
  */
+import { jest, describe, test, expect, beforeAll, afterEach, afterAll } from '@jest/globals';
 import { 
   BASE_URL,
   takeScreenshot,
