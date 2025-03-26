@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { storage } from '../storage';
 import { CustomRoleDefinition, SystemRole, isSystemRole } from '@shared/types';
 import { eq } from 'drizzle-orm';
-import { customRoles, rolePermissions, users } from '@shared/schema';
+import { customRoles, rolePermissions, users, CustomRole } from '@shared/schema';
 
 /**
  * Obtiene los roles personalizados de una organización
