@@ -161,6 +161,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/api-keys', authMiddleware, authService.createApiKey);
   app.delete('/api/api-keys/:id', authMiddleware, authService.deleteApiKey);
   
+  // Password reset routes
+  app.post('/api/forgot-password', authService.requestPasswordReset);
+  app.post('/api/reset-password', authService.resetPassword);
+  
   // Initial setup route - this should only be accessible when no users exist
   app.post('/api/setup', authService.setupAdmin);
   

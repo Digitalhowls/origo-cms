@@ -243,6 +243,114 @@ export async function deleteApiKey(req: Request, res: Response) {
 }
 
 // Initial setup function to create admin user and organization
+// Password Reset functionality
+export async function requestPasswordReset(req: Request, res: Response) {
+  try {
+    const schema = z.object({
+      email: z.string().email()
+    });
+    
+    const validationResult = schema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: 'Email inválido',
+        errors: validationResult.error.errors
+      });
+    }
+    
+    const { email } = validationResult.data;
+    
+    // Find the user by email
+    const user = await storage.getUserByEmail(email);
+    
+    // If no user found, still return success message for security
+    if (!user) {
+      return res.json({ 
+        message: 'Si existe una cuenta con ese email, se ha enviado un enlace para restablecer la contraseña.'
+      });
+    }
+    
+    // Generate password reset token
+    const passwordResetToken = await storage.createPasswordResetToken(user.id);
+    
+    // In a real application, you would send an email with the reset link:
+    // const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${passwordResetToken.token}`;
+    
+    // For development purposes, log the token to the console
+    console.log(`Token de restablecimiento generado para ${user.email}: ${passwordResetToken.token}`);
+    
+    res.json({ 
+      message: 'Si existe una cuenta con ese email, se ha enviado un enlace para restablecer la contraseña.',
+      // Include token in response for testing purposes only - in production this should be removed
+      token: passwordResetToken.token
+    });
+  } catch (error) {
+    console.error('Error requesting password reset:', error);
+    res.status(500).json({ message: 'Error al solicitar restablecimiento de contraseña' });
+  }
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  try {
+    const schema = z.object({
+      token: z.string(),
+      password: z.string().min(6)
+    });
+    
+    const validationResult = schema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: 'Datos inválidos para restablecer contraseña',
+        errors: validationResult.error.errors
+      });
+    }
+    
+    const { token, password } = validationResult.data;
+    
+    // Get the token from the database
+    const passwordResetToken = await storage.getPasswordResetTokenByToken(token);
+    
+    // Check if token exists and is valid
+    if (!passwordResetToken) {
+      return res.status(400).json({ message: 'Token inválido o expirado' });
+    }
+    
+    // Check if token is already used
+    if (passwordResetToken.usedAt) {
+      return res.status(400).json({ message: 'Este token ya ha sido utilizado' });
+    }
+    
+    // Check if token is expired (1 hour)
+    const now = new Date();
+    if (now > new Date(passwordResetToken.expiresAt)) {
+      return res.status(400).json({ message: 'El token ha expirado' });
+    }
+    
+    // Get the user
+    const user = await storage.getUser(passwordResetToken.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Update the user's password
+    await storage.updateUser(user.id, { password: hashedPassword });
+    
+    // Mark the token as used
+    await storage.markTokenAsUsed(passwordResetToken.id);
+    
+    res.json({ message: 'Contraseña restablecida con éxito' });
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    res.status(500).json({ message: 'Error al restablecer contraseña' });
+  }
+}
+
 export async function setupAdmin(req: Request, res: Response) {
   try {
     // Check if there are any users already
