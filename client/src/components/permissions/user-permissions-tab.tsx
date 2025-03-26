@@ -8,6 +8,7 @@ import { UserPermissionsManager } from './user-permissions-manager';
 import { usePermissions } from '@/hooks/use-permissions';
 import { UserRole, Resource, Action, RolePermissions } from '@shared/types';
 import { Loader2, AlertTriangle, Shield, ShieldAlert, ShieldCheck, RefreshCw } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface UserPermissionsTabProps {
   userId: number;
@@ -16,6 +17,8 @@ interface UserPermissionsTabProps {
 }
 
 export function UserPermissionsTab({ userId, userName, userRole: propUserRole }: UserPermissionsTabProps) {
+  const queryClient = useQueryClient();
+  
   const { 
     permissionsData, 
     permissionsLoading, 
