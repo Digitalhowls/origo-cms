@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express } from "express";
+import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -9,10 +9,15 @@ import { User as SelectUser } from "@shared/schema";
 import bcrypt from 'bcryptjs';
 import MemoryStore from 'memorystore';
 import { saveSessionAndRespond, checkAuthenticatedSession } from './utils/session-helper';
+import { generateToken, verifyToken, extractTokenFromHeader } from './utils/jwt-helper';
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    interface User extends Omit<SelectUser, 'password'> {}
+    
+    interface Request {
+      jwtPayload?: any;
+    }
   }
 }
 
@@ -186,22 +191,35 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ message: 'Credenciales incorrectas' });
       }
       
-      // Login del usuario con Passport.js
-      req.login(user, (err) => {
-        if (err) {
-          console.error('Error en req.login:', err);
-          return next(err);
+      // Adquirimos el usuario completo para generar el token
+      storage.getUser(user.id).then(fullUser => {
+        if (!fullUser) {
+          console.error('Usuario no encontrado después de autenticación:', user.id);
+          return res.status(500).json({ message: 'Error interno del servidor' });
         }
         
-        console.log('Usuario autenticado en login:', user.email);
-        console.log('SessionID generado:', req.sessionID);
-        console.log('Datos de sesión post-login:', JSON.stringify(req.session));
+        // Generar token JWT
+        const token = generateToken(fullUser);
+        console.log('Token JWT generado para usuario:', user.email);
         
-        // Establecer explícitamente passport.user (usando propiedad dinámica)
-        (req.session as any).passport = { user: user.id };
-        
-        // Usamos la función helper para guardar sesión y responder
-        saveSessionAndRespond(req, res, next, user);
+        // Login del usuario con Passport.js para mantener compatibilidad
+        req.login(user, (err) => {
+          if (err) {
+            console.error('Error en req.login:', err);
+            return next(err);
+          }
+          
+          console.log('Usuario autenticado en login:', user.email);
+          
+          // Enviar respuesta con token JWT y datos del usuario
+          res.status(200).json({
+            user,
+            token
+          });
+        });
+      }).catch(error => {
+        console.error('Error al obtener usuario completo:', error);
+        next(error);
       });
     })(req, res, next);
   });
