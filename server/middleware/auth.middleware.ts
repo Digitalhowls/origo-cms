@@ -1,31 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
+import { checkAuthenticatedSession } from '../utils/session-helper';
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Verificar si hay un ID de sesión
-  console.log('Verificando sesión. SessionID:', req.sessionID);
-  console.log('Headers:', JSON.stringify(req.headers));
-  console.log('Cookies:', req.headers.cookie);
+  // Verificar si hay un ID de sesión usando el helper
+  console.log('Verificando sesión en authMiddleware. SessionID:', req.sessionID);
   
-  // Check if the user is authenticated
-  if (!req.isAuthenticated()) {
-    console.log('Sesión no autenticada. SessionID:', req.sessionID);
-    console.log('User:', req.user);
-    
-    // Intentar regenerar la sesión
-    if (req.session) {
-      console.log('Regenerando sesión...');
-      req.session.touch();
-      req.session.save((err) => {
-        if (err) {
-          console.error('Error al guardar sesión:', err);
-        }
-      });
-    }
-    
+  // Verificar autenticación utilizando el helper
+  if (!checkAuthenticatedSession(req)) {
+    // Si no está autenticado, devolver 401
     return res.status(401).json({ message: 'No autorizado. Por favor, inicie sesión para continuar.' });
   }
 
-  console.log('Sesión autenticada. SessionID:', req.sessionID);
+  console.log('Sesión autenticada en authMiddleware. SessionID:', req.sessionID);
   console.log('Usuario autenticado:', req.user?.email);
   
   // Refrescar la sesión en cada petición autenticada para mantenerla viva
@@ -37,9 +23,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
 export const adminMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // Check if the user is authenticated and is an admin
-  if (!req.isAuthenticated()) {
+  if (!checkAuthenticatedSession(req)) {
     return res.status(401).json({ message: 'No autorizado. Por favor, inicie sesión para continuar.' });
   }
+
+  // Refrescar la sesión para mantenerla viva
+  req.session.touch();
 
   // Check if user has admin role
   const user = req.user as any;

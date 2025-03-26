@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import bcrypt from 'bcryptjs';
 import MemoryStore from 'memorystore';
+import { saveSessionAndRespond, checkAuthenticatedSession } from './utils/session-helper';
 
 declare global {
   namespace Express {
@@ -22,17 +23,20 @@ export function setupAuth(app: Express) {
   // Configure session middleware
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'origo-secret-key-very-long-and-secure-for-better-session-management',
-    resave: true, // Cambiado a true para forzar guardar la sesión
-    saveUninitialized: true, // Cambiado a true para crear sesión para todas las peticiones
+    resave: true, // Forzamos guardar la sesión en cada petición
+    saveUninitialized: true, // Creamos una sesión para todas las peticiones
+    rolling: true, // Renovamos el tiempo de expiración de la cookie en cada petición
+    name: 'origo.sid', // Nombre personalizado para la cookie de sesión
     cookie: { 
-      secure: false, // Desactivado en desarrollo para facilitar pruebas
+      secure: process.env.NODE_ENV === 'production', // Seguro en producción, inseguro en desarrollo
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días para mayor persistencia
       sameSite: 'lax' as 'lax',
       httpOnly: true,
       path: '/'
     },
     store: new MemoryStoreSession({
-      checkPeriod: 86400000 // prune expired entries every 24h
+      checkPeriod: 86400000, // limpiar sesiones expiradas cada 24h
+      ttl: 30 * 24 * 60 * 60 * 1000 // tiempo de vida igual al maxAge de la cookie
     })
   };
   
@@ -118,15 +122,22 @@ export function setupAuth(app: Express) {
         organizationId: 1, // Por defecto, se asignan a la organización principal
       });
       
+      console.log('Usuario registrado:', email);
+      
       // Login automático después del registro
       req.login(newUser, (err) => {
         if (err) return next(err);
         
+        console.log('Sesión iniciada después del registro. SessionID:', req.sessionID);
+        
         // Eliminar la contraseña de la respuesta
         const { password, ...userWithoutPassword } = newUser;
-        res.status(201).json(userWithoutPassword);
+        
+        // Usar el helper para guardar la sesión y responder
+        saveSessionAndRespond(req, res, next, userWithoutPassword);
       });
     } catch (error) {
+      console.error('Error en el registro:', error);
       next(error);
     }
   });
@@ -137,25 +148,38 @@ export function setupAuth(app: Express) {
       if (!user) {
         return res.status(401).json({ message: 'Credenciales incorrectas' });
       }
+      
+      // Login del usuario con Passport.js
       req.login(user, (err) => {
         if (err) return next(err);
         
-        // Asegurarse de que la sesión se guarde antes de responder
-        req.session.save((err) => {
-          if (err) return next(err);
-          console.log('Sesión guardada correctamente:', req.sessionID);
-          return res.json(user);
-        });
+        console.log('Usuario autenticado en login:', user.email);
+        console.log('SessionID generado:', req.sessionID);
+        
+        // Usamos la función helper para guardar sesión y responder
+        saveSessionAndRespond(req, res, next, user);
       });
     })(req, res, next);
   });
 
   app.post('/api/auth/logout', (req, res, next) => {
+    console.log('Cerrando sesión de usuario:', req.user?.email);
+    console.log('SessionID al hacer logout:', req.sessionID);
+    
     req.logout((err) => {
       if (err) return next(err);
       req.session.destroy((err) => {
         if (err) return next(err);
-        res.clearCookie('connect.sid');
+        
+        // Borrar la cookie con el mismo nombre que configuramos
+        res.clearCookie('origo.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
+        
+        console.log('Sesión destruida correctamente');
         res.json({ success: true });
       });
     });
@@ -164,25 +188,19 @@ export function setupAuth(app: Express) {
   app.get('/api/auth/me', (req, res, next) => {
     console.log('GET /api/auth/me - SessionID:', req.sessionID);
     console.log('Headers:', JSON.stringify(req.headers));
-    console.log('isAuthenticated:', req.isAuthenticated());
+    console.log('Cookies:', req.headers.cookie);
     
-    if (!req.isAuthenticated()) {
+    // Verificación de autenticación utilizando el helper
+    if (!checkAuthenticatedSession(req)) {
       return res.status(401).json({ message: 'No autenticado' });
     }
     
-    // Asegurarse de que la sesión siga viva
-    req.session.touch();
-    req.session.save((err) => {
-      if (err) {
-        console.error('Error al guardar sesión en /api/auth/me:', err);
-        return next(err);
-      }
-      
-      // Devolver los datos del usuario sin la contraseña
-      const user = req.user as any;
-      console.log('Usuario autenticado en /api/auth/me:', user?.email);
-      res.json(user);
-    });
+    // Devolver los datos del usuario sin la contraseña
+    const user = req.user as any;
+    console.log('Usuario autenticado en /api/auth/me:', user?.email);
+    
+    // Usando el helper para guardar sesión y responder
+    saveSessionAndRespond(req, res, next, user);
   });
   
   // Ruta para solicitar un token de recuperación de contraseña
