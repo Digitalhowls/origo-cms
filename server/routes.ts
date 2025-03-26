@@ -26,6 +26,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/organizations/branding', authMiddleware, organizationService.updateBranding);
   app.post('/api/organizations/check-domain', authMiddleware, organizationService.checkDomain);
   app.post('/api/organizations/configure-domain', authMiddleware, organizationService.configureCustomDomain);
+  app.post('/api/organizations/verify-domain', authMiddleware, organizationService.verifyDomain);
   app.get('/api/organizations/users', authMiddleware, organizationService.getOrganizationUsers);
   app.post('/api/organizations/switch/:id', authMiddleware, organizationService.switchOrganization);
   app.get('/api/organizations/:id', authMiddleware, organizationService.getOrganization);

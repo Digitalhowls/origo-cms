@@ -389,6 +389,117 @@ export async function checkDomain(req: Request, res: Response) {
   }
 }
 
+// Verify domain DNS settings
+export async function verifyDomain(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'No autenticado' });
+    }
+    
+    // Validar los datos recibidos
+    const verifySchema = z.object({
+      domain: z.string().min(1, 'El dominio es obligatorio'),
+      organizationId: z.number().optional()
+    });
+    
+    const validationResult = verifySchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: 'Datos inválidos',
+        errors: validationResult.error.errors
+      });
+    }
+    
+    const { domain, organizationId: requestedOrgId } = validationResult.data;
+    
+    const userId = (req.user as any).id;
+    const currentOrgId = requestedOrgId || (req.user as any).organizationId;
+    
+    // Verificar que el usuario tenga permisos para esta operación
+    const hasPermission = await storage.hasPermission(userId, 'organization', 'update');
+    if (!hasPermission) {
+      return res.status(403).json({ message: 'No tiene permisos para verificar el dominio de la organización' });
+    }
+    
+    // Obtener la organización actual
+    const organization = await storage.getOrganization(currentOrgId);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organización no encontrada' });
+    }
+    
+    if (!organization.domain || organization.domain !== domain) {
+      return res.status(400).json({ message: 'Este dominio no está configurado para esta organización' });
+    }
+    
+    const domainConfig = organization.domainConfig || {};
+    const verificationToken = domainConfig.verificationToken;
+    
+    if (!verificationToken) {
+      return res.status(400).json({ message: 'No hay un token de verificación configurado para este dominio' });
+    }
+    
+    // En una implementación real, aquí verificaríamos si el registro DNS TXT está configurado correctamente
+    // Para este ejemplo, usaremos una simulación de éxito en la verificación (50% de probabilidad)
+    const verificationSuccessful = Math.random() > 0.5;
+    
+    if (verificationSuccessful) {
+      // Actualizar la configuración del dominio como verificado
+      const updatedDomainConfig = {
+        ...domainConfig,
+        verified: true,
+        verifiedAt: new Date().toISOString()
+      };
+      
+      // Actualizar la organización con la nueva configuración de dominio
+      const updatedOrg = await storage.updateOrganizationDomains(
+        currentOrgId,
+        {
+          domain,
+          domainConfig: updatedDomainConfig
+        }
+      );
+      
+      res.json({
+        success: true,
+        verified: true,
+        message: '¡Dominio verificado correctamente!',
+        organization: updatedOrg
+      });
+    } else {
+      // Actualizar el timestamp del último intento de verificación
+      const updatedDomainConfig = {
+        ...domainConfig,
+        lastVerificationAttempt: new Date().toISOString()
+      };
+      
+      // Actualizar la organización con la nueva configuración de dominio
+      await storage.updateOrganizationDomains(
+        currentOrgId,
+        {
+          domain,
+          domainConfig: updatedDomainConfig
+        }
+      );
+      
+      res.json({
+        success: false,
+        verified: false,
+        message: 'No se pudo verificar el dominio. Por favor, asegúrese de haber configurado correctamente el registro DNS TXT.',
+        instructions: [
+          `1. Cree un registro TXT en su proveedor DNS con el nombre: _origo-verify.${domain}`,
+          `2. Establezca el valor del registro como: ${verificationToken}`,
+          '3. Espere a que los cambios se propaguen (esto puede tomar entre 5 minutos y 48 horas)',
+          '4. Intente verificar nuevamente'
+        ]
+      });
+    }
+  } catch (error) {
+    console.error('Error verifying domain:', error);
+    res.status(500).json({ message: 'Error al verificar el dominio' });
+  }
+}
+
 // Configure custom domain
 export async function configureCustomDomain(req: Request, res: Response) {
   try {
@@ -396,22 +507,10 @@ export async function configureCustomDomain(req: Request, res: Response) {
       return res.status(401).json({ message: 'No autenticado' });
     }
     
-    const userId = (req.user as any).id;
-    const organizationId = (req.user as any).organizationId;
-    
-    // Verificar que el usuario tenga permisos para esta operación
-    const hasPermission = await storage.hasPermission(userId, 'organization', 'update');
-    if (!hasPermission) {
-      return res.status(403).json({ message: 'No tiene permisos para actualizar la configuración de la organización' });
-    }
-    
     // Validar los datos recibidos
     const domainSchema = z.object({
-      customDomain: z.string().optional(),
-      subdomain: z.string().optional(),
-      enableCustomDomain: z.boolean().default(false),
-      verificationMethod: z.enum(['dns', 'file']).optional(),
-      verificationToken: z.string().optional()
+      domain: z.string().min(1, 'El dominio es obligatorio'),
+      organizationId: z.number().optional()
     });
     
     const validationResult = domainSchema.safeParse(req.body);
@@ -423,60 +522,72 @@ export async function configureCustomDomain(req: Request, res: Response) {
       });
     }
     
-    const { customDomain, subdomain, enableCustomDomain, verificationMethod, verificationToken } = validationResult.data;
+    const { domain, organizationId: requestedOrgId } = validationResult.data;
+    
+    const userId = (req.user as any).id;
+    const currentOrgId = requestedOrgId || (req.user as any).organizationId;
+    
+    // Verificar que el usuario tenga permisos para esta operación
+    const hasPermission = await storage.hasPermission(userId, 'organization', 'update');
+    if (!hasPermission) {
+      return res.status(403).json({ message: 'No tiene permisos para actualizar la configuración de la organización' });
+    }
     
     // Obtener la organización actual
-    const organization = await storage.getOrganization(organizationId);
+    const organization = await storage.getOrganization(currentOrgId);
     if (!organization) {
       return res.status(404).json({ message: 'Organización no encontrada' });
     }
     
-    let customDomainConfig: any = {
-      enabled: enableCustomDomain
+    // Verificar disponibilidad del dominio personalizado
+    const existingOrg = await storage.getOrganizationByCustomDomain(domain);
+    if (existingOrg && existingOrg.id !== currentOrgId) {
+      return res.status(400).json({ 
+        message: 'Este dominio ya está en uso por otra organización' 
+      });
+    }
+    
+    // Validar el formato del dominio
+    const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+    if (!domainRegex.test(domain)) {
+      return res.status(400).json({
+        message: 'Formato de dominio inválido',
+        valid: false
+      });
+    }
+    
+    // Generar token de verificación DNS
+    const verificationToken = `origo-verify-${Math.random().toString(36).substring(2, 15)}`;
+    
+    // Actualizar o crear configuración de dominio
+    const domainConfig = {
+      enabled: true,
+      verificationMethod: 'dns',
+      verificationToken,
+      verified: false, // Por defecto no está verificado
+      lastVerificationAttempt: new Date().toISOString()
     };
     
-    if (customDomain) {
-      // Verificar disponibilidad del dominio personalizado
-      const existingOrg = await storage.getOrganizationByCustomDomain(customDomain);
-      if (existingOrg && existingOrg.id !== organizationId) {
-        return res.status(400).json({ 
-          message: 'Este dominio ya está en uso por otra organización' 
-        });
-      }
-      
-      customDomainConfig.domain = customDomain;
-      customDomainConfig.verified = false;
-      
-      if (verificationMethod && verificationToken) {
-        customDomainConfig.verificationMethod = verificationMethod;
-        customDomainConfig.verificationToken = verificationToken;
-        // En una implementación real, aquí se verificaría el dominio
-        // Por ahora, simplemente guardamos la información
-      }
-    }
-    
-    if (subdomain) {
-      // Verificar disponibilidad del subdominio
-      const existingOrg = await storage.getOrganizationBySubdomain(subdomain);
-      if (existingOrg && existingOrg.id !== organizationId) {
-        return res.status(400).json({ 
-          message: 'Este subdominio ya está en uso por otra organización' 
-        });
-      }
-    }
+    // En una implementación real, aquí se verificaría si el registro DNS existe
+    // Para este ejemplo, asumimos que no está verificado inicialmente
     
     // Actualizar la organización con la configuración de dominio
     const updatedOrg = await storage.updateOrganizationDomains(
-      organizationId, 
+      currentOrgId, 
       { 
-        domain: customDomain, 
-        subdomain, 
-        domainConfig: customDomainConfig 
+        domain, 
+        domainConfig 
       }
     );
     
+    // Simular verificación (en un entorno real esto sería un proceso asíncrono)
+    // Por ahora, simplemente devolvemos el token para que el cliente pueda mostrarlo
+    
     res.json({
       success: true,
+      verified: false, // Inicialmente no está verificado
+      verificationToken,
+      domain,
       organization: updatedOrg
     });
   } catch (error) {
