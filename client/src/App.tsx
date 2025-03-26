@@ -18,6 +18,8 @@ import BrandingSettings from "@/pages/settings/branding";
 import AppearanceSettings from "@/pages/settings/appearance";
 import IntegrationsSettings from "@/pages/settings/integrations";
 import ApiSettings from "@/pages/settings/api";
+import OrganizationsSettings from "@/pages/settings/organizations";
+import NewOrganization from "@/pages/settings/organizations/new";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -38,6 +40,8 @@ function Router() {
       <ProtectedRoute path="/settings/appearance" component={AppearanceSettings} />
       <ProtectedRoute path="/settings/integrations" component={IntegrationsSettings} />
       <ProtectedRoute path="/settings/api" component={ApiSettings} />
+      <ProtectedRoute path="/settings/organizations" component={OrganizationsSettings} />
+      <ProtectedRoute path="/settings/organizations/new" component={NewOrganization} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

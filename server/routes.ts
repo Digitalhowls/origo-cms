@@ -21,10 +21,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Organization routes
   app.get('/api/organizations', authMiddleware, organizationService.getOrganizations);
+  app.post('/api/organizations', authMiddleware, organizationService.createOrganization);
   app.post('/api/organizations/switch/:id', authMiddleware, organizationService.switchOrganization);
+  app.delete('/api/organizations/:id', authMiddleware, organizationService.deleteOrganization);
   app.get('/api/organizations/branding', authMiddleware, organizationService.getBranding);
   app.patch('/api/organizations/branding', authMiddleware, organizationService.updateBranding);
   app.post('/api/organizations/check-domain', authMiddleware, organizationService.checkDomain);
+  app.get('/api/organizations/users', authMiddleware, organizationService.getOrganizationUsers);
   
   // Dashboard routes
   app.get('/api/dashboard', authMiddleware, async (req, res) => {
