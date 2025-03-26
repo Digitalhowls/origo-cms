@@ -152,7 +152,7 @@ export function setupAuth(app: Express) {
       
       console.log('Usuario registrado correctamente:', email);
       
-      // Login automático después del registro
+      // Login automático después del registro y generar token JWT
       req.login(newUser, (err) => {
         if (err) {
           console.error('Error en login automático post-registro:', err);
@@ -160,7 +160,6 @@ export function setupAuth(app: Express) {
         }
         
         console.log('Sesión iniciada después del registro. SessionID:', req.sessionID);
-        console.log('Datos de sesión post-registro:', JSON.stringify(req.session));
         
         // Establecer explícitamente passport.user (usando propiedad dinámica)
         (req.session as any).passport = { user: newUser.id };
@@ -168,8 +167,15 @@ export function setupAuth(app: Express) {
         // Eliminar la contraseña de la respuesta
         const { password, ...userWithoutPassword } = newUser;
         
-        // Usar el helper para guardar la sesión y responder
-        saveSessionAndRespond(req, res, next, userWithoutPassword);
+        // Generar token JWT
+        const token = generateToken(newUser);
+        console.log('Token JWT generado para usuario registrado:', newUser.email);
+        
+        // Responder con el token JWT y los datos del usuario
+        return res.status(201).json({
+          user: userWithoutPassword,
+          token: token
+        });
       });
     } catch (error) {
       console.error('Error en el registro:', error);

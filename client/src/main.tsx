@@ -30,12 +30,15 @@ function initCookieEnvironment() {
 initCookieEnvironment();
 
 // Función para crear un interceptor global de fetch
+// Esta funcionalidad ahora se maneja desde queryClient.ts con JWT
+// Mantenemos el interceptor para compatibilidad, pero delegamos la autenticación
+// al sistema de JWT implementado en queryClient.ts
 const originalFetch = window.fetch;
 window.fetch = async function(input, init) {
   // Asegurarse de que siempre se incluyan las credenciales
-  const modifiedInit = {
+  const modifiedInit: RequestInit = {
     ...init,
-    credentials: 'include',
+    credentials: 'include' as RequestCredentials, // Especificar tipo explícitamente
     headers: {
       ...(init?.headers || {}),
       'Accept': 'application/json',

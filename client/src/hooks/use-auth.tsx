@@ -59,21 +59,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Cookies recibidas:", document.cookie);
       
       const data = await res.json();
+      console.log("Datos de respuesta completos:", data);
       
       // Verificar si recibimos un token JWT
       if (data.token) {
-        console.log("Token JWT recibido");
+        console.log("Token JWT recibido", data.token.slice(0, 15) + "...");
         
         // Guardar el token JWT
         saveAuthToken(data.token);
+        console.log("Token JWT guardado en localStorage");
         
         // Guardar los datos del usuario (sin el token)
         const { token, ...userData } = data;
         saveUserData(userData);
+        console.log("Datos de usuario guardados en localStorage:", userData);
         
-        return userData;
+        return userData.user || userData; // Compatibilidad con diferentes formatos
       }
       
+      console.log("No se recibió token JWT en la respuesta");
       return data;
     },
     onSuccess: (user: User) => {
@@ -100,21 +104,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await apiRequest("POST", "/api/auth/register", credentials);
       
       const data = await res.json();
+      console.log("Datos de respuesta de registro:", data);
       
       // Verificar si recibimos un token JWT
       if (data.token) {
-        console.log("Token JWT recibido en registro");
+        console.log("Token JWT recibido en registro", data.token.slice(0, 15) + "...");
         
         // Guardar el token JWT
         saveAuthToken(data.token);
+        console.log("Token JWT de registro guardado en localStorage");
         
         // Guardar los datos del usuario (sin el token)
         const { token, ...userData } = data;
         saveUserData(userData);
+        console.log("Datos de usuario de registro guardados:", userData);
         
-        return userData;
+        return userData.user || userData; // Compatibilidad con diferentes formatos
       }
       
+      console.log("No se recibió token JWT en la respuesta de registro");
       return data;
     },
     onSuccess: (user: User) => {
