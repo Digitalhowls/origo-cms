@@ -6,9 +6,9 @@
 ✓ Configuración de base de datos PostgreSQL
 ✓ Implementación de la autenticación básica
 
-## 2. Fase de Desarrollo Core - Próximos pasos
+## 2. Fase de Desarrollo Core - En progreso
 ### 2.1 Mejora del Sistema de Autenticación y Permisos
-- [ ] Implementar recuperación de contraseñas
+- [x] Implementar recuperación de contraseñas
 - [ ] Añadir funcionalidad de invitación de usuarios
 - [ ] Desarrollar sistema de roles y permisos detallado
 - [ ] Implementar autenticación con redes sociales (OAuth)
@@ -67,5 +67,6 @@
 - [ ] Preparación para producción (hardening)
 - [ ] Pruebas de seguridad y penetración
 - [ ] Documentación completa para usuarios
+- [x] Configuración de pruebas automatizadas E2E
 - [ ] Establecer pipeline de CI/CD
 - [ ] Planificación de actualizaciones continuas
