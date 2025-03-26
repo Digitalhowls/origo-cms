@@ -47,12 +47,13 @@ describe('Módulo de Autenticación', () => {
     await page.goto(`${BASE_URL}/auth`);
     
     // Ir al formulario de registro
-    await page.click('button:has-text("Crear cuenta")');
+    await page.click('[data-value="register"]');
     
     // Completar el formulario de registro
     await fillForm(page, {
       'name': testUser.name,
       'email': testUser.email,
+      'username': testUser.email.split('@')[0],
       'password': testUser.password,
       'confirmPassword': testUser.password
     });
