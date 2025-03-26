@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { initializeAnimations } from "./lib/animation-service";
 
 // Función para verificar y configurar el entorno de cookies
 function initCookieEnvironment() {
@@ -28,6 +29,9 @@ function initCookieEnvironment() {
 
 // Inicializar entorno de cookies
 initCookieEnvironment();
+
+// Inicializar animaciones
+initializeAnimations();
 
 // Función para crear un interceptor global de fetch
 // Esta funcionalidad ahora se maneja desde queryClient.ts con JWT
