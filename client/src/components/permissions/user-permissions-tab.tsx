@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { UserPermissionsManager } from './user-permissions-manager';
 import { usePermissions } from '@/hooks/use-permissions';
 import { UserRole, Resource, Action, RolePermissions } from '@shared/types';
-import { Loader2, Lock, AlertTriangle, Shield, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Loader2, AlertTriangle, Shield, ShieldAlert, ShieldCheck, RefreshCw } from 'lucide-react';
 
 interface UserPermissionsTabProps {
   userId: number;
@@ -15,21 +15,39 @@ interface UserPermissionsTabProps {
   userRole: UserRole;
 }
 
-export function UserPermissionsTab({ userId, userName, userRole }: UserPermissionsTabProps) {
+export function UserPermissionsTab({ userId, userName, userRole: propUserRole }: UserPermissionsTabProps) {
   const { 
     permissionsData, 
     permissionsLoading, 
     rolePermissions,
+    roleData,
+    roleLoading,
     addPermission,
     updatePermission,
     deletePermission
   } = usePermissions(userId);
 
+  // Utilizamos el rol obtenido de la API si está disponible, de lo contrario usamos el rol proporcionado como prop
   const [activeTab, setActiveTab] = useState<'role' | 'custom'>('role');
+  const [actualRole, setActualRole] = useState<UserRole>(propUserRole);
+  
+  // Actualizamos el rol cuando cambian los datos de la API
+  useEffect(() => {
+    if (roleData?.role) {
+      setActualRole(roleData.role);
+    }
+  }, [roleData]);
   
   // Función de utilidad para convertir los datos de permisos a un formato más manejable
+  // Define el tipo para los permisos procesados para evitar errores de tipado
+  type PermissionAction = {
+    has: boolean;
+    custom: boolean;
+    id?: number;
+  };
+
   const processPermissions = () => {
-    const permissions: Record<string, Record<string, { has: boolean, custom: boolean }>> = {};
+    const permissions: Record<string, Record<string, PermissionAction>> = {};
     
     // Inicializa los permisos según el rol
     Object.entries(rolePermissions).forEach(([key, hasPermission]) => {
@@ -87,7 +105,8 @@ export function UserPermissionsTab({ userId, userName, userRole }: UserPermissio
         await deletePermission(existingPermission.id);
       } else {
         // De lo contrario, actualiza el permiso personalizado
-        await updatePermission(existingPermission.id, {
+        await updatePermission({
+          id: existingPermission.id,
           allowed
         });
       }
@@ -178,7 +197,7 @@ export function UserPermissionsTab({ userId, userName, userRole }: UserPermissio
     );
   };
   
-  if (permissionsLoading) {
+  if (permissionsLoading || roleLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -196,8 +215,30 @@ export function UserPermissionsTab({ userId, userName, userRole }: UserPermissio
       
       <div className="flex items-center gap-2 p-4 rounded-md bg-blue-50 border border-blue-200">
         <ShieldCheck className="h-5 w-5 text-blue-600" />
-        <div>
-          <p className="text-blue-800 font-medium">Rol actual: {userRole}</p>
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <p className="text-blue-800 font-medium">Rol actual: {actualRole}</p>
+              {roleData && (
+                <Badge variant="outline" className="ml-2 text-xs bg-blue-50 text-blue-600 border-blue-300">
+                  Verificado por API
+                </Badge>
+              )}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                // Refrescar datos del rol desde la API
+                queryClient.invalidateQueries({ queryKey: [`/api/permissions/role/${userId}`] });
+                queryClient.invalidateQueries({ queryKey: [`/api/permissions/user/${userId}`] });
+              }}
+              className="text-blue-700 border-blue-300 hover:bg-blue-100"
+            >
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Refrescar
+            </Button>
+          </div>
           <p className="text-sm text-blue-700">
             Los permisos mostrados incluyen los heredados del rol y cualquier permiso personalizado.
           </p>
@@ -223,7 +264,7 @@ export function UserPermissionsTab({ userId, userName, userRole }: UserPermissio
         <TabsContent value="role" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Permisos heredados del rol {userRole}</CardTitle>
+              <CardTitle>Permisos heredados del rol {actualRole}</CardTitle>
               <CardDescription>
                 Estos permisos vienen predefinidos con el rol y no se pueden modificar directamente.
                 Para modificarlos, usa la pestaña de permisos personalizados.
