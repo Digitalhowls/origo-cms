@@ -1,235 +1,303 @@
-import { useState } from 'react';
-import { useCustomRoles } from '@/hooks/use-custom-roles';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { SystemRole } from '@shared/types';
+import React, { useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardFooter 
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Check, Plus, Shield, Trash2, Edit, AlertTriangle } from 'lucide-react';
 import PermissionEditor from '@/components/permissions/permission-editor';
 import RolePermissionsInfo from '@/components/permissions/role-permissions-info';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusCircle, Pencil, Trash2, UserPlus, AlertCircle, Check } from 'lucide-react';
+import { useCustomRoles } from '@/hooks/use-custom-roles';
+import { SystemRole, PermissionSet } from '@shared/types';
 
-export default function CustomRolesTab() {
-  const { roles, isLoading, error, createRole, updateRole, deleteRole, useRoleQuery, isPending } = useCustomRoles();
-  const { user } = useAuth();
+const CustomRolesTab: React.FC = () => {
   const { toast } = useToast();
   
-  // Estado local para la gestión de diálogos y formularios
+  // Obtener custom roles con el hook
+  const { 
+    roles, 
+    isLoading, 
+    getRole, 
+    isLoadingRole, 
+    createRole, 
+    updateRole, 
+    deleteRole,
+    isPending
+  } = useCustomRoles();
+  
+  // Estado para los diálogos y formularios
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [currentRoleId, setCurrentRoleId] = useState<number | null>(null);
   
-  // Estado del formulario para crear o editar un rol
-  const [formData, setFormData] = useState<{
-    name: string;
-    description: string;
-    basedOnRole: SystemRole;
-    permissions: Record<string, boolean>;
-  }>({
+  // Estado para el formulario (usado tanto para crear como para editar)
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
-    basedOnRole: 'editor',
-    permissions: {},
+    basedOnRole: 'viewer' as SystemRole,
+    permissions: {} as PermissionSet,
+    isDefault: false
   });
   
-  // Consulta para obtener los detalles del rol seleccionado para editar
-  const { data: selectedRoleData, isLoading: isLoadingRole } = useRoleQuery(selectedRoleId || undefined);
+  // Manejadores de eventos para los formularios
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
   
-  // Resetear formulario
-  const resetForm = () => {
+  const handleBaseRoleChange = (value: string) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      basedOnRole: value as SystemRole
+    }));
+  };
+  
+  const handlePermissionsChange = (permissions: PermissionSet) => {
+    setFormData(prev => ({ ...prev, permissions }));
+  };
+  
+  // Manejadores para los diálogos
+  const handleOpenCreateDialog = () => {
     setFormData({
       name: '',
       description: '',
-      basedOnRole: 'editor',
+      basedOnRole: 'viewer',
       permissions: {},
+      isDefault: false
     });
+    setIsCreateDialogOpen(true);
   };
   
-  // Abrir el diálogo de edición con los datos del rol
-  const handleEditRole = (roleId: number) => {
-    setSelectedRoleId(roleId);
-    setIsEditDialogOpen(true);
-  };
-  
-  // Cargar datos del rol seleccionado cuando estén disponibles
-  if (selectedRoleData && isEditDialogOpen && formData.name === '') {
-    setFormData({
-      name: selectedRoleData.name,
-      description: selectedRoleData.description || '',
-      basedOnRole: selectedRoleData.basedOnRole as SystemRole,
-      permissions: selectedRoleData.permissions || {},
-    });
-  }
-  
-  // Manejar cambios en el formulario
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-  
-  // Manejar cambio de rol base
-  const handleBaseRoleChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, basedOnRole: value as SystemRole }));
-  };
-  
-  // Manejar cambios en los permisos
-  const handlePermissionsChange = (permissions: Record<string, boolean>) => {
-    setFormData((prev) => ({ ...prev, permissions }));
-  };
-  
-  // Crear un nuevo rol
-  const handleCreateRole = () => {
-    if (!formData.name) {
-      toast({
-        title: 'Error',
-        description: 'El nombre del rol es obligatorio',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    createRole(formData);
-    resetForm();
-    setIsCreateDialogOpen(false);
-  };
-  
-  // Actualizar un rol existente
-  const handleUpdateRole = () => {
-    if (!selectedRoleId) return;
-    
-    if (!formData.name) {
-      toast({
-        title: 'Error',
-        description: 'El nombre del rol es obligatorio',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    updateRole({
-      roleId: selectedRoleId,
-      data: formData,
-    });
-    
-    resetForm();
-    setSelectedRoleId(null);
-    setIsEditDialogOpen(false);
-  };
-  
-  // Confirmar y eliminar un rol
-  const confirmDelete = (roleId: number) => {
-    setConfirmDeleteId(roleId);
-  };
-  
-  const handleDeleteRole = () => {
-    if (!confirmDeleteId) return;
-    
-    deleteRole(confirmDeleteId);
-    setConfirmDeleteId(null);
-  };
-  
-  // Cerrar diálogos y resetear estados
   const handleCloseCreateDialog = () => {
-    resetForm();
     setIsCreateDialogOpen(false);
+  };
+  
+  const handleOpenEditDialog = async (roleId: number) => {
+    setCurrentRoleId(roleId);
+    const role = await getRole(roleId);
+    
+    if (role) {
+      setFormData({
+        name: role.name,
+        description: role.description || '',
+        basedOnRole: role.basedOnRole as SystemRole,
+        permissions: role.permissions || {},
+        isDefault: role.isDefault
+      });
+      setIsEditDialogOpen(true);
+    } else {
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la información del rol",
+        variant: "destructive"
+      });
+    }
   };
   
   const handleCloseEditDialog = () => {
-    resetForm();
-    setSelectedRoleId(null);
     setIsEditDialogOpen(false);
+    setCurrentRoleId(null);
   };
   
-  if (isLoading) {
-    return <div className="flex items-center justify-center py-10">Cargando roles...</div>;
-  }
+  const handleOpenDeleteDialog = (roleId: number) => {
+    setConfirmDeleteId(roleId);
+  };
   
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 text-center">
-        <AlertCircle className="h-10 w-10 text-destructive mb-2" />
-        <h3 className="text-lg font-medium">Error al cargar roles</h3>
-        <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
-      </div>
-    );
-  }
+  // Manejadores para acciones CRUD
+  const handleCreateRole = async () => {
+    try {
+      await createRole({
+        name: formData.name,
+        description: formData.description,
+        basedOnRole: formData.basedOnRole,
+        permissions: formData.permissions,
+        isDefault: formData.isDefault
+      });
+      
+      setIsCreateDialogOpen(false);
+      toast({
+        title: "Rol creado",
+        description: "El rol personalizado ha sido creado correctamente"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo crear el rol: " + (error as Error).message,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleUpdateRole = async () => {
+    if (!currentRoleId) return;
+    
+    try {
+      await updateRole(currentRoleId, {
+        name: formData.name,
+        description: formData.description,
+        basedOnRole: formData.basedOnRole,
+        permissions: formData.permissions,
+        isDefault: formData.isDefault
+      });
+      
+      setIsEditDialogOpen(false);
+      setCurrentRoleId(null);
+      toast({
+        title: "Rol actualizado",
+        description: "El rol personalizado ha sido actualizado correctamente"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el rol: " + (error as Error).message,
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleDeleteRole = async () => {
+    if (!confirmDeleteId) return;
+    
+    try {
+      await deleteRole(confirmDeleteId);
+      setConfirmDeleteId(null);
+      toast({
+        title: "Rol eliminado",
+        description: "El rol personalizado ha sido eliminado correctamente"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el rol: " + (error as Error).message,
+        variant: "destructive"
+      });
+    }
+  };
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold tracking-tight">Roles Personalizados</h2>
-        <Button onClick={() => setIsCreateDialogOpen(true)} disabled={isPending}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Nuevo Rol
-        </Button>
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Roles Personalizados</CardTitle>
+            <CardDescription>
+              Define roles personalizados con permisos específicos para tu organización.
+            </CardDescription>
+          </div>
+          <Button onClick={handleOpenCreateDialog}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nuevo rol
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Los roles personalizados te permiten definir permisos específicos para cada función en tu organización.
+            Puedes basarlos en roles predefinidos y luego personalizarlos según tus necesidades.
+          </p>
+        </CardContent>
+      </Card>
       
-      <p className="text-muted-foreground">
-        Los roles personalizados te permiten definir permisos específicos para distintos
-        usuarios de tu organización, adaptados a sus responsabilidades.
-      </p>
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {roles && roles.length > 0 ? (
-          roles.map((role) => (
-            <Card key={role.id} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{role.name}</CardTitle>
-                    <CardDescription>
-                      Basado en: {role.basedOnRole.charAt(0).toUpperCase() + role.basedOnRole.slice(1)}
-                    </CardDescription>
-                  </div>
-                  <div className="flex">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditRole(role.id)}
+      {/* Lista de roles personalizados */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {isLoading ? (
+          Array(3).fill(0).map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-5 bg-gray-200 rounded w-1/3 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-20 bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
+          ))
+        ) : roles && roles.length > 0 ? (
+          roles.map(role => (
+            <Card key={role.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center">
+                    <Shield className="h-5 w-5 mr-2" />
+                    {role.name}
+                    {role.isDefault && (
+                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 rounded-full px-2 py-0.5">
+                        Por defecto
+                      </span>
+                    )}
+                  </CardTitle>
+                  <div className="flex space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleOpenEditDialog(role.id)}
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Edit className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => confirmDelete(role.id)}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleOpenDeleteDialog(role.id)}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
+                <CardDescription>{role.description}</CardDescription>
               </CardHeader>
               <CardContent>
-                {role.description && (
-                  <p className="text-sm text-muted-foreground mb-3">{role.description}</p>
-                )}
                 <Tabs defaultValue="info">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="info">Información</TabsTrigger>
-                    <TabsTrigger value="permisos">Permisos</TabsTrigger>
+                  <TabsList className="w-full mb-4">
+                    <TabsTrigger value="info" className="flex-1">Información</TabsTrigger>
+                    <TabsTrigger value="permisos" className="flex-1">Permisos</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="info" className="h-[150px] overflow-auto">
+                  <TabsContent value="info">
                     <div className="text-sm space-y-2 pt-2">
                       <div>
                         <span className="font-medium">ID:</span> {role.id}
                       </div>
                       <div>
                         <span className="font-medium">Fecha de creación:</span>{' '}
-                        {new Date(role.createdAt).toLocaleDateString()}
+                        {role.createdAt ? new Date(role.createdAt).toLocaleDateString() : 'N/A'}
                       </div>
                       <div>
                         <span className="font-medium">Última actualización:</span>{' '}
-                        {new Date(role.updatedAt).toLocaleDateString()}
+                        {role.updatedAt ? new Date(role.updatedAt).toLocaleDateString() : 'N/A'}
                       </div>
                       <div>
                         <span className="font-medium">Por defecto:</span>{' '}
@@ -434,4 +502,6 @@ export default function CustomRolesTab() {
       </AlertDialog>
     </div>
   );
-}
+};
+
+export default CustomRolesTab;

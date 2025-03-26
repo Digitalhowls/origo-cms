@@ -1,168 +1,110 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { Resource, Action, RolePermissions, UserRole } from "@shared/types";
-import { useState, useEffect } from "react";
-
-// Tipo para los permisos del usuario
-interface UserPermission {
-  id: number;
-  userId: number;
-  resource: string;
-  action: string;
-  allowed: boolean;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { 
+  PermissionSet, 
+  Resource, 
+  Action, 
+  RolePermissions, 
+  SystemRole,
+  isSystemRole,
+  Permission
+} from '@shared/types';
+import { useQuery } from '@tanstack/react-query';
 
 /**
- * Hook para gestionar permisos de usuario
+ * Hook para gestionar y verificar permisos del usuario
+ * Permite verificar si el usuario actual tiene permisos para realizar acciones específicas
  */
-export function usePermissions(userId?: number) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  // Estado local para los permisos según el rol
-  const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
-  
-  // Interfaz para la respuesta de la API de rol
-  interface RoleResponse {
-    role: UserRole;
-    userId: number;
-  }
+export function usePermissions() {
+  const { user } = useAuth();
+  const [userPermissions, setUserPermissions] = useState<PermissionSet>({});
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Obtener permisos del usuario según su rol
-  const roleQuery = useQuery<RoleResponse>({
-    queryKey: userId ? [`/api/permissions/role/${userId}`] : [],
-    enabled: !!userId,
-  });
+  // Si el rol es personalizado (custom:X), cargar sus permisos
+  const isCustomRole = user?.role?.startsWith('custom:');
+  const customRoleId = isCustomRole ? parseInt(user?.role?.split(':')[1] || '0') : undefined;
   
-  // Configurar los permisos del rol cuando cambia la respuesta de la API
+  // Obtener permisos del rol personalizado
+  const { data: customRoleData } = useQuery({
+    queryKey: ['/api/roles/custom', customRoleId],
+    queryFn: async () => {
+      if (!customRoleId) return null;
+      
+      const response = await fetch(`/api/roles/custom/${customRoleId}`);
+      if (!response.ok) {
+        throw new Error('Error al obtener los permisos del rol personalizado');
+      }
+      return response.json();
+    },
+    enabled: !!customRoleId && !!user,
+  });
+
+  // Cuando cambia el usuario o los datos del rol, actualizar los permisos
   useEffect(() => {
-    if (roleQuery.data?.role) {
-      setRolePermissions(RolePermissions[roleQuery.data.role] || {});
+    if (!user) {
+      setUserPermissions({});
+      setIsLoaded(false);
+      return;
     }
-  }, [roleQuery.data]);
+    
+    let permissions: PermissionSet = {};
+    
+    // Si es un rol del sistema, usar los permisos predefinidos
+    if (user.role && isSystemRole(user.role)) {
+      permissions = { ...RolePermissions[user.role as SystemRole] };
+    }
+    // Si es un rol personalizado, usar los permisos obtenidos de la API
+    else if (isCustomRole && customRoleData) {
+      permissions = { ...customRoleData.permissions };
+    }
+    
+    setUserPermissions(permissions);
+    setIsLoaded(true);
+  }, [user, customRoleData, isCustomRole]);
 
-  // Obtener los permisos personalizados del usuario
-  const permissionsQuery = useQuery<UserPermission[]>({
-    queryKey: userId ? [`/api/permissions/user/${userId}`] : [],
-    enabled: !!userId,
-  });
+  /**
+   * Verifica si el usuario tiene permiso para una acción específica en un recurso
+   */
+  const hasPermission = useCallback(
+    (resource: Resource, action: Action): boolean => {
+      if (!user || !isLoaded) return false;
+      
+      // Super admin siempre tiene todos los permisos
+      if (user.role === 'superadmin') return true;
+      
+      const permissionKey = `${resource}.${action}` as Permission;
+      return !!userPermissions[permissionKey];
+    },
+    [user, userPermissions, isLoaded]
+  );
 
-  // Verificar si un usuario tiene un permiso específico
-  const checkPermissionQuery = (userId: number, resource: Resource, action: Action) => {
-    return useQuery<boolean>({
-      queryKey: [`/api/permissions/check/${userId}/${resource}/${action}`],
-      enabled: !!userId,
-    });
-  };
-
-  // Añadir un nuevo permiso
-  const addPermissionMutation = useMutation({
-    mutationFn: async (permission: {
-      userId: number;
-      resource: string;
-      action: string;
-      allowed: boolean;
-      description?: string;
-    }) => {
-      const response = await apiRequest("POST", "/api/permissions", permission);
-      return await response.json();
+  /**
+   * Verifica si el usuario tiene al menos uno de los permisos proporcionados
+   */
+  const hasAnyPermission = useCallback(
+    (permissions: Array<[Resource, Action]>): boolean => {
+      return permissions.some(([resource, action]) => hasPermission(resource, action));
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/permissions/user/${userId}`] });
-      toast({
-        title: "Permiso añadido",
-        description: "El permiso se ha añadido correctamente.",
-      });
+    [hasPermission]
+  );
+  
+  /**
+   * Verifica si el usuario tiene todos los permisos proporcionados
+   */
+  const hasAllPermissions = useCallback(
+    (permissions: Array<[Resource, Action]>): boolean => {
+      return permissions.every(([resource, action]) => hasPermission(resource, action));
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Error al añadir permiso",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Actualizar un permiso existente
-  const updatePermissionMutation = useMutation({
-    mutationFn: async ({
-      id,
-      allowed,
-    }: {
-      id: number;
-      allowed: boolean;
-    }) => {
-      const response = await apiRequest("PATCH", `/api/permissions/${id}`, { allowed });
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/permissions/user/${userId}`] });
-      toast({
-        title: "Permiso actualizado",
-        description: "El permiso se ha actualizado correctamente.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error al actualizar permiso",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Eliminar un permiso
-  const deletePermissionMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest("DELETE", `/api/permissions/${id}`);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/permissions/user/${userId}`] });
-      toast({
-        title: "Permiso eliminado",
-        description: "El permiso se ha eliminado correctamente.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error al eliminar permiso",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+    [hasPermission]
+  );
 
   return {
-    // Datos de permisos
-    permissionsData: permissionsQuery.data,
-    permissionsLoading: permissionsQuery.isLoading,
-    permissionsError: permissionsQuery.error,
-    
-    // Datos del rol y sus permisos base
-    roleData: roleQuery.data,
-    roleLoading: roleQuery.isLoading,
-    roleError: roleQuery.error,
-    rolePermissions,
-    
-    // Funciones de utilidad
-    checkPermission: checkPermissionQuery,
-    
-    // Mutaciones para gestión de permisos
-    addPermission: addPermissionMutation.mutate,
-    isAddingPermission: addPermissionMutation.isPending,
-    updatePermission: updatePermissionMutation.mutate,
-    isUpdatingPermission: updatePermissionMutation.isPending,
-    deletePermission: deletePermissionMutation.mutate,
-    isDeletingPermission: deletePermissionMutation.isPending,
-    
-    // Mantenemos las propiedades anteriores para compatibilidad
-    permissions: permissionsQuery.data,
-    isLoadingPermissions: permissionsQuery.isLoading,
-    errorPermissions: permissionsQuery.error,
+    isLoaded,
+    permissions: userPermissions,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
+    isCustomRole,
+    customRoleData,
   };
 }

@@ -1,34 +1,43 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { type CustomRoleDefinition } from '@shared/types';
+import { CustomRoleDefinition, PermissionSet } from '@shared/types';
+import { useToast } from '@/hooks/use-toast';
 
-interface CustomRoleFormData {
+export interface CustomRoleFormData {
   name: string;
   description: string;
   basedOnRole: string;
-  permissions: Record<string, boolean>;
-  isDefault?: boolean;
+  permissions: PermissionSet;
 }
 
-// Hook para gestionar roles personalizados
-export function useCustomRoles(organizationId = 1) {
+/**
+ * Hook para gestionar los roles personalizados
+ * Proporciona funciones para obtener, crear, actualizar y eliminar roles personalizados
+ */
+export function useCustomRoles() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isPending, setIsPending] = useState(false);
 
-  // Obtener todos los roles personalizados de una organización
-  const rolesQuery = useQuery({
-    queryKey: ['/api/roles/custom', organizationId],
+  // Obtener todos los roles personalizados
+  const { 
+    data: roles = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery<CustomRoleDefinition[]>({
+    queryKey: ['/api/roles/custom'],
     queryFn: async () => {
-      const response = await fetch(`/api/roles/custom?organizationId=${organizationId}`);
+      const response = await fetch('/api/roles/custom');
       if (!response.ok) {
-        throw new Error('Error al obtener roles personalizados');
+        throw new Error('Error al obtener los roles personalizados');
       }
       return response.json();
     },
-    enabled: !!organizationId,
   });
 
-  // Obtener un rol específico
+  // Hook para obtener un rol específico
   const useRoleQuery = (roleId?: number) => {
     return useQuery({
       queryKey: ['/api/roles/custom', roleId],
@@ -47,118 +56,127 @@ export function useCustomRoles(organizationId = 1) {
 
   // Crear un nuevo rol personalizado
   const createRoleMutation = useMutation({
-    mutationFn: async (data: CustomRoleFormData) => {
-      const roleData = {
-        ...data,
-        organizationId,
-      };
-      
+    mutationFn: async (roleData: CustomRoleFormData) => {
+      setIsPending(true);
       const response = await apiRequest('POST', '/api/roles/custom', roleData);
-      return await response.json();
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/roles/custom'] });
+      setIsPending(false);
       toast({
         title: 'Rol creado',
-        description: 'El rol personalizado se ha creado correctamente',
+        description: 'El rol personalizado ha sido creado correctamente.',
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/roles/custom'] });
     },
     onError: (error: Error) => {
+      setIsPending(false);
       toast({
-        title: 'Error al crear rol',
-        description: error.message,
+        title: 'Error',
+        description: `Error al crear el rol: ${error.message}`,
         variant: 'destructive',
       });
-    },
+    }
   });
 
-  // Actualizar un rol personalizado
+  // Actualizar un rol personalizado existente
   const updateRoleMutation = useMutation({
-    mutationFn: async ({
-      roleId,
-      data,
-    }: {
-      roleId: number;
-      data: Partial<CustomRoleFormData>;
+    mutationFn: async ({ 
+      roleId, 
+      data 
+    }: { 
+      roleId: number, 
+      data: Partial<CustomRoleFormData>
     }) => {
+      setIsPending(true);
       const response = await apiRequest('PATCH', `/api/roles/custom/${roleId}`, data);
-      return await response.json();
+      return response;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/roles/custom'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/roles/custom', variables.roleId] });
+      setIsPending(false);
       toast({
         title: 'Rol actualizado',
-        description: 'El rol personalizado se ha actualizado correctamente',
+        description: 'El rol personalizado ha sido actualizado correctamente.',
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/roles/custom', variables.roleId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/roles/custom'] });
     },
     onError: (error: Error) => {
+      setIsPending(false);
       toast({
-        title: 'Error al actualizar rol',
-        description: error.message,
+        title: 'Error',
+        description: `Error al actualizar el rol: ${error.message}`,
         variant: 'destructive',
       });
-    },
+    }
   });
 
   // Eliminar un rol personalizado
   const deleteRoleMutation = useMutation({
     mutationFn: async (roleId: number) => {
+      setIsPending(true);
       const response = await apiRequest('DELETE', `/api/roles/custom/${roleId}`);
-      return await response.json();
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/roles/custom'] });
+      setIsPending(false);
       toast({
         title: 'Rol eliminado',
-        description: 'El rol personalizado se ha eliminado correctamente',
+        description: 'El rol personalizado ha sido eliminado correctamente.',
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/roles/custom'] });
     },
     onError: (error: Error) => {
+      setIsPending(false);
       toast({
-        title: 'Error al eliminar rol',
-        description: error.message,
+        title: 'Error',
+        description: `Error al eliminar el rol: ${error.message}`,
         variant: 'destructive',
       });
-    },
+    }
   });
 
-  // Asignar un rol a un usuario
+  // Asignar un rol personalizado a un usuario
   const assignRoleMutation = useMutation({
-    mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
-      const response = await apiRequest('POST', '/api/roles/assign', { userId, roleId });
-      return await response.json();
+    mutationFn: async ({ 
+      userId, 
+      roleId 
+    }: { 
+      userId: number, 
+      roleId: number
+    }) => {
+      setIsPending(true);
+      const response = await apiRequest('POST', `/api/roles/assign`, { userId, roleId });
+      return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setIsPending(false);
       toast({
         title: 'Rol asignado',
-        description: 'El rol ha sido asignado correctamente al usuario',
+        description: 'El rol ha sido asignado al usuario correctamente.',
       });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
     },
     onError: (error: Error) => {
+      setIsPending(false);
       toast({
-        title: 'Error al asignar rol',
-        description: error.message,
+        title: 'Error',
+        description: `Error al asignar el rol: ${error.message}`,
         variant: 'destructive',
       });
-    },
+    }
   });
 
   return {
-    roles: rolesQuery.data as CustomRoleDefinition[],
-    isLoading: rolesQuery.isLoading,
-    isError: rolesQuery.isError,
-    error: rolesQuery.error,
+    roles,
+    isLoading,
+    isError,
+    error,
     useRoleQuery,
-    createRole: createRoleMutation.mutate,
-    updateRole: updateRoleMutation.mutate,
-    deleteRole: deleteRoleMutation.mutate,
-    assignRole: assignRoleMutation.mutate,
-    isPending: 
-      createRoleMutation.isPending || 
-      updateRoleMutation.isPending || 
-      deleteRoleMutation.isPending ||
-      assignRoleMutation.isPending
+    createRoleMutation,
+    updateRoleMutation,
+    deleteRoleMutation,
+    assignRoleMutation,
+    isPending,
   };
 }

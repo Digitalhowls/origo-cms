@@ -1,37 +1,37 @@
+import React from 'react';
+import { Resource, Action, PermissionSet } from '@shared/types';
+import { Check, X } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { 
-  PermissionSet, 
-  Resource, 
-  Action, 
-  RolePermissions, 
-  SystemRole, 
-  isSystemRole 
-} from '@shared/types';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface RolePermissionsInfoProps {
-  role: string;
-  permissions?: PermissionSet;
-  condensed?: boolean;
+  permissions: PermissionSet;
 }
 
-// Mapeo de recursos a etiquetas legibles
-const resourceLabels: Record<Resource, string> = {
+// Categorías de recursos para mostrar en grupos
+const ResourceGroups = {
+  'Contenido': [Resource.PAGE, Resource.BLOG, Resource.MEDIA, Resource.COURSE, Resource.CATEGORY, Resource.TAG],
+  'Administración': [Resource.USER, Resource.ORGANIZATION, Resource.SETTING, Resource.API_KEY, Resource.ANALYTICS]
+};
+
+// Nombres legibles de cada recurso
+const ResourceLabels: Record<Resource, string> = {
   [Resource.PAGE]: 'Páginas',
   [Resource.BLOG]: 'Blog',
-  [Resource.MEDIA]: 'Medios',
+  [Resource.MEDIA]: 'Media',
   [Resource.COURSE]: 'Cursos',
   [Resource.USER]: 'Usuarios',
   [Resource.ORGANIZATION]: 'Organización',
-  [Resource.SETTING]: 'Configuración',
-  [Resource.ANALYTICS]: 'Analíticas',
-  [Resource.API_KEY]: 'Claves API',
+  [Resource.SETTING]: 'Ajustes',
+  [Resource.ANALYTICS]: 'Análisis',
+  [Resource.API_KEY]: 'API Keys',
   [Resource.CATEGORY]: 'Categorías',
-  [Resource.TAG]: 'Etiquetas',
+  [Resource.TAG]: 'Etiquetas'
 };
 
-// Mapeo de acciones a etiquetas legibles
-const actionLabels: Record<Action, string> = {
+// Nombres legibles de cada acción
+const ActionLabels: Record<Action, string> = {
   [Action.CREATE]: 'Crear',
   [Action.READ]: 'Ver',
   [Action.UPDATE]: 'Editar',
@@ -40,107 +40,119 @@ const actionLabels: Record<Action, string> = {
   [Action.UNPUBLISH]: 'Despublicar',
   [Action.INVITE]: 'Invitar',
   [Action.MANAGE]: 'Gestionar',
-  [Action.ADMIN]: 'Administrar',
+  [Action.ADMIN]: 'Admin'
 };
 
-// Mapeo de roles del sistema a nombres legibles
-const roleLabels: Record<SystemRole, string> = {
-  superadmin: 'Super Administrador',
-  admin: 'Administrador',
-  editor: 'Editor',
-  reader: 'Lector',
-  viewer: 'Visitante',
-};
+// Acciones más comunes para mostrar en la tabla
+const CommonActions = [Action.READ, Action.CREATE, Action.UPDATE, Action.DELETE];
 
-// Descripción breve de los roles del sistema
-const roleDescriptions: Record<SystemRole, string> = {
-  superadmin: 'Acceso completo a todas las funciones del sistema',
-  admin: 'Administración de la organización y sus recursos',
-  editor: 'Creación y edición de contenido',
-  reader: 'Lectura y visualización de contenido',
-  viewer: 'Solo visualización limitada de contenido',
-};
-
-const RolePermissionsInfo: React.FC<RolePermissionsInfoProps> = ({ 
-  role, 
-  permissions,
-  condensed = false
-}) => {
-  // Determinar si es un rol del sistema o personalizado
-  const isSystem = isSystemRole(role);
+const RolePermissionsInfo: React.FC<RolePermissionsInfoProps> = ({ permissions }) => {
+  // Verificar si hay algún permiso
+  const hasAnyPermissions = Object.keys(permissions).length > 0;
   
-  // Obtener el nombre legible del rol
-  let roleName = role;
-  let description = '';
-  let permissionsToShow: PermissionSet = {};
+  // Verificar si un permiso específico está habilitado
+  const hasPermission = (resource: Resource, action: Action): boolean => {
+    const permissionKey = `${resource}.${action}`;
+    return !!permissions[permissionKey];
+  };
   
-  if (isSystem) {
-    roleName = roleLabels[role as SystemRole] || role;
-    description = roleDescriptions[role as SystemRole] || '';
-    permissionsToShow = RolePermissions[role as SystemRole] || {};
-  } else if (role.startsWith('custom:')) {
-    roleName = 'Rol Personalizado';
-    permissionsToShow = permissions || {};
-  }
-
-  // Agrupar permisos por recurso
-  const groupedPermissions: Record<Resource, Action[]> = {} as Record<Resource, Action[]>;
+  // Contar permisos por categoría
+  const countPermissionsByGroup = () => {
+    const counts: Record<string, number> = {};
+    
+    Object.entries(ResourceGroups).forEach(([group, resources]) => {
+      let count = 0;
+      resources.forEach(resource => {
+        Object.values(Action).forEach(action => {
+          if (hasPermission(resource, action)) {
+            count++;
+          }
+        });
+      });
+      counts[group] = count;
+    });
+    
+    return counts;
+  };
   
-  Object.entries(permissionsToShow).forEach(([key, enabled]) => {
-    if (enabled) {
-      const [resource, action] = key.split('.') as [Resource, Action];
-      if (!groupedPermissions[resource]) {
-        groupedPermissions[resource] = [];
-      }
-      groupedPermissions[resource].push(action);
-    }
-  });
-
-  if (condensed) {
-    // Versión condensada: solo mostrar recursos accesibles
-    return (
-      <div className="flex flex-wrap gap-1">
-        {Object.keys(groupedPermissions).map((resource) => (
-          <Badge key={resource} variant="outline" className="text-xs">
-            {resourceLabels[resource as Resource]}
-          </Badge>
-        ))}
-      </div>
-    );
-  }
-
+  const permissionCounts = countPermissionsByGroup();
+  
   return (
-    <Card className="border rounded-lg">
-      <CardContent className="pt-6">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold">{roleName}</h3>
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
-        </div>
-        
-        {Object.entries(groupedPermissions).length > 0 ? (
-          <div className="space-y-4">
-            {Object.entries(groupedPermissions).map(([resource, actions]) => (
-              <div key={resource} className="border-b pb-2 last:border-b-0">
-                <h4 className="font-medium mb-1">
-                  {resourceLabels[resource as Resource]}
-                </h4>
-                <div className="flex flex-wrap gap-1">
-                  {actions.map((action) => (
-                    <Badge key={action} variant="secondary" className="text-xs">
-                      {actionLabels[action]}
-                    </Badge>
-                  ))}
-                </div>
+    <div className="space-y-4">
+      {!hasAnyPermissions ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            No hay permisos definidos para este rol. El usuario no podrá acceder a ninguna funcionalidad.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          {/* Resumen de permisos */}
+          <div className="mb-6 flex gap-4">
+            {Object.entries(permissionCounts).map(([group, count]) => (
+              <div key={group} className="bg-muted p-3 rounded-lg">
+                <p className="text-xs font-medium text-muted-foreground">{group}</p>
+                <p className="text-2xl font-bold">{count}</p>
+                <p className="text-xs text-muted-foreground">permisos</p>
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Sin permisos definidos</p>
-        )}
-      </CardContent>
-    </Card>
+          
+          {/* Tablas de permisos por grupo */}
+          {Object.entries(ResourceGroups).map(([group, resources]) => (
+            <div key={group} className="mb-6">
+              <h4 className="text-sm font-medium mb-2">{group}</h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[180px]">Recurso</TableHead>
+                    {CommonActions.map(action => (
+                      <TableHead key={action} className="text-center">
+                        {ActionLabels[action]}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center">Otros</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {resources.map(resource => (
+                    <TableRow key={resource}>
+                      <TableCell className="font-medium">
+                        {ResourceLabels[resource]}
+                      </TableCell>
+                      
+                      {/* Columnas para acciones comunes */}
+                      {CommonActions.map(action => (
+                        <TableCell key={action} className="text-center">
+                          {hasPermission(resource, action) ? (
+                            <Check className="h-4 w-4 text-green-500 mx-auto" />
+                          ) : (
+                            <X className="h-4 w-4 text-gray-300 mx-auto" />
+                          )}
+                        </TableCell>
+                      ))}
+                      
+                      {/* Columna para otras acciones */}
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {Object.values(Action).filter(action => !CommonActions.includes(action)).map(action => (
+                            hasPermission(resource, action) && (
+                              <Badge key={action} variant="outline" className="text-xs">
+                                {ActionLabels[action]}
+                              </Badge>
+                            )
+                          ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
   );
 };
 

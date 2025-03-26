@@ -48,6 +48,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import UserPermissionsTab from '@/components/permissions/user-permissions-tab';
 import CustomRolesTab from '@/components/settings/custom-roles-tab';
+import UserPermissionsManager from '@/components/permissions/user-permissions-manager';
 import { UserRole } from '@shared/types';
 import { Plus, MoreVertical, Mail, Trash, PenSquare, Search, Copy, Users, Shield } from 'lucide-react';
 
@@ -364,6 +365,15 @@ const UsersSettings: React.FC = () => {
                                     <DropdownMenuItem onClick={() => handleEditUser(user)}>
                                       <PenSquare className="h-4 w-4 mr-2" />
                                       Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                      <div className="w-full px-2 py-1.5">
+                                        <UserPermissionsManager 
+                                          userId={user.id} 
+                                          userName={user.name} 
+                                          userRole={user.role}
+                                        />
+                                      </div>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => {
                                       navigator.clipboard.writeText(user.email);
