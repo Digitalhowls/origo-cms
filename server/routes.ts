@@ -10,6 +10,7 @@ import * as mediaService from './services/media.service';
 import * as coursesService from './services/courses.service';
 import * as organizationService from './services/organization.service';
 import * as permissionsService from './services/permissions.service';
+import * as rolesService from './services/roles.service';
 import { authMiddleware } from './middleware/auth.middleware';
 
 export async function registerRoutes(app: Express): Promise<Server> {

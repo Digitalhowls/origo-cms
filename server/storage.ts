@@ -14,9 +14,11 @@ import {
   courseLessons, type CourseLesson,
   apiKeys, type ApiKey,
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
-  userPermissions, type UserPermission, type InsertUserPermission
+  userPermissions, type UserPermission, type InsertUserPermission,
+  customRoles, type CustomRole, type InsertCustomRole,
+  rolePermissions, type RolePermission, type InsertRolePermission
 } from "@shared/schema";
-import { RolePermissions } from "@shared/types";
+import { RolePermissions, CustomRoleDefinition } from "@shared/types";
 import { eq, like, and, or, desc, sql, asc } from "drizzle-orm";
 import { db } from "./db";
 import * as crypto from "crypto";
@@ -84,13 +86,30 @@ export interface IStorage {
   getPasswordResetTokenByToken(token: string): Promise<PasswordResetToken | undefined>;
   markTokenAsUsed(id: number): Promise<PasswordResetToken | undefined>;
   
-  // Permissions methods
+  // Roles methods
+  getCustomRoles(organizationId: number): Promise<CustomRole[]>;
+  getCustomRole(id: number): Promise<CustomRole | undefined>;
+  getCustomRoleByName(organizationId: number, name: string): Promise<CustomRole | undefined>;
+  createCustomRole(roleData: InsertCustomRole): Promise<CustomRole>;
+  updateCustomRole(id: number, roleData: Partial<CustomRole>): Promise<CustomRole | undefined>;
+  deleteCustomRole(id: number): Promise<boolean>;
+  
+  // Role Permissions methods
+  getRolePermissions(roleId: number): Promise<RolePermission[]>;
+  addRolePermission(permission: InsertRolePermission): Promise<RolePermission>;
+  updateRolePermission(id: number, data: Partial<RolePermission>): Promise<RolePermission | undefined>;
+  deleteRolePermission(id: number): Promise<boolean>;
+  
+  // User Permissions methods
   getUserPermissions(userId: number): Promise<UserPermission[]>;
   getPermissionsByResource(userId: number, resource: string): Promise<UserPermission[]>;
   hasPermission(userId: number, resource: string, action: string): Promise<boolean>;
   addUserPermission(permission: InsertUserPermission): Promise<UserPermission>;
   updateUserPermission(id: number, data: Partial<UserPermission>): Promise<UserPermission | undefined>;
   deleteUserPermission(id: number): Promise<boolean>;
+  
+  // Role Management helper
+  getFullCustomRoleDefinition(roleId: number): Promise<CustomRoleDefinition | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -749,7 +768,114 @@ export class DatabaseStorage implements IStorage {
     return updatedToken;
   }
 
-  // === Permissions methods ===
+  // === Custom Roles methods ===
+  async getCustomRoles(organizationId: number): Promise<CustomRole[]> {
+    return db
+      .select()
+      .from(customRoles)
+      .where(eq(customRoles.organizationId, organizationId))
+      .orderBy(asc(customRoles.name));
+  }
+  
+  async getCustomRole(id: number): Promise<CustomRole | undefined> {
+    const [role] = await db.select().from(customRoles).where(eq(customRoles.id, id));
+    return role;
+  }
+  
+  async getCustomRoleByName(organizationId: number, name: string): Promise<CustomRole | undefined> {
+    const [role] = await db
+      .select()
+      .from(customRoles)
+      .where(
+        and(
+          eq(customRoles.organizationId, organizationId),
+          eq(customRoles.name, name)
+        )
+      );
+    return role;
+  }
+  
+  async createCustomRole(roleData: InsertCustomRole): Promise<CustomRole> {
+    const [role] = await db.insert(customRoles).values(roleData).returning();
+    return role;
+  }
+  
+  async updateCustomRole(id: number, roleData: Partial<CustomRole>): Promise<CustomRole | undefined> {
+    const [updatedRole] = await db
+      .update(customRoles)
+      .set({ ...roleData, updatedAt: new Date() })
+      .where(eq(customRoles.id, id))
+      .returning();
+    return updatedRole;
+  }
+  
+  async deleteCustomRole(id: number): Promise<boolean> {
+    // Primero eliminamos todos los permisos asociados al rol
+    await db.delete(rolePermissions).where(eq(rolePermissions.roleId, id));
+    
+    // Luego eliminamos el rol
+    const result = await db.delete(customRoles).where(eq(customRoles.id, id));
+    return !!result;
+  }
+  
+  // === Role Permissions methods ===
+  async getRolePermissions(roleId: number): Promise<RolePermission[]> {
+    return db
+      .select()
+      .from(rolePermissions)
+      .where(eq(rolePermissions.roleId, roleId))
+      .orderBy(asc(rolePermissions.resource), asc(rolePermissions.action));
+  }
+  
+  async addRolePermission(permission: InsertRolePermission): Promise<RolePermission> {
+    const [rolePermission] = await db.insert(rolePermissions).values(permission).returning();
+    return rolePermission;
+  }
+  
+  async updateRolePermission(id: number, data: Partial<RolePermission>): Promise<RolePermission | undefined> {
+    const [updatedPermission] = await db
+      .update(rolePermissions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(rolePermissions.id, id))
+      .returning();
+    return updatedPermission;
+  }
+  
+  async deleteRolePermission(id: number): Promise<boolean> {
+    const result = await db.delete(rolePermissions).where(eq(rolePermissions.id, id));
+    return !!result;
+  }
+  
+  // === Role Management helper ===
+  async getFullCustomRoleDefinition(roleId: number): Promise<CustomRoleDefinition | undefined> {
+    const role = await this.getCustomRole(roleId);
+    if (!role) return undefined;
+    
+    // Obtenemos todos los permisos asociados al rol
+    const permissions = await this.getRolePermissions(roleId);
+    
+    // Convertimos la lista de permisos a un objeto PermissionSet
+    const permissionSet: Record<string, boolean> = {};
+    permissions.forEach(permission => {
+      const key = `${permission.resource}.${permission.action}`;
+      permissionSet[key] = permission.allowed;
+    });
+    
+    // Retornamos la definición completa del rol personalizado
+    return {
+      id: role.id,
+      name: role.name,
+      description: role.description || undefined,
+      organizationId: role.organizationId,
+      basedOnRole: role.basedOnRole as any, // Convertimos a SystemRole
+      isDefault: role.isDefault,
+      permissions: permissionSet,
+      createdAt: role.createdAt?.toISOString(),
+      updatedAt: role.updatedAt?.toISOString()
+    };
+  }
+
+  // === User Permissions methods ===
   async getUserPermissions(userId: number): Promise<UserPermission[]> {
     return db
       .select()
@@ -778,20 +904,7 @@ export class DatabaseStorage implements IStorage {
     // Si es superadmin, siempre tiene todos los permisos
     if (user.role === 'superadmin') return true;
 
-    // Verificar permisos basados en rol del usuario
-    const rolePermissions = RolePermissions[user.role];
-    if (rolePermissions) {
-      // Verificar si tiene permiso wildcard general
-      if (rolePermissions['*'] === true) return true;
-      
-      // Verificar si tiene permiso wildcard para el recurso
-      if (rolePermissions[`${resource}.*`] === true) return true;
-      
-      // Verificar permiso específico
-      if (rolePermissions[`${resource}.${action}`] === true) return true;
-    }
-
-    // Verificar permisos personalizados del usuario (pueden anular los del rol)
+    // Verificar permisos específicos del usuario (tienen máxima prioridad)
     const [permission] = await db
       .select()
       .from(userPermissions)
@@ -803,9 +916,50 @@ export class DatabaseStorage implements IStorage {
         )
       );
 
-    // Si hay un permiso personalizado, devuelve su valor 'allowed'
+    // Si hay un permiso personalizado para el usuario, devuelve su valor 'allowed'
     if (permission) {
       return permission.allowed;
+    }
+
+    // Verificar si es un rol personalizado (comienza con "custom_")
+    if (user.role.startsWith('custom_')) {
+      // Extraer el ID del rol personalizado a partir del nombre (formato: "custom_ID")
+      const roleId = parseInt(user.role.split('_')[1]);
+      if (!isNaN(roleId)) {
+        // Obtener la definición completa del rol personalizado
+        const customRole = await this.getFullCustomRoleDefinition(roleId);
+        if (customRole && customRole.permissions) {
+          // Verificar si tiene permiso wildcard general
+          if (customRole.permissions['*'] === true) return true;
+          
+          // Verificar si tiene permiso wildcard para el recurso
+          if (customRole.permissions[`${resource}.*`] === true) return true;
+          
+          // Verificar permiso específico
+          if (customRole.permissions[`${resource}.${action}`] === true) return true;
+          
+          // Verificar permisos del rol base (si no se encontró un permiso específico)
+          const baseRolePermissions = RolePermissions[customRole.basedOnRole];
+          if (baseRolePermissions) {
+            if (baseRolePermissions['*'] === true) return true;
+            if (baseRolePermissions[`${resource}.*`] === true) return true;
+            if (baseRolePermissions[`${resource}.${action}`] === true) return true;
+          }
+        }
+      }
+    } else {
+      // Verificar permisos basados en rol del sistema
+      const rolePermissions = RolePermissions[user.role];
+      if (rolePermissions) {
+        // Verificar si tiene permiso wildcard general
+        if (rolePermissions['*'] === true) return true;
+        
+        // Verificar si tiene permiso wildcard para el recurso
+        if (rolePermissions[`${resource}.*`] === true) return true;
+        
+        // Verificar permiso específico
+        if (rolePermissions[`${resource}.${action}`] === true) return true;
+      }
     }
 
     // Por defecto, denegar
