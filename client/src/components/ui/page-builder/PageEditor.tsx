@@ -12,6 +12,7 @@ import { PageData, Block } from '@shared/types';
 import HeaderBlock from './blocks/HeaderBlock';
 import FeaturesBlock from './blocks/FeaturesBlock';
 import TextMediaBlock from './blocks/TextMediaBlock';
+import TestimonialBlock from './blocks/TestimonialBlock';
 import SortableBlockWrapper from './SortableBlockWrapper';
 import { v4 as uuidv4 } from 'uuid';
 import { TransitionList, AOSElement } from '@/lib/animation-service';
@@ -178,6 +179,12 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
         break;
       case 'text-media':
         blockComponent = <TextMediaBlock 
+          block={block} 
+          onClick={() => handleBlockClick(block.id)} 
+        />;
+        break;
+      case 'testimonial':
+        blockComponent = <TestimonialBlock 
           block={block} 
           onClick={() => handleBlockClick(block.id)} 
         />;

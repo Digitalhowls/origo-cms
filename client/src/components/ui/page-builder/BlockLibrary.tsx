@@ -172,6 +172,54 @@ const blockTemplates: BlockTemplate[] = [
       },
     },
   },
+  {
+    type: BlockType.TESTIMONIAL,
+    title: 'Testimonios',
+    description: 'Muestra opiniones y valoraciones de clientes',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+      </svg>
+    ),
+    defaultContent: {
+      title: 'Lo que dicen nuestros clientes',
+      subtitle: 'Testimonios',
+      testimonials: [
+        {
+          id: uuidv4(),
+          quote: 'El mejor servicio que he experimentado. Totalmente recomendado para cualquier empresa.',
+          author: 'Ana García',
+          role: 'CEO, Empresa ABC',
+          avatar: ''
+        },
+        {
+          id: uuidv4(),
+          quote: 'Increíble plataforma, fácil de usar y muy potente. Ha transformado nuestro negocio.',
+          author: 'Carlos Rodríguez',
+          role: 'Director de Marketing, XYZ Inc',
+          avatar: ''
+        },
+        {
+          id: uuidv4(),
+          quote: 'Un servicio excepcional con un equipo muy profesional siempre dispuesto a ayudar.',
+          author: 'María López',
+          role: 'Gerente de Operaciones, Corp 123',
+          avatar: ''
+        }
+      ],
+      layout: 'grid'
+    },
+    defaultSettings: {
+      spacing: {
+        marginTop: 10,
+        marginBottom: 10,
+      },
+      appearance: {
+        bgColor: '#f9fafb',
+        textColor: '#111827',
+      },
+    },
+  },
 ];
 
 const BlockLibrary: React.FC = () => {
