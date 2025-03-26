@@ -42,12 +42,28 @@ const registerSchema = insertUserSchema
     path: ["confirmPassword"],
   });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Correo electrónico inválido"),
+});
+
+const resetPasswordSchema = z.object({
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  confirmPassword: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  token: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, registerMutation, forgotPasswordMutation, resetPasswordMutation } = useAuth();
+  const [resetToken, setResetToken] = useState("");
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -68,6 +84,22 @@ export default function AuthPage() {
       role: "editor",
     },
   });
+  
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+  
+  const resetPasswordForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+      token: resetToken,
+    },
+  });
 
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data);
@@ -76,6 +108,27 @@ export default function AuthPage() {
   const onRegisterSubmit = (data: RegisterFormValues) => {
     const { confirmPassword, ...userData } = data;
     registerMutation.mutate(userData);
+  };
+  
+  const onForgotPasswordSubmit = (data: ForgotPasswordFormValues) => {
+    forgotPasswordMutation.mutate(data, {
+      onSuccess: (response) => {
+        if (response.token) {
+          setResetToken(response.token);
+          setActiveTab("reset-password");
+        }
+      }
+    });
+  };
+  
+  const onResetPasswordSubmit = (data: ResetPasswordFormValues) => {
+    const { confirmPassword, ...resetData } = data;
+    resetPasswordMutation.mutate(resetData, {
+      onSuccess: () => {
+        // Redirigir a login después de restablecer exitosamente
+        setActiveTab("login");
+      }
+    });
   };
 
   // Redirect to dashboard if user is already logged in
@@ -100,6 +153,12 @@ export default function AuthPage() {
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Iniciar sesión</TabsTrigger>
               <TabsTrigger value="register">Crear cuenta</TabsTrigger>
+            </TabsList>
+            
+            {/* Estas pestañas están ocultas pero son accesibles programáticamente */}
+            <TabsList className="hidden">
+              <TabsTrigger value="forgot-password">Olvidé mi contraseña</TabsTrigger>
+              <TabsTrigger value="reset-password">Restablecer contraseña</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="mt-4">
@@ -163,13 +222,20 @@ export default function AuthPage() {
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter className="flex justify-center">
+                <CardFooter className="flex flex-col space-y-2">
                   <Button
                     variant="link"
                     className="px-0"
                     onClick={() => setActiveTab("register")}
                   >
                     ¿No tienes cuenta? Regístrate
+                  </Button>
+                  <Button
+                    variant="link"
+                    className="px-0"
+                    onClick={() => setActiveTab("forgot-password")}
+                  >
+                    ¿Olvidaste tu contraseña?
                   </Button>
                 </CardFooter>
               </Card>
