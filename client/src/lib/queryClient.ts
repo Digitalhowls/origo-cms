@@ -1,10 +1,36 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getAuthToken } from "./authStorage";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
+}
+
+/**
+ * Tipo para los headers HTTP
+ */
+type Headers = {
+  [key: string]: string;
+};
+
+/**
+ * Añade el token de autenticación JWT al objeto de headers si existe
+ * @param headers Headers actuales
+ * @returns Headers con token de autenticación añadido si existe
+ */
+function addAuthHeader(headers: Headers): Headers {
+  const token = getAuthToken();
+  
+  if (token) {
+    return {
+      ...headers,
+      "Authorization": `Bearer ${token}`
+    };
+  }
+  
+  return headers;
 }
 
 export async function apiRequest(
@@ -18,18 +44,29 @@ export async function apiRequest(
   const cookies = document.cookie;
   console.log("Cookies existentes:", cookies);
   
+  // Preparar headers base según si hay datos o no
+  const baseHeaders = data ? { 
+    "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest",
+    "Accept": "application/json"
+  } : {
+    "X-Requested-With": "XMLHttpRequest",
+    "Accept": "application/json"
+  };
+  
+  // Añadir token JWT si existe
+  const headers = addAuthHeader(baseHeaders);
+  
+  // Mostrar si estamos usando autorización JWT
+  if (headers.Authorization) {
+    console.log("Usando token JWT para autorización");
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { 
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-      "Accept": "application/json"
-    } : {
-      "X-Requested-With": "XMLHttpRequest",
-      "Accept": "application/json"
-    },
+    headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include", // Mantener credenciales para cookies
+    credentials: "include", // Mantener para compatibilidad con cookies
     cache: "no-cache",
   });
 
@@ -38,6 +75,10 @@ export async function apiRequest(
     await throwIfResNotOk(res);
   } else {
     console.log(`API Success: ${method} ${url}`);
+    
+    // Verificar si hay cookies recibidas
+    const cookiesAfter = document.cookie;
+    console.log("Cookies recibidas:", cookiesAfter);
   }
   
   return res;
@@ -55,12 +96,23 @@ export const getQueryFn: <T>(options: {
     const cookies = document.cookie;
     console.log("Cookies antes de fetch:", cookies);
     
+    // Preparar headers base
+    const baseHeaders = {
+      "X-Requested-With": "XMLHttpRequest",
+      "Accept": "application/json"
+    };
+    
+    // Añadir token JWT si existe
+    const headers = addAuthHeader(baseHeaders);
+    
+    // Mostrar si estamos usando autorización JWT
+    if (headers.Authorization) {
+      console.log("Usando token JWT para autorización en query");
+    }
+    
     const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        "Accept": "application/json"
-      },
+      credentials: "include", // Mantener para compatibilidad con cookies
+      headers,
       cache: "no-cache"
     });
 
@@ -74,6 +126,10 @@ export const getQueryFn: <T>(options: {
       await throwIfResNotOk(res);
     } else {
       console.log(`QueryFn Success: ${queryKey[0]}`);
+      
+      // Verificar si hay cookies recibidas
+      const cookiesAfter = document.cookie;
+      console.log("Cookies después de query:", cookiesAfter);
     }
     
     return await res.json();

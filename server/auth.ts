@@ -247,22 +247,49 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get('/api/auth/me', (req, res, next) => {
+  app.get('/api/auth/me', async (req, res, next) => {
     console.log('GET /api/auth/me - SessionID:', req.sessionID);
     console.log('Headers:', JSON.stringify(req.headers));
-    console.log('Cookies:', req.headers.cookie);
     
-    // Verificación de autenticación utilizando el helper
-    if (!checkAuthenticatedSession(req)) {
+    try {
+      // 1. Verificar JWT en el header Authorization
+      const authHeader = req.headers.authorization;
+      console.log('Authorization header:', authHeader);
+      
+      if (authHeader) {
+        const token = extractTokenFromHeader(authHeader);
+        
+        if (token) {
+          // Verificar y decodificar el token
+          const decoded = verifyToken(token);
+          
+          if (decoded && decoded.id) {
+            // El token es válido, obtener usuario desde la BD
+            const user = await storage.getUser(decoded.id);
+            
+            if (user) {
+              const { password, ...userWithoutPassword } = user;
+              console.log('Usuario autenticado vía JWT:', userWithoutPassword.email);
+              return res.json(userWithoutPassword);
+            }
+          }
+        }
+      }
+      
+      // 2. Si no hay token JWT válido, intentar verificar sesión
+      if (checkAuthenticatedSession(req)) {
+        const user = req.user as any;
+        console.log('Usuario autenticado vía sesión:', user?.email);
+        return saveSessionAndRespond(req, res, next, user);
+      }
+      
+      // Si no hay autenticación de ningún tipo
+      console.log('Usuario no autenticado en /api/auth/me');
       return res.status(401).json({ message: 'No autenticado' });
+    } catch (error) {
+      console.error('Error en verificación de autenticación:', error);
+      return res.status(500).json({ message: 'Error interno del servidor' });
     }
-    
-    // Devolver los datos del usuario sin la contraseña
-    const user = req.user as any;
-    console.log('Usuario autenticado en /api/auth/me:', user?.email);
-    
-    // Usando el helper para guardar sesión y responder
-    saveSessionAndRespond(req, res, next, user);
   });
   
   // Ruta para solicitar un token de recuperación de contraseña
