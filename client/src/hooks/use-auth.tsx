@@ -36,10 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
+      console.log("Intentando iniciar sesión con:", credentials);
       const res = await apiRequest("POST", "/api/auth/login", credentials);
       return await res.json();
     },
     onSuccess: (user: User) => {
+      console.log("Login exitoso, usuario:", user);
       queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Sesión iniciada",
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Error en login:", error);
       toast({
         title: "Error al iniciar sesión",
         description: error.message || "Credenciales incorrectas",
@@ -57,10 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
+      console.log("Intentando registrar usuario:", credentials);
       const res = await apiRequest("POST", "/api/auth/register", credentials);
       return await res.json();
     },
     onSuccess: (user: User) => {
+      console.log("Registro exitoso, usuario:", user);
       queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Registro exitoso",
@@ -68,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Error en registro:", error);
       toast({
         title: "Error al registrarse",
         description: error.message,
@@ -78,9 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
+      console.log("Intentando cerrar sesión");
       await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
+      console.log("Sesión cerrada exitosamente");
       queryClient.setQueryData(["/api/auth/me"], null);
       toast({
         title: "Sesión cerrada",
@@ -88,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Error al cerrar sesión:", error);
       toast({
         title: "Error al cerrar sesión",
         description: error.message,
