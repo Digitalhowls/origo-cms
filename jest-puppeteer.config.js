@@ -9,7 +9,7 @@ export default {
     }
   },
   server: {
-    command: 'npm run dev',
+    command: 'node --experimental-vm-modules test-server/index.js',
     port: 5001,
     launchTimeout: 30000,
     debug: true,
