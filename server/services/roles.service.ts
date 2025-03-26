@@ -1,25 +1,26 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
-import { CustomRoleDefinition, SystemRole } from '@shared/types';
-import { customRoles, insertCustomRoleSchema, rolePermissions } from '@shared/schema';
-import { InsertRolePermission } from '@shared/schema';
-import { z } from 'zod';
+import { CustomRoleDefinition, SystemRole, isSystemRole } from '@shared/types';
+import { eq } from 'drizzle-orm';
+import { customRoles, rolePermissions, users } from '@shared/schema';
 
 /**
  * Obtiene los roles personalizados de una organización
  */
 export async function getCustomRoles(req: Request, res: Response) {
   try {
-    const organizationId = parseInt(req.params.organizationId);
-    if (isNaN(organizationId)) {
-      return res.status(400).json({ error: 'ID de organización inválido' });
+    const organizationId = req.query.organizationId as string;
+    
+    if (!organizationId) {
+      return res.status(400).json({ message: 'Se requiere el ID de la organización' });
     }
-
-    const roles = await storage.getCustomRoles(organizationId);
-    return res.status(200).json(roles);
+    
+    const roles = await storage.getCustomRoles(Number(organizationId));
+    
+    return res.json(roles);
   } catch (error) {
     console.error('Error al obtener roles personalizados:', error);
-    return res.status(500).json({ error: 'Error al obtener roles personalizados' });
+    return res.status(500).json({ message: 'Error al obtener roles personalizados' });
   }
 }
 
@@ -28,20 +29,22 @@ export async function getCustomRoles(req: Request, res: Response) {
  */
 export async function getCustomRole(req: Request, res: Response) {
   try {
-    const roleId = parseInt(req.params.id);
-    if (isNaN(roleId)) {
-      return res.status(400).json({ error: 'ID de rol inválido' });
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: 'Se requiere el ID del rol' });
     }
-
-    const role = await storage.getFullCustomRoleDefinition(roleId);
+    
+    const role = await storage.getFullCustomRoleDefinition(Number(id));
+    
     if (!role) {
-      return res.status(404).json({ error: 'Rol no encontrado' });
+      return res.status(404).json({ message: 'Rol no encontrado' });
     }
-
-    return res.status(200).json(role);
+    
+    return res.json(role);
   } catch (error) {
     console.error('Error al obtener rol personalizado:', error);
-    return res.status(500).json({ error: 'Error al obtener rol personalizado' });
+    return res.status(500).json({ message: 'Error al obtener rol personalizado' });
   }
 }
 
@@ -50,63 +53,55 @@ export async function getCustomRole(req: Request, res: Response) {
  */
 export async function createCustomRole(req: Request, res: Response) {
   try {
-    // Validar datos de entrada
-    const roleSchema = insertCustomRoleSchema.extend({
-      permissions: z.record(z.string(), z.boolean()).optional()
-    });
-
-    const validationResult = roleSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({
-        error: 'Datos de entrada inválidos',
-        details: validationResult.error.format()
-      });
-    }
-
-    const { permissions, ...roleData } = validationResult.data;
+    const { name, description, organizationId, basedOnRole, isDefault, permissions } = req.body;
     
-    // Verificar que el rol base sea válido
-    if (!isValidSystemRole(roleData.basedOnRole)) {
-      return res.status(400).json({ error: 'Rol base inválido' });
+    if (!name || !organizationId || !basedOnRole) {
+      return res.status(400).json({ message: 'Faltan campos requeridos' });
     }
-
-    // Verificar que no exista otro rol con el mismo nombre en la organización
-    const existingRole = await storage.getCustomRoleByName(roleData.organizationId, roleData.name);
+    
+    // Validar que el rol base sea válido
+    if (!isSystemRole(basedOnRole)) {
+      return res.status(400).json({ message: 'Rol base inválido' });
+    }
+    
+    // Verificar si ya existe un rol con el mismo nombre en la organización
+    const existingRole = await storage.getCustomRoleByName(organizationId, name);
     if (existingRole) {
-      return res.status(409).json({ error: 'Ya existe un rol con ese nombre en la organización' });
+      return res.status(400).json({ message: 'Ya existe un rol con ese nombre en la organización' });
     }
-
-    // Crear el rol
+    
+    // Crear el rol personalizado
     const role = await storage.createCustomRole({
-      ...roleData,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      name,
+      description: description || null,
+      organizationId,
+      basedOnRole,
+      isDefault: isDefault || false,
+      createdById: req.user?.id || null
     });
-
-    // Si se proporcionaron permisos, añadirlos
+    
+    // Si se proporcionaron permisos específicos, crearlos
     if (permissions && Object.keys(permissions).length > 0) {
-      for (const [key, allowed] of Object.entries(permissions)) {
+      for (const [key, allowedValue] of Object.entries(permissions)) {
         const [resource, action] = key.split('.');
-        if (resource && action) {
-          const permissionData: InsertRolePermission = {
-            roleId: role.id,
-            resource,
-            action,
-            allowed,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          await storage.addRolePermission(permissionData);
-        }
+        const allowed = Boolean(allowedValue);
+        
+        await storage.addRolePermission({
+          roleId: role.id,
+          resource,
+          action,
+          allowed
+        });
       }
     }
-
-    // Obtener el rol completo con permisos
+    
+    // Obtener la definición completa del rol para devolver
     const fullRole = await storage.getFullCustomRoleDefinition(role.id);
+    
     return res.status(201).json(fullRole);
   } catch (error) {
     console.error('Error al crear rol personalizado:', error);
-    return res.status(500).json({ error: 'Error al crear rol personalizado' });
+    return res.status(500).json({ message: 'Error al crear rol personalizado' });
   }
 }
 
@@ -115,86 +110,80 @@ export async function createCustomRole(req: Request, res: Response) {
  */
 export async function updateCustomRole(req: Request, res: Response) {
   try {
-    const roleId = parseInt(req.params.id);
-    if (isNaN(roleId)) {
-      return res.status(400).json({ error: 'ID de rol inválido' });
-    }
-
-    // Obtener el rol existente
-    const existingRole = await storage.getCustomRole(roleId);
-    if (!existingRole) {
-      return res.status(404).json({ error: 'Rol no encontrado' });
-    }
-
-    // Validar datos de entrada
-    const updateSchema = z.object({
-      name: z.string().min(1).optional(),
-      description: z.string().optional().nullable(),
-      basedOnRole: z.string().optional(),
-      isDefault: z.boolean().optional(),
-      permissions: z.record(z.string(), z.boolean()).optional()
-    });
-
-    const validationResult = updateSchema.safeParse(req.body);
-    if (!validationResult.success) {
-      return res.status(400).json({
-        error: 'Datos de entrada inválidos',
-        details: validationResult.error.format()
-      });
-    }
-
-    const { permissions, ...roleData } = validationResult.data;
+    const { id } = req.params;
+    const { name, description, basedOnRole, isDefault, permissions } = req.body;
     
-    // Verificar que el rol base sea válido si se está actualizando
-    if (roleData.basedOnRole && !isValidSystemRole(roleData.basedOnRole)) {
-      return res.status(400).json({ error: 'Rol base inválido' });
+    if (!id) {
+      return res.status(400).json({ message: 'Se requiere el ID del rol' });
     }
-
-    // Verificar que no exista otro rol con el mismo nombre en la organización
-    if (roleData.name && roleData.name !== existingRole.name) {
-      const existingRoleWithName = await storage.getCustomRoleByName(existingRole.organizationId, roleData.name);
-      if (existingRoleWithName) {
-        return res.status(409).json({ error: 'Ya existe un rol con ese nombre en la organización' });
+    
+    // Verificar que el rol exista
+    const existingRole = await storage.getCustomRole(Number(id));
+    if (!existingRole) {
+      return res.status(404).json({ message: 'Rol no encontrado' });
+    }
+    
+    // Validar que el rol base sea válido si se proporciona
+    if (basedOnRole && !isSystemRole(basedOnRole)) {
+      return res.status(400).json({ message: 'Rol base inválido' });
+    }
+    
+    // Si se cambia el nombre, verificar que no exista otro rol con ese nombre
+    if (name && name !== existingRole.name) {
+      const roleWithName = await storage.getCustomRoleByName(existingRole.organizationId, name);
+      if (roleWithName && roleWithName.id !== Number(id)) {
+        return res.status(400).json({ message: 'Ya existe un rol con ese nombre en la organización' });
       }
     }
-
+    
+    // Actualizar los datos básicos del rol
+    const updatedRoleData: Partial<CustomRole> = {};
+    if (name) updatedRoleData.name = name;
+    if (description !== undefined) updatedRoleData.description = description;
+    if (basedOnRole) updatedRoleData.basedOnRole = basedOnRole;
+    if (isDefault !== undefined) updatedRoleData.isDefault = isDefault;
+    
     // Actualizar el rol
-    const updatedRole = await storage.updateCustomRole(roleId, {
-      ...roleData,
-      updatedAt: new Date()
-    });
-
-    // Si se proporcionaron permisos, actualizar permisos
+    await storage.updateCustomRole(Number(id), updatedRoleData);
+    
+    // Si se proporcionaron permisos, actualizar
     if (permissions && Object.keys(permissions).length > 0) {
-      // Primero eliminar permisos existentes
-      const currentPermissions = await storage.getRolePermissions(roleId);
-      for (const permission of currentPermissions) {
-        await storage.deleteRolePermission(permission.id);
-      }
-
-      // Luego añadir los nuevos permisos
-      for (const [key, allowed] of Object.entries(permissions)) {
+      // Obtener los permisos actuales del rol
+      const currentPermissions = await storage.getRolePermissions(Number(id));
+      const currentPermissionsMap = new Map(
+        currentPermissions.map(p => [`${p.resource}.${p.action}`, p])
+      );
+      
+      // Procesar cada permiso nuevo o actualizado
+      for (const [key, allowedValue] of Object.entries(permissions)) {
         const [resource, action] = key.split('.');
-        if (resource && action) {
-          const permissionData: InsertRolePermission = {
-            roleId,
+        const allowed = Boolean(allowedValue);
+        const existingPermission = currentPermissionsMap.get(key);
+        
+        if (existingPermission) {
+          // Actualizar permiso existente
+          if (existingPermission.allowed !== allowed) {
+            await storage.updateRolePermission(existingPermission.id, { allowed });
+          }
+        } else {
+          // Crear nuevo permiso
+          await storage.addRolePermission({
+            roleId: Number(id),
             resource,
             action,
-            allowed,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          await storage.addRolePermission(permissionData);
+            allowed
+          });
         }
       }
     }
-
-    // Obtener el rol completo con permisos
-    const fullRole = await storage.getFullCustomRoleDefinition(roleId);
-    return res.status(200).json(fullRole);
+    
+    // Obtener la definición completa actualizada
+    const fullRole = await storage.getFullCustomRoleDefinition(Number(id));
+    
+    return res.json(fullRole);
   } catch (error) {
     console.error('Error al actualizar rol personalizado:', error);
-    return res.status(500).json({ error: 'Error al actualizar rol personalizado' });
+    return res.status(500).json({ message: 'Error al actualizar rol personalizado' });
   }
 }
 
@@ -203,28 +192,34 @@ export async function updateCustomRole(req: Request, res: Response) {
  */
 export async function deleteCustomRole(req: Request, res: Response) {
   try {
-    const roleId = parseInt(req.params.id);
-    if (isNaN(roleId)) {
-      return res.status(400).json({ error: 'ID de rol inválido' });
-    }
-
-    // Verificar que el rol exista
-    const role = await storage.getCustomRole(roleId);
-    if (!role) {
-      return res.status(404).json({ error: 'Rol no encontrado' });
-    }
-
-    // Eliminar el rol (esto también eliminará sus permisos asociados debido a la implementación en storage)
-    const result = await storage.deleteCustomRole(roleId);
+    const { id } = req.params;
     
-    if (result) {
-      return res.status(200).json({ message: 'Rol personalizado eliminado correctamente' });
-    } else {
-      return res.status(500).json({ error: 'Error al eliminar rol personalizado' });
+    if (!id) {
+      return res.status(400).json({ message: 'Se requiere el ID del rol' });
     }
+    
+    // Verificar que el rol exista
+    const existingRole = await storage.getCustomRole(Number(id));
+    if (!existingRole) {
+      return res.status(404).json({ message: 'Rol no encontrado' });
+    }
+    
+    // Verificar si hay usuarios con este rol asignado
+    const usersWithRole = await storage.getUsers({ role: `custom:${id}` });
+    if (usersWithRole.totalItems > 0) {
+      return res.status(400).json({ 
+        message: 'No se puede eliminar el rol porque hay usuarios que lo tienen asignado',
+        usersCount: usersWithRole.totalItems
+      });
+    }
+    
+    // Eliminar el rol
+    await storage.deleteCustomRole(Number(id));
+    
+    return res.status(200).json({ message: 'Rol eliminado correctamente' });
   } catch (error) {
     console.error('Error al eliminar rol personalizado:', error);
-    return res.status(500).json({ error: 'Error al eliminar rol personalizado' });
+    return res.status(500).json({ message: 'Error al eliminar rol personalizado' });
   }
 }
 
@@ -233,16 +228,18 @@ export async function deleteCustomRole(req: Request, res: Response) {
  */
 export async function getRolePermissions(req: Request, res: Response) {
   try {
-    const roleId = parseInt(req.params.id);
-    if (isNaN(roleId)) {
-      return res.status(400).json({ error: 'ID de rol inválido' });
+    const { id } = req.params;
+    
+    if (!id) {
+      return res.status(400).json({ message: 'Se requiere el ID del rol' });
     }
-
-    const permissions = await storage.getRolePermissions(roleId);
-    return res.status(200).json(permissions);
+    
+    const permissions = await storage.getRolePermissions(Number(id));
+    
+    return res.json(permissions);
   } catch (error) {
     console.error('Error al obtener permisos del rol:', error);
-    return res.status(500).json({ error: 'Error al obtener permisos del rol' });
+    return res.status(500).json({ message: 'Error al obtener permisos del rol' });
   }
 }
 
@@ -251,44 +248,31 @@ export async function getRolePermissions(req: Request, res: Response) {
  */
 export async function assignRoleToUser(req: Request, res: Response) {
   try {
-    const roleId = parseInt(req.params.id);
-    const userId = parseInt(req.params.userId);
+    const { userId, roleId } = req.body;
     
-    if (isNaN(roleId) || isNaN(userId)) {
-      return res.status(400).json({ error: 'ID de rol o usuario inválido' });
+    if (!userId || !roleId) {
+      return res.status(400).json({ message: 'Se requieren el ID del usuario y el ID del rol' });
     }
-
-    // Verificar que el rol exista
-    const role = await storage.getCustomRole(roleId);
-    if (!role) {
-      return res.status(404).json({ error: 'Rol no encontrado' });
-    }
-
+    
     // Verificar que el usuario exista
     const user = await storage.getUser(userId);
     if (!user) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
-
+    
+    // Verificar que el rol exista
+    const role = await storage.getCustomRole(roleId);
+    if (!role) {
+      return res.status(404).json({ message: 'Rol personalizado no encontrado' });
+    }
+    
     // Actualizar el rol del usuario
-    const updatedUser = await storage.updateUser(userId, {
-      role: `custom_${roleId}`,
-      updatedAt: new Date()
-    });
-
-    if (updatedUser) {
-      // Excluir la contraseña del usuario
-      const { password, ...userWithoutPassword } = updatedUser;
-      return res.status(200).json({
-        message: 'Rol asignado correctamente',
-        user: userWithoutPassword
-      });
-    } else {
-      return res.status(500).json({ error: 'Error al asignar rol al usuario' });
-    }
+    const updatedUser = await storage.updateUser(userId, { role: `custom:${roleId}` });
+    
+    return res.json(updatedUser);
   } catch (error) {
-    console.error('Error al asignar rol:', error);
-    return res.status(500).json({ error: 'Error al asignar rol al usuario' });
+    console.error('Error al asignar rol al usuario:', error);
+    return res.status(500).json({ message: 'Error al asignar rol al usuario' });
   }
 }
 
