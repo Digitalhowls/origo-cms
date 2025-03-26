@@ -261,7 +261,31 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   usedAt: timestamp("used_at"),
 });
 
-// User permissions
+// Custom Roles
+export const customRoles = pgTable("custom_roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  basedOnRole: text("based_on_role").notNull(), // 'superadmin', 'admin', 'editor', 'reader', 'viewer'
+  isDefault: boolean("is_default").default(false),
+  createdById: integer("created_by_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Role permissions (for custom roles)
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").references(() => customRoles.id).notNull(),
+  resource: text("resource").notNull(),
+  action: text("action").notNull(),
+  allowed: boolean("allowed").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User permissions (overrides for individual users)
 export const userPermissions = pgTable("user_permissions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -317,6 +341,22 @@ export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTo
   createdAt: true
 });
 export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
+
+export type CustomRole = typeof customRoles.$inferSelect;
+export const insertCustomRoleSchema = createInsertSchema(customRoles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCustomRole = z.infer<typeof insertCustomRoleSchema>;
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 
 export type UserPermission = typeof userPermissions.$inferSelect;
 export const insertUserPermissionSchema = createInsertSchema(userPermissions).omit({

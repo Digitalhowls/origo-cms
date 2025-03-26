@@ -76,7 +76,20 @@ export interface OrganizationBranding {
 }
 
 // User Types
-export type UserRole = 'superadmin' | 'admin' | 'editor' | 'reader' | 'viewer';
+export type SystemRole = 'superadmin' | 'admin' | 'editor' | 'reader' | 'viewer';
+export type UserRole = SystemRole | string; // Permite roles personalizados como string
+
+export interface CustomRoleDefinition {
+  id: number;
+  name: string;
+  description?: string;
+  organizationId: number;
+  basedOnRole: SystemRole;
+  isDefault: boolean;
+  permissions?: PermissionSet;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 // Permissions and Resource Types
 export enum Resource {
@@ -112,7 +125,7 @@ export interface PermissionSet {
 }
 
 // Predefined permission sets for standard roles
-export const RolePermissions: Record<UserRole, PermissionSet> = {
+export const RolePermissions: Record<SystemRole, PermissionSet> = {
   superadmin: {
     '*': true, // Wildcard for all permissions
   },
@@ -176,6 +189,42 @@ export const RolePermissions: Record<UserRole, PermissionSet> = {
     'course.read': true,
   },
 };
+
+/**
+ * Determina si una cadena es un rol del sistema
+ * @param role Rol a comprobar
+ */
+export function isSystemRole(role: string): role is SystemRole {
+  return ['superadmin', 'admin', 'editor', 'reader', 'viewer'].includes(role);
+}
+
+/**
+ * Obtiene los permisos base de un rol (sistema o personalizado)
+ * @param role Rol para el que obtener los permisos
+ * @param customRoles Lista de roles personalizados disponibles
+ */
+export function getBaseRolePermissions(role: UserRole, customRoles?: CustomRoleDefinition[]): PermissionSet {
+  // Si es un rol del sistema, devolvemos sus permisos predefinidos
+  if (isSystemRole(role)) {
+    return RolePermissions[role];
+  }
+  
+  // Si es un rol personalizado, buscamos su definición
+  if (customRoles) {
+    const customRole = customRoles.find(r => r.name === role);
+    if (customRole && customRole.permissions) {
+      return customRole.permissions;
+    }
+    // Si se encontró el rol personalizado pero no tiene permisos definidos,
+    // utilizamos los permisos del rol base en el que se basa
+    if (customRole && customRole.basedOnRole) {
+      return RolePermissions[customRole.basedOnRole];
+    }
+  }
+  
+  // Si no se encuentra, devolvemos los permisos de viewer como fallback
+  return RolePermissions.viewer;
+}
 
 export interface UserProfile {
   id: number;
