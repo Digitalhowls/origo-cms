@@ -1,7 +1,7 @@
 /**
  * Script para probar la autenticación
  */
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
 async function testAuth() {
   try {
@@ -16,7 +16,7 @@ async function testAuth() {
       },
       body: JSON.stringify({
         email: 'admin@origo.com',
-        password: 'password123'
+        password: 'admin123'
       }),
       credentials: 'include'
     });
