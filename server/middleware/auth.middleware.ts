@@ -3,9 +3,15 @@ import { Request, Response, NextFunction } from 'express';
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // Check if the user is authenticated
   if (!req.isAuthenticated()) {
+    console.log('Sesión no autenticada. SessionID:', req.sessionID);
+    console.log('Cookies:', req.headers.cookie);
+    console.log('User:', req.user);
     return res.status(401).json({ message: 'No autorizado. Por favor, inicie sesión para continuar.' });
   }
 
+  console.log('Sesión autenticada. SessionID:', req.sessionID);
+  console.log('Usuario autenticado:', req.user?.email);
+  
   // User is authenticated, proceed to the next middleware/route handler
   next();
 };

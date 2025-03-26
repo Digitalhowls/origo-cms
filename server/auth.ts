@@ -28,12 +28,18 @@ export function setupAuth(app: Express) {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax' as 'lax',
-      httpOnly: true
+      httpOnly: true,
+      path: '/'
     },
     store: new MemoryStoreSession({
       checkPeriod: 86400000 // prune expired entries every 24h
     })
   };
+  
+  // Para entornos de desarrollo, permite que la cookie funcione sin HTTPS
+  if (process.env.NODE_ENV !== 'production') {
+    app.set('trust proxy', 1); // Confiar en el primer proxy
+  }
 
   // Configurar session y passport
   app.use(session(sessionSettings));
@@ -135,7 +141,13 @@ export function setupAuth(app: Express) {
       }
       req.login(user, (err) => {
         if (err) return next(err);
-        return res.json(user);
+        
+        // Asegurarse de que la sesión se guarde antes de responder
+        req.session.save((err) => {
+          if (err) return next(err);
+          console.log('Sesión guardada correctamente:', req.sessionID);
+          return res.json(user);
+        });
       });
     })(req, res, next);
   });
