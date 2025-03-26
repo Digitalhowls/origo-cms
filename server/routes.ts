@@ -154,7 +154,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/blog', authMiddleware, blogService.getPosts);
   app.post('/api/blog', authMiddleware, blogService.createPost);
   app.get('/api/blog/categories', authMiddleware, blogService.getCategories);
+  app.post('/api/blog/categories', authMiddleware, blogService.createCategory);
   app.get('/api/blog/tags', authMiddleware, blogService.getTags);
+  app.post('/api/blog/tags', authMiddleware, blogService.createTag);
   app.get('/api/blog/:id', authMiddleware, blogService.getPost);
   app.patch('/api/blog/:id', authMiddleware, blogService.updatePost);
   app.delete('/api/blog/:id', authMiddleware, blogService.deletePost);

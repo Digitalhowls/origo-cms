@@ -4,8 +4,8 @@ import {
   organizationUsers, type OrganizationUser,
   pages, type Page, type InsertPage,
   blogPosts, type BlogPost, type InsertBlogPost,
-  categories, type Category,
-  tags, type Tag,
+  categories, type Category, type InsertCategory,
+  tags, type Tag, type InsertTag,
   postCategories, type PostCategory,
   postTags, type PostTag,
   media, type Media, type InsertMedia,
@@ -52,7 +52,9 @@ export interface IStorage {
   updateBlogPost(id: number, postData: Partial<BlogPost>): Promise<BlogPost | undefined>;
   deleteBlogPost(id: number): Promise<boolean>;
   getCategories(organizationId: number): Promise<Category[]>;
+  createCategory(category: InsertCategory): Promise<Category>;
   getTags(organizationId: number): Promise<Tag[]>;
+  createTag(tag: InsertTag): Promise<Tag>;
   
   // Media methods
   getMediaFiles(organizationId: number, options?: { search?: string, type?: string, folder?: string }): Promise<{ items: Media[], folders: { id: string, name: string }[] }>;
@@ -455,12 +457,22 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(categories.name));
   }
   
+  async createCategory(categoryData: InsertCategory): Promise<Category> {
+    const [category] = await db.insert(categories).values(categoryData).returning();
+    return category;
+  }
+  
   async getTags(organizationId: number): Promise<Tag[]> {
     return db
       .select()
       .from(tags)
       .where(eq(tags.organizationId, organizationId))
       .orderBy(asc(tags.name));
+  }
+  
+  async createTag(tagData: InsertTag): Promise<Tag> {
+    const [tag] = await db.insert(tags).values(tagData).returning();
+    return tag;
   }
   
   // === Media methods ===
