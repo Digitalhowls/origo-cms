@@ -13,7 +13,8 @@ import {
   courseModules, type CourseModule,
   courseLessons, type CourseLesson,
   apiKeys, type ApiKey,
-  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken
+  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
+  userPermissions, type UserPermission, type InsertUserPermission
 } from "@shared/schema";
 import { eq, like, and, or, desc, sql, asc } from "drizzle-orm";
 import { db } from "./db";
@@ -81,6 +82,14 @@ export interface IStorage {
   createPasswordResetToken(userId: number): Promise<PasswordResetToken>;
   getPasswordResetTokenByToken(token: string): Promise<PasswordResetToken | undefined>;
   markTokenAsUsed(id: number): Promise<PasswordResetToken | undefined>;
+  
+  // Permissions methods
+  getUserPermissions(userId: number): Promise<UserPermission[]>;
+  getPermissionsByResource(userId: number, resource: string): Promise<UserPermission[]>;
+  hasPermission(userId: number, resource: string, action: string): Promise<boolean>;
+  addUserPermission(permission: InsertUserPermission): Promise<UserPermission>;
+  updateUserPermission(id: number, data: Partial<UserPermission>): Promise<UserPermission | undefined>;
+  deleteUserPermission(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
