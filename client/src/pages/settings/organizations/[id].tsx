@@ -104,6 +104,8 @@ export default function OrganizationDetailsPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('general');
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [domainStatus, setDomainStatus] = useState<'pending' | 'verified' | 'failed' | null>(null);
+  const [domainVerificationToken, setDomainVerificationToken] = useState<string | null>(null);
 
   // Obtener datos de la organización
   const { 
@@ -239,6 +241,42 @@ export default function OrganizationDetailsPage() {
       });
     },
   });
+  
+  // Mutación para configurar dominio personalizado
+  const configureDomainMutation = useMutation({
+    mutationFn: async (domain: string) => {
+      const response = await apiRequest('POST', '/api/organizations/configure-domain', { 
+        domain,
+        organizationId: Number(organizationId)
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.verified) {
+        setDomainStatus('verified');
+        toast({
+          title: 'Dominio verificado',
+          description: 'El dominio ha sido verificado y configurado correctamente.',
+        });
+      } else {
+        setDomainStatus('pending');
+        setDomainVerificationToken(data.verificationToken);
+        toast({
+          title: 'Verificación pendiente',
+          description: 'Sigue las instrucciones para verificar tu dominio.',
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}`] });
+    },
+    onError: (error: Error) => {
+      setDomainStatus('failed');
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo configurar el dominio personalizado',
+        variant: 'destructive',
+      });
+    },
+  });
 
   // Verificar disponibilidad del slug cuando cambia
   const checkSlugAvailability = async (slug: string) => {
@@ -332,6 +370,31 @@ export default function OrganizationDetailsPage() {
   // Manejar eliminación de organización
   const handleDelete = () => {
     deleteOrgMutation.mutate();
+  };
+  
+  // Manejar verificación de dominio personalizado
+  const handleVerifyDomain = (domain: string) => {
+    if (!domain) {
+      toast({
+        title: 'Dominio requerido',
+        description: 'Por favor, ingresa un dominio para verificar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Validar formato del dominio
+    const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+    if (!domainRegex.test(domain)) {
+      toast({
+        title: 'Formato de dominio inválido',
+        description: 'Por favor, ingresa un dominio válido (ej: mi-dominio.com).',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    configureDomainMutation.mutate(domain);
   };
 
   // Renderizar indicador de disponibilidad del slug
@@ -580,15 +643,62 @@ export default function OrganizationDetailsPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Dominio personalizado</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="mi-organizacion.com" 
-                                {...field}
-                              />
-                            </FormControl>
+                            <div className="flex items-center gap-2">
+                              <FormControl>
+                                <Input 
+                                  placeholder="mi-organizacion.com" 
+                                  {...field}
+                                />
+                              </FormControl>
+                              <Button 
+                                type="button" 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleVerifyDomain(field.value)}
+                                disabled={!field.value || configureDomainMutation.isPending}
+                              >
+                                {configureDomainMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : (
+                                  <Globe className="h-4 w-4 mr-2" />
+                                )}
+                                Verificar
+                              </Button>
+                            </div>
                             <FormDescription>
                               Deberás configurar los registros DNS de tu dominio para apuntar a nuestros servidores.
                             </FormDescription>
+                            {domainStatus === 'verified' && (
+                              <div className="mt-2 text-sm text-green-600 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                Dominio verificado correctamente
+                              </div>
+                            )}
+                            {domainStatus === 'pending' && (
+                              <div className="mt-2 text-sm text-orange-500 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                Verificación pendiente. Configura tus registros DNS.
+                              </div>
+                            )}
+                            {domainStatus === 'failed' && (
+                              <div className="mt-2 text-sm text-destructive flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                Verificación fallida. Revisa la configuración DNS.
+                              </div>
+                            )}
+                            {domainVerificationToken && (
+                              <div className="mt-3 p-3 bg-muted rounded-md">
+                                <div className="text-sm font-medium mb-1">Configuración DNS:</div>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div className="font-medium">Tipo:</div>
+                                  <div>TXT</div>
+                                  <div className="font-medium">Nombre/Host:</div>
+                                  <div>@</div>
+                                  <div className="font-medium">Valor:</div>
+                                  <div className="break-all">{domainVerificationToken}</div>
+                                </div>
+                              </div>
+                            )}
                             <FormMessage />
                           </FormItem>
                         )}
