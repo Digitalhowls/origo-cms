@@ -1,8 +1,12 @@
 /**
  * Utilidades para las pruebas
  */
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // URL base para las pruebas
 const BASE_URL = process.env.TEST_URL || 'http://localhost:5000';
@@ -263,7 +267,7 @@ function generateTestUser() {
   };
 }
 
-module.exports = {
+export {
   BASE_URL,
   takeScreenshot,
   waitForElementVisible,
