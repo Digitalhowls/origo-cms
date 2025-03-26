@@ -36,7 +36,9 @@ export interface IStorage {
   getOrganization(id: number): Promise<Organization | undefined>;
   getOrganizationBySlug(slug: string): Promise<Organization | undefined>;
   getUserOrganizations(userId: number): Promise<Organization[]>;
+  createOrganization(orgData: InsertOrganization, creatorId: number): Promise<Organization>;
   updateOrganizationBranding(id: number, branding: Partial<Organization>): Promise<Organization | undefined>;
+  deleteOrganization(id: number): Promise<boolean>;
   
   // Organization Users methods
   getOrganizationUsers(organizationId: number): Promise<User[]>;
@@ -191,6 +193,53 @@ export class DatabaseStorage implements IStorage {
     return result.map(item => item.organization);
   }
   
+  async createOrganization(orgData: InsertOrganization, creatorId: number): Promise<Organization> {
+    // Crear la organización en una transacción para garantizar que todo se complete o nada
+    const result = await db.transaction(async (tx) => {
+      // Insertar la organización
+      const [organization] = await tx
+        .insert(organizations)
+        .values(orgData)
+        .returning();
+      
+      // Añadir al creador como administrador de la organización
+      await tx
+        .insert(organizationUsers)
+        .values({
+          organizationId: organization.id,
+          userId: creatorId,
+          role: 'admin' // El creador siempre es administrador
+        });
+      
+      return organization;
+    });
+    
+    return result;
+  }
+  
+  async deleteOrganization(id: number): Promise<boolean> {
+    // Debemos comprobar primero si la organización existe
+    const organization = await this.getOrganization(id);
+    if (!organization) {
+      return false;
+    }
+    
+    // Eliminar la organización y todos sus registros asociados en una transacción
+    return await db.transaction(async (tx) => {
+      // Eliminar relaciones de usuarios con esta organización
+      await tx
+        .delete(organizationUsers)
+        .where(eq(organizationUsers.organizationId, id));
+      
+      // Eliminar la organización
+      const result = await tx
+        .delete(organizations)
+        .where(eq(organizations.id, id));
+      
+      return !!result;
+    });
+  }
+
   async updateOrganizationBranding(id: number, branding: Partial<Organization>): Promise<Organization | undefined> {
     const [updatedOrg] = await db
       .update(organizations)
