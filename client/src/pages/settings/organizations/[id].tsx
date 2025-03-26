@@ -246,9 +246,6 @@ export default function OrganizationDetailsPage() {
   // Estado para almacenar instrucciones detalladas de verificación
   const [domainVerificationInstructions, setDomainVerificationInstructions] = useState<any>(null);
   
-  // Estado para almacenar instrucciones de configuración DNS
-  const [dnsSetupInstructions, setDnsSetupInstructions] = useState<any>(null);
-  
   // Mutación para configurar dominio personalizado
   const configureDomainMutation = useMutation({
     mutationFn: async (domain: string) => {
