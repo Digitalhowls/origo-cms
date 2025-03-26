@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Block } from '@shared/types';
+import { AnimateCss, StyleTransition } from '@/lib/animation-service';
 import { 
   Zap, 
   Shield, 
@@ -41,6 +42,7 @@ const iconMap: { [key: string]: React.ReactNode } = {
 
 const FeaturesBlock: React.FC<FeaturesBlockProps> = ({ block, onClick }) => {
   const { content, settings } = block;
+  const [isHovered, setIsHovered] = useState(false);
   
   // Default values if not set
   const title = content.title || 'Nuestras características principales';
@@ -72,11 +74,24 @@ const FeaturesBlock: React.FC<FeaturesBlockProps> = ({ block, onClick }) => {
     return iconMap[iconName] || <Star />;
   };
 
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
+
   return (
-    <div 
-      className="page-builder-block relative mb-6 transition-all duration-200 hover:border hover:border-dashed hover:border-blue-500 hover:bg-blue-50/20" 
+    <StyleTransition
+      property="all"
+      duration="0.3s"
+      timingFunction="ease-in-out"
+      className="page-builder-block relative mb-6 transition-all duration-200 hover:border hover:border-dashed hover:border-blue-500 hover:bg-blue-50/20"
       style={style}
       onClick={onClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="block-handle absolute top-2 right-2 hidden bg-white rounded-md shadow-sm border border-gray-200 p-1 group-hover:flex">
         <button className="text-gray-500 hover:text-gray-700 p-1" title="Mover">
@@ -102,60 +117,111 @@ const FeaturesBlock: React.FC<FeaturesBlockProps> = ({ block, onClick }) => {
       </div>
       
       <div className="py-10">
-        <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-900 mb-8">{title}</h2>
+        <h2 className={`text-2xl md:text-3xl font-bold text-center text-gray-900 mb-8 ${isHovered ? 'text-blue-600' : ''}`}>{title}</h2>
         <div className={`grid ${columnClass} gap-8 max-w-6xl mx-auto`}>
           {features.length > 0 ? (
             features.map((feature: any, index: number) => (
-              <div key={feature.id || index} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                <div 
-                  className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
-                  style={{ 
-                    backgroundColor: feature.iconBgColor || '#EFF6FF',
-                  }}
-                >
-                  <div style={{ color: feature.iconColor || '#3B82F6' }}>
-                    {getIconComponent(feature.icon || 'star')}
-                  </div>
+              <AnimateCss 
+                key={feature.id || index}
+                animationName={isHovered ? 'pulse' : ''}
+                duration="0.5s"
+                delay={`${0.1 * index}s`}
+              >
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
+                  <StyleTransition
+                    property="transform"
+                    duration="0.3s"
+                    className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
+                    style={{ 
+                      backgroundColor: feature.iconBgColor || '#EFF6FF',
+                      transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+                    }}
+                  >
+                    <div style={{ color: feature.iconColor || '#3B82F6' }}>
+                      {getIconComponent(feature.icon || 'star')}
+                    </div>
+                  </StyleTransition>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
+              </AnimateCss>
             ))
           ) : (
             // Default sample features if none are provided
             <>
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4">
-                  <div className="text-primary">
-                    <Zap />
-                  </div>
+              <AnimateCss 
+                animationName={isHovered ? 'pulse' : ''}
+                duration="0.5s"
+                delay="0s"
+              >
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
+                  <StyleTransition
+                    property="transform"
+                    duration="0.3s"
+                    className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-4"
+                    style={{ 
+                      transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+                    }}
+                  >
+                    <div className="text-primary">
+                      <Zap />
+                    </div>
+                  </StyleTransition>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Personalización avanzada</h3>
+                  <p className="text-gray-600">Adapta cada aspecto de tu plataforma con nuestras opciones de personalización intuitivas.</p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Personalización avanzada</h3>
-                <p className="text-gray-600">Adapta cada aspecto de tu plataforma con nuestras opciones de personalización intuitivas.</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-4">
-                  <div className="text-secondary">
-                    <Shield />
-                  </div>
+              </AnimateCss>
+              
+              <AnimateCss 
+                animationName={isHovered ? 'pulse' : ''}
+                duration="0.5s"
+                delay="0.1s"
+              >
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
+                  <StyleTransition
+                    property="transform"
+                    duration="0.3s"
+                    className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-4"
+                    style={{ 
+                      transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+                    }}
+                  >
+                    <div className="text-secondary">
+                      <Shield />
+                    </div>
+                  </StyleTransition>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Seguridad garantizada</h3>
+                  <p className="text-gray-600">Protección avanzada para tus datos y contenido con nuestro sistema de seguridad multicapa.</p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Seguridad garantizada</h3>
-                <p className="text-gray-600">Protección avanzada para tus datos y contenido con nuestro sistema de seguridad multicapa.</p>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-4">
-                  <div className="text-accent">
-                    <BarChart />
-                  </div>
+              </AnimateCss>
+              
+              <AnimateCss 
+                animationName={isHovered ? 'pulse' : ''}
+                duration="0.5s"
+                delay="0.2s"
+              >
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 transition-all duration-200 hover:shadow-md">
+                  <StyleTransition
+                    property="transform"
+                    duration="0.3s"
+                    className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-4"
+                    style={{ 
+                      transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+                    }}
+                  >
+                    <div className="text-accent">
+                      <BarChart />
+                    </div>
+                  </StyleTransition>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Análisis detallado</h3>
+                  <p className="text-gray-600">Comprende el comportamiento de tus usuarios con nuestras herramientas analíticas intuitivas.</p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Análisis detallado</h3>
-                <p className="text-gray-600">Comprende el comportamiento de tus usuarios con nuestras herramientas analíticas intuitivas.</p>
-              </div>
+              </AnimateCss>
             </>
           )}
         </div>
       </div>
-    </div>
+    </StyleTransition>
   );
 };
 

@@ -239,6 +239,11 @@ export interface StyleTransitionProps {
   delay?: string;
   className?: string;
   style?: React.CSSProperties;
+  onClick?: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  onMouseOver?: () => void;
+  onMouseOut?: () => void;
 }
 
 export const StyleTransition: React.FC<StyleTransitionProps> = ({
@@ -249,6 +254,11 @@ export const StyleTransition: React.FC<StyleTransitionProps> = ({
   delay = '0s',
   className = '',
   style = {},
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+  onMouseOver,
+  onMouseOut,
 }) => {
   const transitionStyle = {
     ...style,
@@ -256,7 +266,15 @@ export const StyleTransition: React.FC<StyleTransitionProps> = ({
   };
 
   return (
-    <div className={className} style={transitionStyle}>
+    <div 
+      className={className} 
+      style={transitionStyle}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onMouseOver={onMouseOver}
+      onMouseOut={onMouseOut}
+    >
       {children}
     </div>
   );
