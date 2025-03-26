@@ -223,7 +223,14 @@ export async function createCategory(req: Request, res: Response) {
     const user = req.user as any;
     const organizationId = user.organizationId;
     
-    const validationResult = insertCategorySchema.safeParse(req.body);
+    // Crear un esquema que no incluya organizationId
+    const categorySchema = z.object({
+      name: z.string().min(1, 'El nombre es requerido'),
+      slug: z.string().min(1, 'El slug es requerido'),
+      description: z.string().optional()
+    });
+    
+    const validationResult = categorySchema.safeParse(req.body);
     
     if (!validationResult.success) {
       return res.status(400).json({
@@ -268,7 +275,13 @@ export async function createTag(req: Request, res: Response) {
     const user = req.user as any;
     const organizationId = user.organizationId;
     
-    const validationResult = insertTagSchema.safeParse(req.body);
+    // Crear un esquema que no incluya organizationId
+    const tagSchema = z.object({
+      name: z.string().min(1, 'El nombre es requerido'),
+      slug: z.string().min(1, 'El slug es requerido')
+    });
+    
+    const validationResult = tagSchema.safeParse(req.body);
     
     if (!validationResult.success) {
       return res.status(400).json({
