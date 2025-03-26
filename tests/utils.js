@@ -203,19 +203,10 @@ async function requestPasswordReset(page, email) {
     await takeScreenshot(page, 'forgot-password-page');
     
     // Buscar y hacer clic en el enlace de olvido de contraseña
-    const forgotPasswordSelectors = [
-      'a:has-text("¿Olvidaste tu contraseña?")', 
-      'a:has-text("Olvidé mi contraseña")',
-      'button:has-text("Olvidé mi contraseña")',
-      'a:has-text("Recuperar contraseña")'
-    ];
-    
-    for (const selector of forgotPasswordSelectors) {
-      if (await page.$(selector)) {
-        await page.click(selector);
-        await page.waitForTimeout(500);
-        break;
-      }
+    const forgotPasswordSelector = 'button[variant="link"]:has-text("¿Olvidaste tu contraseña?")';
+    if (await page.$(forgotPasswordSelector)) {
+      await page.click(forgotPasswordSelector);
+      await page.waitForTimeout(500);
     }
     
     // Esperar a que el formulario esté visible

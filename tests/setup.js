@@ -1,8 +1,6 @@
 /**
  * Configuración de pruebas para Jest y Puppeteer
  */
-import { jest } from '@jest/globals';
-
 // Configuración de la URL base para las pruebas
 const BASE_URL = process.env.TEST_URL || 'http://localhost:5000';
 globalThis.BASE_URL = BASE_URL;

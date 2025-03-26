@@ -167,11 +167,11 @@ describe('Módulo de Autenticación', () => {
     expect(url).toBe(`${BASE_URL}/dashboard`);
     
     // Hacer clic en menú de usuario
-    await page.click('button[aria-label="User menu"]');
+    await page.click('button[aria-label="Abrir menú de usuario"]');
     await waitForElementVisible(page, '[role="menu"]');
     
     // Hacer clic en cerrar sesión
-    await page.click('[role="menuitem"]:has-text("Cerrar sesión")');
+    await page.click('[data-testid="logout-button"]');
     
     // Verificar redirección a login
     await page.waitForNavigation();
