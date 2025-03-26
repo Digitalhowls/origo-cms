@@ -12,7 +12,8 @@ import {
   courses, type Course, type InsertCourse,
   courseModules, type CourseModule,
   courseLessons, type CourseLesson,
-  apiKeys, type ApiKey
+  apiKeys, type ApiKey,
+  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken
 } from "@shared/schema";
 import { eq, like, and, or, desc, sql, asc } from "drizzle-orm";
 import { db } from "./db";
