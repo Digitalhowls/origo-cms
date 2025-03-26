@@ -1,0 +1,160 @@
+{
+  "project_name": "Origo – CMS Modular y Headless",
+  "language_for_interaction": "español",
+  "application_language": "multilenguaje (por defecto en español)",
+  "description": "Origo es un CMS moderno, visual y modular, diseñado como una aplicación SaaS multicliente, multilenguaje y headless-first. Permite a empresas crear sitios, blogs, cursos y manejar contenido desde un panel visual tipo Notion/Webflow. Su arquitectura permite la integración futura de módulos verticales como ShieldCuisine (industria alimentaria), eCommerce y Analytics Pro.",
+  "target_platform": "Web",
+  "operating_environment": "Aplicación online, instalada en servidor propio con Ubuntu y Docker. Repositorio completo alojado en GitHub. El proyecto se estructura en contenedores separados para frontend (Next.js), backend (NestJS), y base de datos PostgreSQL.",
+  "hosting": "Servidor propio (Ubuntu 22+), instalación con Docker Compose, entorno local y producción. Preparado para CI/CD en el futuro.",
+  "interface_style": "Interfaz limpia, moderna y responsive, inspirada en Notion y Webflow. Diseñada para usuarios técnicos y no técnicos. Estilo modular con bloques visuales reutilizables.",
+  "stack": {
+    "frontend": {
+      "framework": "Next.js",
+      "styling": "TailwindCSS",
+      "state": "Zustand",
+      "editor": "TipTap o Editor.js con bloques personalizados"
+    },
+    "backend": {
+      "framework": "NestJS",
+      "database": "PostgreSQL",
+      "ORM": "Prisma",
+      "auth": ["JWT", "Magic Link", "OAuth (Google)"],
+      "api": "REST documentada con Swagger (OpenAPI v3)",
+      "storage": "Cloudinary o Supabase",
+      "security": ["CSRF", "XSS", "rate limiting", "auditoría de cambios"]
+    },
+    "infraestructura": {
+      "contenedores": "Docker",
+      "env": ".env y docker-compose.yml",
+      "repositorio": "GitHub",
+      "multi_tenant": true
+    }
+  },
+  "core_modules": [
+    {
+      "name": "Constructor de Páginas",
+      "features": [
+        "Editor visual drag & drop por bloques",
+        "Vista previa en tiempo real",
+        "Publicación en rutas limpias con SEO",
+        "Edición responsive por dispositivo",
+        "Estados: Borrador / Publicado / Archivado"
+      ]
+    },
+    {
+      "name": "Blog Profesional",
+      "features": [
+        "Editor visual enriquecido (Markdown + visual)",
+        "Categorías, etiquetas, autores, programación",
+        "Imagen destacada, resumen, OG Tags",
+        "Embeds de redes sociales y multimedia",
+        "Feed RSS autogenerado"
+      ]
+    },
+    {
+      "name": "Branding Personalizado",
+      "features": [
+        "Colores, tipografía, logo, favicon por organización",
+        "Dominio propio o subdominio tipo cliente.origo.app",
+        "Aplicación automática de estilos globales"
+      ]
+    },
+    {
+      "name": "Gestión de Medios",
+      "features": [
+        "Carga de imágenes, vídeos y documentos",
+        "Conversión automática a WebP",
+        "Embeds listos para contenido",
+        "Organización por carpetas y etiquetas"
+      ]
+    },
+    {
+      "name": "Cursos / LMS Básico",
+      "features": [
+        "Módulos, vídeos, PDFs, test por curso",
+        "Acceso abierto o por usuario autenticado",
+        "Visibilidad por organización",
+        "Página pública generada automáticamente"
+      ]
+    },
+    {
+      "name": "Roles y Permisos Avanzados",
+      "features": [
+        "Multiusuario por organización",
+        "Superadmin global",
+        "Roles personalizables: Admin / Editor / Lector / Viewer externo",
+        "Editor visual de roles (fase futura)"
+      ]
+    },
+    {
+      "name": "API REST Pública",
+      "features": [
+        "JWT y API Key por organización",
+        "Endpoints: páginas, blog, cursos, media",
+        "Swagger/OpenAPI integrado"
+      ]
+    },
+    {
+      "name": "Estadísticas Básicas (GA4)",
+      "features": [
+        "Integración de Google Analytics por ID",
+        "Resumen en dashboard: visitas, páginas más vistas",
+        "Preparado para módulo avanzado Analytics Pro"
+      ]
+    }
+  ],
+  "advanced_features": [
+    "Editor visual dual: modo estructura (tipo Notion) y modo visual (tipo Webflow)",
+    "Bloques reutilizables + exportables entre sitios",
+    "Plantillas visuales: entrevistas, testimonios, Q&A",
+    "Publicación programada con link de vista previa",
+    "Asistente IA (GPT) para títulos, SEO y resúmenes",
+    "Embeds nativos: YouTube, TikTok, Twitter, IG, Spotify",
+    "Podcasting y video posts con player embebido",
+    "Sistema de clonación de espacios enteros (plantillas)",
+    "Workspaces tipo multisite WordPress",
+    "Modo desarrollador para ver estructura JSON + datos"
+  ],
+  "integration_hooks": {
+    "marketplace_ready": true,
+    "plugin_system": true,
+    "module_injection": true,
+    "subdomain_routing": true,
+    "custom_domain_routing": true
+  },
+  "future_modules": [
+    {
+      "name": "ShieldCuisine",
+      "description": "Módulo para sector alimentario: TPV, APPCC, fichas técnicas, producción, trazabilidad.",
+      "integration": "Interna como plugin embebido por organización."
+    },
+    {
+      "name": "Origo Commerce",
+      "description": "Tienda online con productos, carrito y pagos. Integración con Stripe y PayPal.",
+      "integration": "Marketplace de módulos. Planeado como módulo externo oficial."
+    },
+    {
+      "name": "Analytics Pro",
+      "description": "Módulo visual de estadísticas avanzadas. Métricas por tipo de contenido, comparativas, embudos.",
+      "integration": "Integración con GA4, Plausible o Umami."
+    }
+  ],
+  "developer_documentation": {
+    "included_files": [
+      "README.md",
+      "architecture.md",
+      "roadmap.md",
+      "docker-compose.yml",
+      ".env.example",
+      "prompt-origo.json"
+    ],
+    "project_structure": [
+      "frontend/ (Next.js + Tailwind)",
+      "backend/ (NestJS + Prisma)",
+      "docs/ (Documentación técnica y visión)",
+      "api-docs/ (Swagger YAML)"
+    ],
+    "start_command": "docker-compose up --build",
+    "env_setup": ".env file with variables for frontend/backend"
+  }
+}

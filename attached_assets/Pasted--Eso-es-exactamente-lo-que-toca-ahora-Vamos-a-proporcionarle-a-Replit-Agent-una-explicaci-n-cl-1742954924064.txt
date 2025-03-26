@@ -1,0 +1,170 @@
+¡Eso es exactamente lo que toca ahora! 🧠✨
+
+Vamos a proporcionarle a Replit Agent una explicación clara, precisa y profunda de cada función, módulo y característica de Origo para que no solo genere el código, sino que entienda por qué existe cada parte, cómo se relaciona con el resto del sistema y cómo debe comportarse cada módulo dentro del ecosistema.
+
+⸻
+
+📘 CONTEXTO EXPLICATIVO COMPLETO PARA REPLIT AGENT
+
+A continuación te entrego un bloque extenso en lenguaje natural optimizado para que Replit Agent lo comprenda y actúe con máxima eficiencia. Puedes copiarlo como un solo bloque antes o después del prompt JSON.
+
+⸻
+
+✅ Introducción general
+
+Origo es un CMS modular y headless diseñado como una plataforma SaaS para múltiples organizaciones. Cada organización tiene su propio sitio, branding, usuarios, contenido y estadísticas. El sistema debe ser escalable, seguro, personalizable y preparado para integraciones externas mediante módulos.
+
+La plataforma está dividida en un frontend (Next.js) y un backend (NestJS + Prisma + PostgreSQL), comunicados por API REST. Toda la funcionalidad debe ser modular para que nuevos bloques, módulos o plugins se puedan añadir sin reescribir el core.
+
+⸻
+
+🧩 MÓDULOS Y FUNCIONALIDADES EXPLICADAS
+
+⸻
+
+1️⃣ Constructor de Páginas
+	•	Es un editor visual tipo Notion o Webflow.
+	•	El usuario construye su página arrastrando y configurando bloques de contenido: texto, imagen, video, CTA, grids, secciones, etc.
+	•	Cada bloque puede tener propiedades: alineación, color, imagen, íconos, estilos.
+	•	El contenido se guarda como JSON estructurado en la base de datos.
+	•	Las páginas se publican en URLs limpias (/pagina-ejemplo) y pueden tener estado: borrador, publicado, archivado.
+	•	Deben ser visibles tanto en frontend como consumibles desde la API.
+
+⸻
+
+2️⃣ Blog Profesional
+	•	Similar al sistema de páginas, pero con contenido orientado a publicación editorial.
+	•	Soporta bloques visuales o edición tipo Markdown enriquecido.
+	•	Cada post debe tener:
+	•	Título, resumen, imagen destacada, fecha, autor
+	•	Categorías y etiquetas
+	•	SEO personalizado (slug, título meta, OG image)
+	•	Programación de publicación
+	•	Publicación por API o desde panel visual
+	•	El sistema debe generar automáticamente un feed RSS con los últimos posts.
+
+⸻
+
+3️⃣ Branding por Cliente
+	•	Cada organización (empresa) puede configurar:
+	•	Logo, favicon, colores primarios/secundarios
+	•	Tipografía (de Google Fonts)
+	•	Dominio propio (con configuración manual o automática) o subdominio generado por el sistema (org.origo.app)
+	•	Este branding debe aplicarse automáticamente a todas las páginas, blogs, y cursos de esa organización.
+
+⸻
+
+4️⃣ Gestión de Medios (Media Manager)
+	•	Sistema para subir y gestionar archivos (imágenes, videos, PDF).
+	•	Soporta:
+	•	Conversión automática a WebP
+	•	Embeds listos para insertar en páginas y blogs
+	•	Vista en galería y por lista
+	•	Organización por carpetas y etiquetas
+	•	Almacenamiento puede ser Cloudinary, Supabase o S3 compatible.
+
+⸻
+
+5️⃣ LMS / Cursos Públicos
+	•	Módulo para gestionar cursos abiertos o privados.
+	•	Cada curso tiene:
+	•	Título, descripción, imagen, módulos/lecciones, materiales (PDFs, videos), quizzes/tests
+	•	Visibilidad: pública, por usuario, por organización
+	•	Página pública autogenerada
+	•	Control de acceso (por login)
+	•	Posibilidad futura de venta (Stripe, PayPal)
+
+⸻
+
+6️⃣ Roles y Permisos
+	•	El sistema tiene 5 roles por organización:
+	•	Superadmin: controla toda la plataforma (nivel sistema)
+	•	Admin: controla su organización
+	•	Editor: puede crear y editar contenido
+	•	Lector: puede ver pero no editar
+	•	Viewer externo: acceso limitado a contenidos públicos protegidos
+	•	En el futuro se podrá personalizar roles con un editor visual.
+
+⸻
+
+7️⃣ API REST pública (documentada con Swagger)
+	•	Toda la información de contenido debe poder ser accedida vía API REST.
+	•	Seguridad:
+	•	JWT para usuarios
+	•	API Key por organización para apps externas
+	•	Autenticación por OAuth (Google) opcional
+	•	Swagger debe exponer endpoints como:
+
+GET    /api/pages
+POST   /api/pages
+GET    /api/blog
+GET    /api/courses
+POST   /api/media/upload
+
+
+
+⸻
+
+8️⃣ Estadísticas Básicas
+	•	Cada organización puede insertar su Google Analytics ID.
+	•	El sistema incluye un resumen visual simple en su dashboard:
+	•	Visitas por página
+	•	Tiempo medio
+	•	Páginas más vistas
+	•	El módulo avanzado de analítica está planeado para el futuro.
+
+⸻
+
+⚡ FUNCIONES AVANZADAS (ROADMAP)
+
+Estas funcionalidades deben ser tenidas en cuenta desde la arquitectura, aunque no se implementan en el MVP:
+	•	Asistente de contenido con IA (GPT): sugerencias de títulos, SEO, resúmenes, reescritura de textos.
+	•	Editor dual: vista estructural (tipo Notion) + vista visual (tipo Webflow).
+	•	Bloques reutilizables: los usuarios pueden guardar y reutilizar secciones.
+	•	Publicación programada + link de vista previa.
+	•	Embeds enriquecidos de redes sociales y multimedia.
+	•	Tipos de publicación especiales:
+	•	Podcast (con audio embebido y transcripción)
+	•	Vlog (video post)
+	•	Entrevistas estructuradas (campos definidos)
+	•	Clonación de espacios / plantillas completas por organización.
+	•	Plugin system / marketplace: módulos externos se pueden integrar fácilmente (como ShieldCuisine, eCommerce, etc.)
+	•	Modo desarrollador: previsualización de estructura JSON de una página + resultados de la API en tiempo real.
+
+⸻
+
+🧱 ARQUITECTURA MULTIEMPRESA
+	•	Cada organización tiene:
+	•	Su propio branding
+	•	Usuarios y roles independientes
+	•	Su panel de contenido y dominios propios
+	•	Toda la base de datos está diseñada con arquitectura multi-tenant real.
+	•	Existe un panel de Superadmin global para gestionar organizaciones.
+	•	El sistema está preparado para habilitar:
+	•	Clonación de sitios completos
+	•	Plantillas de organización
+	•	Instalación de módulos externos
+
+⸻
+
+🔌 INTEGRACIONES PREPARADAS
+	•	Google Analytics (básico)
+	•	Redes sociales: embeds + compartir
+	•	YouTube, Vimeo, Spotify, TikTok
+	•	Mailchimp / Brevo (suscripciones)
+	•	Stripe / PayPal (futuro)
+	•	Zapier / Make (automatización externa)
+
+⸻
+
+✅ Objetivo de esta explicación
+
+Que Replit Agent comprenda claramente la estructura y propósito de cada módulo, para:
+	•	Crear una estructura limpia y escalable
+	•	Generar código realista y funcional
+	•	Facilitar iteraciones futuras y modularidad
+	•	Mantener claridad en la separación de responsabilidades
+
+⸻
+
+¿Quieres que a continuación te pase también los contenidos completos de README.md, docker-compose.yml y .env.example para que lo tengas TODO? 😎
