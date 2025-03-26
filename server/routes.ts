@@ -1,11 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import session from 'express-session';
-import passport from 'passport';
-import { Strategy as LocalStrategy } from 'passport-local';
-import MemoryStore from 'memorystore';
 import { db } from "./db";
 import { storage } from "./storage";
+import { setupAuth } from "./auth";
 import * as authService from './services/auth.service';
 import * as pagesService from './services/pages.service';
 import * as blogService from './services/blog.service';
@@ -13,87 +10,12 @@ import * as mediaService from './services/media.service';
 import * as coursesService from './services/courses.service';
 import * as organizationService from './services/organization.service';
 import { authMiddleware } from './middleware/auth.middleware';
-import { users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Initialize session storage
-  const MemoryStoreSession = MemoryStore(session);
-  
-  // Configure session middleware
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'origo-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    },
-    store: new MemoryStoreSession({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    })
-  }));
-  
-  // Initialize and configure passport
-  app.use(passport.initialize());
-  app.use(passport.session());
-  
-  // Configure passport local strategy
-  passport.use(new LocalStrategy(
-    { usernameField: 'email' },
-    async (email, password, done) => {
-      try {
-        const user = await authService.validateUser(email, password);
-        if (!user) {
-          return done(null, false, { message: 'Credenciales incorrectas' });
-        }
-        return done(null, user);
-      } catch (error) {
-        return done(error);
-      }
-    }
-  ));
-  
-  // Serialize user to session
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-  
-  // Deserialize user from session
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const [user] = await db.select().from(users).where(eq(users.id, id));
-      if (!user) {
-        return done(null, false);
-      }
-      // Remove password from user object
-      const { password, ...userWithoutPassword } = user;
-      done(null, userWithoutPassword);
-    } catch (error) {
-      done(error);
-    }
-  });
+  // Configurar autenticación
+  setupAuth(app);
   
   // ==== API Routes ====
-  
-  // Auth routes
-  app.post('/api/auth/login', passport.authenticate('local'), (req, res) => {
-    res.json(req.user);
-  });
-  
-  app.post('/api/auth/logout', (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.json({ success: true });
-    });
-  });
-  
-  app.get('/api/auth/me', (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'No autenticado' });
-    }
-    res.json(req.user);
-  });
   
   // Organization routes
   app.get('/api/organizations', authMiddleware, organizationService.getOrganizations);
