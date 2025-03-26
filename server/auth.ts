@@ -28,11 +28,12 @@ export function setupAuth(app: Express) {
     rolling: true, // Renovamos el tiempo de expiración en cada petición
     name: 'origo.sid', // Nombre personalizado para la cookie de sesión
     cookie: { 
-      secure: process.env.NODE_ENV === 'production', // Seguro en producción
+      secure: false, // Permitir cookies sin HTTPS en desarrollo
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días 
-      sameSite: 'lax' as 'lax',
-      httpOnly: true,
-      path: '/'
+      sameSite: 'none' as 'none', // Permitir cookies cross-site
+      httpOnly: false, // Permitir acceso desde JavaScript para debug
+      path: '/',
+      domain: undefined // Usar dominio actual
     },
     store: new MemoryStoreSession({
       checkPeriod: 86400000, // limpiar sesiones expiradas cada 24h
@@ -217,9 +218,9 @@ export function setupAuth(app: Express) {
         // Borrar la cookie con el mismo nombre que configuramos
         res.clearCookie('origo.sid', {
           path: '/',
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
+          httpOnly: false,
+          secure: false,
+          sameSite: 'none'
         });
         
         console.log('Sesión destruida correctamente');

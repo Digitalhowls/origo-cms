@@ -14,6 +14,10 @@ export async function apiRequest(
 ): Promise<Response> {
   console.log(`API Request: ${method} ${url}`);
   
+  // Obtener cookies para diagnóstico
+  const cookies = document.cookie;
+  console.log("Cookies existentes:", cookies);
+  
   const res = await fetch(url, {
     method,
     headers: data ? { 
@@ -46,6 +50,10 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     console.log(`QueryFn: ${queryKey[0]}`);
+    
+    // Obtener cookies para diagnóstico
+    const cookies = document.cookie;
+    console.log("Cookies antes de fetch:", cookies);
     
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
