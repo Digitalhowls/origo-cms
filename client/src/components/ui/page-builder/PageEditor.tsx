@@ -13,6 +13,7 @@ import HeaderBlock from './blocks/HeaderBlock';
 import FeaturesBlock from './blocks/FeaturesBlock';
 import TextMediaBlock from './blocks/TextMediaBlock';
 import { v4 as uuidv4 } from 'uuid';
+import { TransitionList, AOSElement } from '@/lib/animation-service';
 
 interface PageEditorProps {
   pageId?: number;
@@ -172,7 +173,21 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
       <Card className="bg-white mb-6 min-h-[500px]">
         <CardContent className="p-4 md:p-6">
           {currentPage?.blocks && currentPage.blocks.length > 0 ? (
-            currentPage.blocks.map(block => renderBlock(block))
+            <TransitionList
+              items={currentPage.blocks}
+              keyExtractor={(block) => block.id}
+              renderItem={(block) => (
+                <AOSElement 
+                  animation="fade-up" 
+                  duration={600} 
+                  delay={150}
+                >
+                  {renderBlock(block)}
+                </AOSElement>
+              )}
+              classNames="block"
+              timeout={400}
+            />
           ) : (
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center text-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

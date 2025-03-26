@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BlockType } from '@shared/types';
 import { usePageStore } from '@/lib/store';
 import { v4 as uuidv4 } from 'uuid';
+import { TransitionList, AnimateCss, StyleTransition } from '@/lib/animation-service';
 
 interface BlockTemplate {
   type: BlockType;
@@ -231,25 +232,38 @@ const BlockLibrary: React.FC = () => {
         </div>
 
         <TabsContent value="basic" className="flex-1 overflow-y-auto p-4 space-y-4">
-          {filteredBlocks.map((block) => (
-            <div
-              key={block.type}
-              className="block-template border border-gray-200 rounded-md p-3 cursor-move hover:border-primary hover:shadow-sm transition-all duration-200"
-              draggable
-              onDragStart={(e) => handleDragStart(e, block)}
-              onClick={() => handleBlockClick(block)}
-            >
-              <div className="flex items-start">
-                <div className="flex-shrink-0 bg-gray-100 rounded-md p-2">
-                  {block.icon}
+          <TransitionList
+            items={filteredBlocks}
+            keyExtractor={(block) => block.type}
+            renderItem={(block) => (
+              <StyleTransition
+                property="transform, border-color, box-shadow"
+                duration="0.3s"
+                timingFunction="cubic-bezier(0.4, 0, 0.2, 1)"
+                className="block-template border border-gray-200 rounded-md p-3 cursor-move hover:border-primary hover:shadow-sm"
+              >
+                <div
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, block)}
+                  onClick={() => handleBlockClick(block)}
+                >
+                  <div className="flex items-start">
+                    <AnimateCss animationName="pulse" duration="0.5s" delay="0.1s">
+                      <div className="flex-shrink-0 bg-gray-100 rounded-md p-2">
+                        {block.icon}
+                      </div>
+                    </AnimateCss>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-gray-900">{block.title}</h3>
+                      <p className="text-xs text-gray-500">{block.description}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-gray-900">{block.title}</h3>
-                  <p className="text-xs text-gray-500">{block.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+              </StyleTransition>
+            )}
+            classNames="list-item"
+            timeout={300}
+          />
         </TabsContent>
 
         <TabsContent value="layout" className="flex-1 overflow-y-auto p-4">
