@@ -12,14 +12,28 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  console.log(`API Request: ${method} ${url}`);
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: data ? { 
+      "Content-Type": "application/json",
+      "X-Requested-With": "XMLHttpRequest"
+    } : {
+      "X-Requested-With": "XMLHttpRequest"
+    },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
+    cache: "no-cache",
   });
 
-  await throwIfResNotOk(res);
+  if (!res.ok) {
+    console.error(`API Error ${res.status}: ${method} ${url}`);
+    await throwIfResNotOk(res);
+  } else {
+    console.log(`API Success: ${method} ${url}`);
+  }
+  
   return res;
 }
 
@@ -29,15 +43,29 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    console.log(`QueryFn: ${queryKey[0]}`);
+    
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "Accept": "application/json"
+      },
+      cache: "no-cache"
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      console.log(`Auth check failed (401) for ${queryKey[0]}`);
       return null;
     }
 
-    await throwIfResNotOk(res);
+    if (!res.ok) {
+      console.error(`QueryFn Error ${res.status}: ${queryKey[0]}`);
+      await throwIfResNotOk(res);
+    } else {
+      console.log(`QueryFn Success: ${queryKey[0]}`);
+    }
+    
     return await res.json();
   };
 
