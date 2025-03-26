@@ -1,8 +1,9 @@
-import { Pool } from 'pg';
+import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { neon, neonConfig } from '@neondatabase/serverless';
 
-let pool: Pool;
+const { Pool } = pg;
+let pool;
 
 if (process.env.NODE_ENV === 'production') {
   // Use serverless Neon database in production

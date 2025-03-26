@@ -22,7 +22,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from '@/components/ui/badge';
 import { 
-  Format, 
+  FileText, 
   Check, 
   Eye, 
   Calendar as CalendarIcon, 
@@ -366,11 +366,11 @@ const BlogEditor: React.FC = () => {
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
                       <TabsList className="mb-4">
                         <TabsTrigger value="editor">
-                          <Format className="h-4 w-4 mr-2" />
+                          <FileText className="h-4 w-4 mr-2" />
                           Editor
                         </TabsTrigger>
                         <TabsTrigger value="settings">
-                          <Format className="h-4 w-4 mr-2" />
+                          <FileText className="h-4 w-4 mr-2" />
                           SEO
                         </TabsTrigger>
                       </TabsList>
