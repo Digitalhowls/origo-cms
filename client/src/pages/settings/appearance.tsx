@@ -535,6 +535,504 @@ const AppearanceSettings: React.FC = () => {
                   </CardFooter>
                 </Card>
               </TabsContent>
+              
+              {/* Web Settings */}
+              <TabsContent value="web">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Tipografía */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Type className="h-5 w-5 mr-2" />
+                        Tipografía Web
+                      </CardTitle>
+                      <CardDescription>
+                        Personaliza las fuentes para tus páginas web y contenido publicado.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Fuente Principal */}
+                      <div className="space-y-2">
+                        <Label htmlFor="web-font-family">Fuente Principal</Label>
+                        <Select
+                          value={settings.webFontFamily}
+                          onValueChange={(value: 'sans' | 'serif' | 'mono' | 'custom') => handleSettingChange('webFontFamily', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar fuente" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sans">Sans-serif (Inter)</SelectItem>
+                            <SelectItem value="serif">Serif (Merriweather)</SelectItem>
+                            <SelectItem value="mono">Monospace (Roboto Mono)</SelectItem>
+                            <SelectItem value="custom">Personalizada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {settings.webFontFamily === 'custom' && (
+                          <div className="mt-2">
+                            <Label htmlFor="web-custom-font">Nombre de la fuente personalizada</Label>
+                            <Input 
+                              id="web-custom-font"
+                              value={settings.webCustomFont}
+                              onChange={(e) => handleSettingChange('webCustomFont', e.target.value)}
+                              placeholder="ej. 'Nunito', sans-serif"
+                              className="mt-1"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Asegúrate de incluir la fuente en tu proyecto o usar una fuente de Google Fonts.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Fuente para Títulos */}
+                      <div className="space-y-2">
+                        <Label htmlFor="web-heading-font">Fuente para Títulos</Label>
+                        <Select
+                          value={settings.webHeadingFont}
+                          onValueChange={(value: 'sans' | 'serif' | 'mono' | 'custom') => handleSettingChange('webHeadingFont', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar fuente" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sans">Sans-serif (Inter)</SelectItem>
+                            <SelectItem value="serif">Serif (Merriweather)</SelectItem>
+                            <SelectItem value="mono">Monospace (Roboto Mono)</SelectItem>
+                            <SelectItem value="custom">Personalizada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {settings.webHeadingFont === 'custom' && (
+                          <div className="mt-2">
+                            <Label htmlFor="web-custom-heading-font">Nombre de la fuente personalizada para títulos</Label>
+                            <Input 
+                              id="web-custom-heading-font"
+                              value={settings.webCustomHeadingFont}
+                              onChange={(e) => handleSettingChange('webCustomHeadingFont', e.target.value)}
+                              placeholder="ej. 'Playfair Display', serif"
+                              className="mt-1"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Vista previa */}
+                      <div className="border rounded-md p-4 mt-4">
+                        <p className="text-sm font-medium text-gray-500">Vista previa</p>
+                        <h3 className="text-xl font-bold mt-2" style={{ 
+                          fontFamily: settings.webHeadingFont === 'custom' 
+                            ? settings.webCustomHeadingFont 
+                            : settings.webHeadingFont === 'sans' 
+                              ? 'Inter, sans-serif' 
+                              : settings.webHeadingFont === 'serif' 
+                                ? 'Merriweather, serif' 
+                                : 'Roboto Mono, monospace' 
+                        }}>
+                          Título de ejemplo
+                        </h3>
+                        <p className="mt-2" style={{ 
+                          fontFamily: settings.webFontFamily === 'custom' 
+                            ? settings.webCustomFont 
+                            : settings.webFontFamily === 'sans' 
+                              ? 'Inter, sans-serif' 
+                              : settings.webFontFamily === 'serif' 
+                                ? 'Merriweather, serif' 
+                                : 'Roboto Mono, monospace' 
+                        }}>
+                          Este es un párrafo de ejemplo que muestra cómo se verá el texto en tu sitio web.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Colores */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Palette className="h-5 w-5 mr-2" />
+                        Colores Web
+                      </CardTitle>
+                      <CardDescription>
+                        Define la paleta de colores para tus páginas web.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="web-color-palette">Paleta de colores</Label>
+                        <Select
+                          value={settings.webColorPalette}
+                          onValueChange={(value: 'default' | 'corporate' | 'creative' | 'elegant' | 'vibrant' | 'custom') => handleSettingChange('webColorPalette', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar paleta" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="default">Por defecto</SelectItem>
+                            <SelectItem value="corporate">Corporativa</SelectItem>
+                            <SelectItem value="creative">Creativa</SelectItem>
+                            <SelectItem value="elegant">Elegante</SelectItem>
+                            <SelectItem value="vibrant">Vibrante</SelectItem>
+                            <SelectItem value="custom">Personalizada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      {settings.webColorPalette === 'custom' && (
+                        <div className="space-y-4 mt-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="web-color-primary">Color primario</Label>
+                              <div className="flex mt-1">
+                                <Input 
+                                  id="web-color-primary"
+                                  value={settings.webCustomColors.primary}
+                                  onChange={(e) => handleSettingChange('webCustomColors', {
+                                    ...settings.webCustomColors,
+                                    primary: e.target.value
+                                  })}
+                                  className="rounded-r-none"
+                                />
+                                <div 
+                                  className="w-10 border border-l-0 rounded-r-md flex items-center justify-center"
+                                  style={{ backgroundColor: settings.webCustomColors.primary }}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="web-color-secondary">Color secundario</Label>
+                              <div className="flex mt-1">
+                                <Input 
+                                  id="web-color-secondary"
+                                  value={settings.webCustomColors.secondary}
+                                  onChange={(e) => handleSettingChange('webCustomColors', {
+                                    ...settings.webCustomColors,
+                                    secondary: e.target.value
+                                  })}
+                                  className="rounded-r-none"
+                                />
+                                <div 
+                                  className="w-10 border border-l-0 rounded-r-md flex items-center justify-center"
+                                  style={{ backgroundColor: settings.webCustomColors.secondary }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="web-color-accent">Color acento</Label>
+                              <div className="flex mt-1">
+                                <Input 
+                                  id="web-color-accent"
+                                  value={settings.webCustomColors.accent}
+                                  onChange={(e) => handleSettingChange('webCustomColors', {
+                                    ...settings.webCustomColors,
+                                    accent: e.target.value
+                                  })}
+                                  className="rounded-r-none"
+                                />
+                                <div 
+                                  className="w-10 border border-l-0 rounded-r-md flex items-center justify-center"
+                                  style={{ backgroundColor: settings.webCustomColors.accent }}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="web-color-background">Color de fondo</Label>
+                              <div className="flex mt-1">
+                                <Input 
+                                  id="web-color-background"
+                                  value={settings.webCustomColors.background}
+                                  onChange={(e) => handleSettingChange('webCustomColors', {
+                                    ...settings.webCustomColors,
+                                    background: e.target.value
+                                  })}
+                                  className="rounded-r-none"
+                                />
+                                <div 
+                                  className="w-10 border border-l-0 rounded-r-md flex items-center justify-center"
+                                  style={{ backgroundColor: settings.webCustomColors.background }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="web-color-text">Color de texto</Label>
+                            <div className="flex mt-1">
+                              <Input 
+                                id="web-color-text"
+                                value={settings.webCustomColors.text}
+                                onChange={(e) => handleSettingChange('webCustomColors', {
+                                  ...settings.webCustomColors,
+                                  text: e.target.value
+                                })}
+                                className="rounded-r-none"
+                              />
+                              <div 
+                                className="w-10 border border-l-0 rounded-r-md flex items-center justify-center"
+                                style={{ backgroundColor: settings.webCustomColors.text }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Vista previa de colores */}
+                      <div className="border rounded-md p-4 mt-4 space-y-3">
+                        <p className="text-sm font-medium text-gray-500">Vista previa de colores</p>
+                        <div className="flex space-x-2">
+                          <div className="h-8 w-8 rounded-full" style={{ 
+                            backgroundColor: settings.webColorPalette === 'custom' 
+                              ? settings.webCustomColors.primary 
+                              : settings.webColorPalette === 'corporate' 
+                                ? '#0284c7'
+                                : settings.webColorPalette === 'creative'
+                                  ? '#8b5cf6'
+                                  : settings.webColorPalette === 'elegant'
+                                    ? '#334155'
+                                    : settings.webColorPalette === 'vibrant'
+                                      ? '#f43f5e'
+                                      : '#3b82f6'
+                          }}></div>
+                          <div className="h-8 w-8 rounded-full" style={{ 
+                            backgroundColor: settings.webColorPalette === 'custom' 
+                              ? settings.webCustomColors.secondary 
+                              : settings.webColorPalette === 'corporate' 
+                                ? '#0369a1'
+                                : settings.webColorPalette === 'creative'
+                                  ? '#a855f7'
+                                  : settings.webColorPalette === 'elegant'
+                                    ? '#475569'
+                                    : settings.webColorPalette === 'vibrant'
+                                      ? '#ec4899'
+                                      : '#6366f1'
+                          }}></div>
+                          <div className="h-8 w-8 rounded-full" style={{ 
+                            backgroundColor: settings.webColorPalette === 'custom' 
+                              ? settings.webCustomColors.accent 
+                              : settings.webColorPalette === 'corporate' 
+                                ? '#ea580c'
+                                : settings.webColorPalette === 'creative'
+                                  ? '#ec4899'
+                                  : settings.webColorPalette === 'elegant'
+                                    ? '#ca8a04'
+                                    : settings.webColorPalette === 'vibrant'
+                                      ? '#8b5cf6'
+                                      : '#f43f5e'
+                          }}></div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Estilo de Componentes */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <Box className="h-5 w-5 mr-2" />
+                        Estilo de Componentes
+                      </CardTitle>
+                      <CardDescription>
+                        Personaliza el aspecto de los componentes en tus páginas web.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="web-component-style">Estilo visual</Label>
+                        <Select
+                          value={settings.webComponentStyle}
+                          onValueChange={(value: 'flat' | 'soft' | 'neumorph' | 'glassmorphism') => handleSettingChange('webComponentStyle', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar estilo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="flat">Plano (Flat)</SelectItem>
+                            <SelectItem value="soft">Suave (Soft UI)</SelectItem>
+                            <SelectItem value="neumorph">Neumorfismo</SelectItem>
+                            <SelectItem value="glassmorphism">Glassmorfismo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Define el estilo visual de botones, tarjetas y otros componentes.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="web-spacing-scale">Espaciado</Label>
+                        <Select
+                          value={settings.webSpacingScale}
+                          onValueChange={(value: 'compact' | 'standard' | 'airy') => handleSettingChange('webSpacingScale', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar espaciado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="compact">Compacto</SelectItem>
+                            <SelectItem value="standard">Estándar</SelectItem>
+                            <SelectItem value="airy">Espacioso</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Controla el espaciado entre componentes y secciones.
+                        </p>
+                      </div>
+                      
+                      {/* Vista previa de estilos */}
+                      <div className="border rounded-md p-4 mt-4">
+                        <p className="text-sm font-medium text-gray-500 mb-3">Vista previa de estilo</p>
+                        <div className={`p-4 rounded-md w-full h-24 flex items-center justify-center mb-3 ${
+                          settings.webComponentStyle === 'flat'
+                            ? 'bg-gray-100 border border-gray-200'
+                            : settings.webComponentStyle === 'soft'
+                              ? 'bg-gray-100 shadow-[5px_5px_10px_rgba(0,0,0,0.05),-5px_-5px_10px_rgba(255,255,255,0.8)]'
+                              : settings.webComponentStyle === 'neumorph'
+                                ? 'bg-gray-100 shadow-[5px_5px_10px_rgba(0,0,0,0.1),-5px_-5px_10px_rgba(255,255,255,0.8)]'
+                                : 'bg-white/20 backdrop-blur-sm border border-white/20'
+                        }`}>
+                          <div className="text-center">
+                            <p className="text-sm">Estilo: {settings.webComponentStyle}</p>
+                            <button className={`mt-2 px-3 py-1 text-sm rounded-md ${
+                              settings.webComponentStyle === 'flat'
+                                ? 'bg-blue-500 text-white'
+                                : settings.webComponentStyle === 'soft'
+                                  ? 'bg-blue-100 text-blue-700 shadow-[2px_2px_4px_rgba(0,0,0,0.1),-2px_-2px_4px_rgba(255,255,255,0.8)]'
+                                  : settings.webComponentStyle === 'neumorph'
+                                    ? 'bg-gray-100 text-blue-700 shadow-[2px_2px_4px_rgba(0,0,0,0.1),-2px_-2px_4px_rgba(255,255,255,0.8)]'
+                                    : 'bg-white/10 backdrop-blur-sm border border-white/20 text-blue-600'
+                            }`}>Botón de ejemplo</button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Animaciones y Layout */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center">
+                        <LayoutGrid className="h-5 w-5 mr-2" />
+                        Animaciones y Layout
+                      </CardTitle>
+                      <CardDescription>
+                        Configura las animaciones y el tipo de layout para tus páginas web.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="web-animations-level">Nivel de Animaciones</Label>
+                        <Select
+                          value={settings.webAnimationsLevel}
+                          onValueChange={(value: 'none' | 'minimal' | 'moderate' | 'playful') => handleSettingChange('webAnimationsLevel', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar nivel" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Sin animaciones</SelectItem>
+                            <SelectItem value="minimal">Mínimas</SelectItem>
+                            <SelectItem value="moderate">Moderadas</SelectItem>
+                            <SelectItem value="playful">Dinámicas</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Define la cantidad y tipo de animaciones en tus páginas.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="web-layout-type">Tipo de Layout</Label>
+                        <Select
+                          value={settings.webLayoutType}
+                          onValueChange={(value: 'responsive' | 'fixed' | 'fluid') => handleSettingChange('webLayoutType', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar layout" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="responsive">Responsive</SelectItem>
+                            <SelectItem value="fixed">Ancho fijo</SelectItem>
+                            <SelectItem value="fluid">Fluido</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Define cómo se comportará el layout de tu página en diferentes tamaños de pantalla.
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="web-nav-style">Estilo de Navegación</Label>
+                          <Select
+                            value={settings.webNavStyle}
+                            onValueChange={(value: 'standard' | 'minimal' | 'prominent') => handleSettingChange('webNavStyle', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar estilo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="standard">Estándar</SelectItem>
+                              <SelectItem value="minimal">Minimalista</SelectItem>
+                              <SelectItem value="prominent">Prominente</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="web-footer-style">Estilo de Footer</Label>
+                          <Select
+                            value={settings.webFooterStyle}
+                            onValueChange={(value: 'simple' | 'detailed' | 'minimal') => handleSettingChange('webFooterStyle', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar estilo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="simple">Simple</SelectItem>
+                              <SelectItem value="detailed">Detallado</SelectItem>
+                              <SelectItem value="minimal">Minimalista</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      {/* Vista previa de layout */}
+                      <div className="border rounded-md p-4 mt-4">
+                        <p className="text-sm font-medium text-gray-500 mb-3">Vista previa de layout</p>
+                        <div className="w-full h-32 bg-gray-100 rounded-md flex flex-col">
+                          <div className={`h-8 w-full ${
+                            settings.webNavStyle === 'standard'
+                              ? 'bg-gray-200'
+                              : settings.webNavStyle === 'minimal'
+                                ? 'bg-white border-b border-gray-200'
+                                : 'bg-blue-500'
+                          }`}></div>
+                          <div className={`flex-1 ${
+                            settings.webLayoutType === 'fixed'
+                              ? 'px-8'
+                              : settings.webLayoutType === 'fluid'
+                                ? 'px-2'
+                                : 'px-4'
+                          }`}>
+                            <div className="w-full h-4 bg-gray-200 rounded mt-2"></div>
+                            <div className="w-2/3 h-4 bg-gray-200 rounded mt-1"></div>
+                          </div>
+                          <div className={`h-6 w-full ${
+                            settings.webFooterStyle === 'simple'
+                              ? 'bg-gray-200'
+                              : settings.webFooterStyle === 'detailed'
+                                ? 'bg-gray-700'
+                                : 'bg-white border-t border-gray-200'
+                          }`}></div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
             </Tabs>
           )}
         </main>
