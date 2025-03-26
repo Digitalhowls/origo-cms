@@ -11,9 +11,17 @@ import * as coursesService from './services/courses.service';
 import * as organizationService from './services/organization.service';
 import * as permissionsService from './services/permissions.service';
 import * as rolesService from './services/roles.service';
+import * as tenantService from './services/tenant.service';
 import { authMiddleware } from './middleware/auth.middleware';
+import { organizationContextMiddleware, requireOrganizationContext } from './middleware/organization.middleware';
+import { customDomainMiddleware } from './middleware/custom-domain.middleware';
+import { validateResourceMiddleware } from './services/tenant.service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configurar middlewares
+  app.use(customDomainMiddleware);
+  app.use(organizationContextMiddleware);
+  
   // Configurar autenticación
   setupAuth(app);
   
@@ -76,15 +84,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Pages routes
   app.get('/api/pages', authMiddleware, pagesService.getPages);
   app.get('/api/pages/:id', authMiddleware, pagesService.getPage);
-  app.post('/api/pages', authMiddleware, pagesService.createPage);
+  app.post('/api/pages', authMiddleware, requireOrganizationContext, validateResourceMiddleware('pages'), pagesService.createPage);
   app.patch('/api/pages/:id', authMiddleware, pagesService.updatePage);
   app.delete('/api/pages/:id', authMiddleware, pagesService.deletePage);
-  app.post('/api/pages/:id/duplicate', authMiddleware, pagesService.duplicatePage);
+  app.post('/api/pages/:id/duplicate', authMiddleware, requireOrganizationContext, validateResourceMiddleware('pages'), pagesService.duplicatePage);
   app.get('/api/preview/pages/:slug', authMiddleware, pagesService.previewPage);
   
   // Blog routes
   app.get('/api/blog', authMiddleware, blogService.getPosts);
-  app.post('/api/blog', authMiddleware, blogService.createPost);
+  app.post('/api/blog', authMiddleware, requireOrganizationContext, validateResourceMiddleware('posts'), blogService.createPost);
   app.get('/api/blog/categories', authMiddleware, blogService.getCategories);
   app.post('/api/blog/categories', authMiddleware, blogService.createCategory);
   app.get('/api/blog/tags', authMiddleware, blogService.getTags);
@@ -92,25 +100,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/blog/:id', authMiddleware, blogService.getPost);
   app.patch('/api/blog/:id', authMiddleware, blogService.updatePost);
   app.delete('/api/blog/:id', authMiddleware, blogService.deletePost);
-  app.post('/api/blog/:id/duplicate', authMiddleware, blogService.duplicatePost);
+  app.post('/api/blog/:id/duplicate', authMiddleware, requireOrganizationContext, validateResourceMiddleware('posts'), blogService.duplicatePost);
   app.get('/api/preview/blog/:slug', authMiddleware, blogService.previewPost);
   
   // Media routes
   app.get('/api/media', authMiddleware, mediaService.getMediaFiles);
-  app.post('/api/media/upload', authMiddleware, mediaService.uploadMedia);
+  app.post('/api/media/upload', authMiddleware, requireOrganizationContext, validateResourceMiddleware('storage'), mediaService.uploadMedia);
   app.delete('/api/media/:id', authMiddleware, mediaService.deleteMedia);
   
   // Course routes
   app.get('/api/courses', authMiddleware, coursesService.getCourses);
   app.get('/api/courses/:id', authMiddleware, coursesService.getCourse);
-  app.post('/api/courses', authMiddleware, coursesService.createCourse);
+  app.post('/api/courses', authMiddleware, requireOrganizationContext, validateResourceMiddleware('courses'), coursesService.createCourse);
   app.patch('/api/courses/:id', authMiddleware, coursesService.updateCourse);
   app.delete('/api/courses/:id', authMiddleware, coursesService.deleteCourse);
-  app.post('/api/courses/:id/duplicate', authMiddleware, coursesService.duplicateCourse);
+  app.post('/api/courses/:id/duplicate', authMiddleware, requireOrganizationContext, validateResourceMiddleware('courses'), coursesService.duplicateCourse);
   
   // User routes
   app.get('/api/users', authMiddleware, authService.getUsers);
-  app.post('/api/users/invite', authMiddleware, authService.inviteUser);
+  app.post('/api/users/invite', authMiddleware, requireOrganizationContext, validateResourceMiddleware('users'), authService.inviteUser);
   app.patch('/api/users/:id', authMiddleware, authService.updateUser);
   app.delete('/api/users/:id', authMiddleware, authService.deleteUser);
   
@@ -194,6 +202,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Initial setup route - this should only be accessible when no users exist
   app.post('/api/setup', authService.setupAdmin);
+  
+  // Tenant routes
+  app.get('/api/plans', authMiddleware, tenantService.getPlans);
+  app.get('/api/organization/usage', authMiddleware, requireOrganizationContext, tenantService.getOrganizationUsage);
+  app.get('/api/organization/resource-quotas', authMiddleware, requireOrganizationContext, tenantService.getResourceQuotas);
+  app.post('/api/organization/change-plan', authMiddleware, requireOrganizationContext, tenantService.changePlan);
   
   // Create HTTP server
   const httpServer = createServer(app);

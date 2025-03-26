@@ -38,6 +38,8 @@ export interface IStorage {
   getOrganizationByCustomDomain(domain: string): Promise<Organization | undefined>;
   getOrganizationBySubdomain(subdomain: string): Promise<Organization | undefined>;
   getUserOrganizations(userId: number): Promise<Organization[]>;
+  updateOrganization(id: number, data: Partial<Organization>): Promise<Organization | undefined>;
+  getUserRoleInOrganization(userId: number, organizationId: number): Promise<string | null>;
   createOrganization(orgData: InsertOrganization, creatorId: number): Promise<Organization>;
   updateOrganizationBranding(id: number, branding: Partial<Organization>): Promise<Organization | undefined>;
   updateOrganizationDomains(id: number, domainData: { domain?: string, subdomain?: string, domainConfig?: any }): Promise<Organization | undefined>;
@@ -260,6 +262,29 @@ export class DatabaseStorage implements IStorage {
       .where(eq(organizations.id, id))
       .returning();
     return updatedOrg;
+  }
+  
+  async updateOrganization(id: number, data: Partial<Organization>): Promise<Organization | undefined> {
+    const [updatedOrg] = await db
+      .update(organizations)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    return updatedOrg;
+  }
+  
+  async getUserRoleInOrganization(userId: number, organizationId: number): Promise<string | null> {
+    const [orgUser] = await db
+      .select()
+      .from(organizationUsers)
+      .where(
+        and(
+          eq(organizationUsers.userId, userId),
+          eq(organizationUsers.organizationId, organizationId)
+        )
+      );
+    
+    return orgUser ? orgUser.role : null;
   }
   
   async updateOrganizationDomains(id: number, domainData: { domain?: string, subdomain?: string, domainConfig?: any }): Promise<Organization | undefined> {

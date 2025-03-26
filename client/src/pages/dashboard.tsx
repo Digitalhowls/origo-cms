@@ -3,6 +3,8 @@ import Sidebar from '@/components/layout/Sidebar';
 import TopNavbar from '@/components/layout/TopNavbar';
 import StatisticsOverview from '@/components/dashboard/StatisticsOverview';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import { ResourceQuotaWidget } from '@/components/dashboard/ResourceQuotaWidget';
+import { PlanInfoWidget } from '@/components/dashboard/PlanInfoWidget';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
@@ -157,8 +159,14 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Recent Activity */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-2 space-y-6">
                 <RecentActivity activities={data?.recentActivities} isLoading={isLoading} />
+                
+                {/* Plan Info and Resource Quotas - New widgets */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <PlanInfoWidget />
+                  <ResourceQuotaWidget />
+                </div>
               </div>
             </div>
           </div>

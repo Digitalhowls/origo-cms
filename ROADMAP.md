@@ -17,7 +17,7 @@
 - [x] Crear panel de administración de organizaciones
 - [x] Implementar ajustes de marca personalizada
 - [ ] Desarrollar sistema multi-tenant completo
-- [ ] Añadir soporte para dominios personalizados
+- [x] Añadir soporte para dominios personalizados
 
 ### 2.3 Mejora del Constructor de Páginas
 - [ ] Completar los bloques del constructor visual
