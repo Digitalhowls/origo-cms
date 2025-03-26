@@ -124,6 +124,12 @@ export const categories = pgTable("categories", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const insertCategorySchema = createInsertSchema(categories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Join table for posts and categories
 export const postCategories = pgTable("post_categories", {
   id: serial("id").primaryKey(),
@@ -143,6 +149,12 @@ export const tags = pgTable("tags", {
   organizationId: integer("organization_id").references(() => organizations.id).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertTagSchema = createInsertSchema(tags).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
 // Join table for posts and tags
@@ -260,8 +272,11 @@ export type BlogPost = typeof blogPosts.$inferSelect;
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
 
 export type Category = typeof categories.$inferSelect;
+export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type PostCategory = typeof postCategories.$inferSelect;
+
 export type Tag = typeof tags.$inferSelect;
+export type InsertTag = z.infer<typeof insertTagSchema>;
 export type PostTag = typeof postTags.$inferSelect;
 
 export type Media = typeof media.$inferSelect;
