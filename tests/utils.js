@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // URL base para las pruebas
-const BASE_URL = process.env.TEST_URL || 'http://localhost:5000';
+const BASE_URL = process.env.TEST_URL || 'http://localhost:5001';
 
 /**
  * Hace una captura de pantalla para el reporte
