@@ -48,29 +48,45 @@ export async function switchOrganization(req: Request, res: Response) {
     const organizationId = parseInt(req.params.id);
     const userId = (req.user as any).id;
     
+    console.log(`Intentando cambiar a la organización ${organizationId} para el usuario ${userId}`);
+    
     // Check if the organization exists
     const organization = await storage.getOrganization(organizationId);
     if (!organization) {
+      console.log(`Organización ${organizationId} no encontrada`);
       return res.status(404).json({ message: 'Organización no encontrada' });
     }
     
     // Check if the user belongs to this organization
     const userOrganizations = await storage.getUserOrganizations(userId);
+    console.log(`Organizaciones del usuario:`, userOrganizations.map(org => org.id));
+    
     const hasAccess = userOrganizations.some(org => org.id === organizationId);
     
     if (!hasAccess) {
+      console.log(`Usuario ${userId} no tiene acceso a la organización ${organizationId}`);
       return res.status(403).json({ message: 'No tienes acceso a esta organización' });
     }
     
-    // Update the user's session with the new organization ID
-    (req.user as any).organizationId = organizationId;
+    // Update the session with the new organization ID
+    (req.session as any).organizationId = organizationId;
     
-    // In a real application, you would update the session or user record
-    // For this implementation, we'll just return success
+    // Also update the current context for this request
+    (req as any).currentOrganization = organization;
     
-    res.json({ 
-      message: 'Organización cambiada correctamente',
-      organization
+    console.log(`Contexto de organización actualizado: ID=${organizationId}`);
+    
+    // Save the session before responding
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error al guardar la sesión:', err);
+        return res.status(500).json({ message: 'Error al cambiar de organización' });
+      }
+      
+      res.json({ 
+        message: 'Organización cambiada correctamente',
+        organization
+      });
     });
   } catch (error) {
     console.error('Error switching organization:', error);

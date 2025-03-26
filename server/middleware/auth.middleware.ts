@@ -41,6 +41,37 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
             req.jwtPayload = decoded;
             req.user = userWithoutPassword as Express.User;
             
+            // Añadir datos a la sesión para mejorar la persistencia entre peticiones
+            console.log('Guardando información de usuario en sesión...');
+            
+            try {
+              // Guardar organizationId en la sesión si existe en el usuario o en el token
+              const organizationId = (user as any).organizationId || decoded.organizationId || null;
+              if (organizationId) {
+                console.log(`Estableciendo organizationId=${organizationId} en la sesión`);
+                (req.session as any).organizationId = organizationId;
+                
+                // Actualizar también (req as any).currentOrganization
+                const organization = await storage.getOrganization(organizationId);
+                if (organization) {
+                  console.log(`Estableciendo currentOrganization en el contexto de la solicitud (ID: ${organizationId})`);
+                  (req as any).currentOrganization = organization;
+                }
+              }
+              
+              // Guardar cambios en la sesión
+              req.session.save((err) => {
+                if (err) {
+                  console.error('Error al guardar la sesión:', err);
+                } else {
+                  console.log('Sesión guardada correctamente');
+                }
+              });
+            } catch (sessionError) {
+              console.error('Error al actualizar la sesión:', sessionError);
+              // No bloqueamos la autenticación por errores en la sesión
+            }
+            
             console.log('Usuario autenticado vía JWT:', userWithoutPassword.email);
             return next();
           }
