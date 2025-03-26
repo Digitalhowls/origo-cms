@@ -6,8 +6,7 @@ export default {
   ],
   testTimeout: 30000,
   setupFilesAfterEnv: ['./tests/setup.js'],
-  transform: {},
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
+  transform: {
+    '^.+\\.jsx?$': 'babel-jest'
   },
 };
