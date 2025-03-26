@@ -14,8 +14,8 @@
 - [ ] Implementar autenticación con redes sociales (OAuth)
 
 ### 2.2 Desarrollo de Funcionalidades de Organización
-- [ ] Crear panel de administración de organizaciones
-- [ ] Implementar ajustes de marca personalizada
+- [x] Crear panel de administración de organizaciones
+- [x] Implementar ajustes de marca personalizada
 - [ ] Desarrollar sistema multi-tenant completo
 - [ ] Añadir soporte para dominios personalizados
 
