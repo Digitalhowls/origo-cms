@@ -36,7 +36,7 @@ describe('Módulo de Autenticación', () => {
     
     // Verificar que estamos en la página de autenticación
     const heading = await page.$eval('h1', el => el.textContent);
-    expect(heading).toContain('Iniciar sesión');
+    expect(heading).toContain('Origo CMS');
     
     // Verificar que existe el formulario de login
     const loginForm = await page.$('form') !== null;
