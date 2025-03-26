@@ -7,7 +7,6 @@ export default {
   testTimeout: 30000,
   setupFilesAfterEnv: ['./tests/setup.js'],
   transform: {},
-  extensionsToTreatAsEsm: ['.js'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
