@@ -20,6 +20,7 @@ import IntegrationsSettings from "@/pages/settings/integrations";
 import ApiSettings from "@/pages/settings/api";
 import OrganizationsSettings from "@/pages/settings/organizations";
 import NewOrganization from "@/pages/settings/organizations/new";
+import OrganizationDetails from "@/pages/settings/organizations/[id]";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -42,6 +43,7 @@ function Router() {
       <ProtectedRoute path="/settings/api" component={ApiSettings} />
       <ProtectedRoute path="/settings/organizations" component={OrganizationsSettings} />
       <ProtectedRoute path="/settings/organizations/new" component={NewOrganization} />
+      <ProtectedRoute path="/settings/organizations/:id" component={OrganizationDetails} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

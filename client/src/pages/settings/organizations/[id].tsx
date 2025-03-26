@@ -252,20 +252,29 @@ export default function OrganizationDetailsPage() {
       return response.json();
     },
     onSuccess: (data) => {
+      setDomainVerificationToken(data.verificationToken);
+      
       if (data.verified) {
         setDomainStatus('verified');
         toast({
           title: 'Dominio verificado',
-          description: 'El dominio ha sido verificado y configurado correctamente.',
+          description: data.message || 'El dominio ha sido verificado y configurado correctamente.',
         });
       } else {
         setDomainStatus('pending');
-        setDomainVerificationToken(data.verificationToken);
         toast({
           title: 'Verificación pendiente',
           description: 'Sigue las instrucciones para verificar tu dominio.',
         });
       }
+      
+      // Almacenar instrucciones si existen
+      if (data.instructions) {
+        // En caso de que se proporcionen instrucciones específicas, las podríamos almacenar
+        // en un estado para mostrarlas
+        console.log('Instrucciones de verificación:', data.instructions);
+      }
+      
       queryClient.invalidateQueries({ queryKey: [`/api/organizations/${organizationId}`] });
     },
     onError: (error: Error) => {
@@ -688,14 +697,44 @@ export default function OrganizationDetailsPage() {
                             )}
                             {domainVerificationToken && (
                               <div className="mt-3 p-3 bg-muted rounded-md">
-                                <div className="text-sm font-medium mb-1">Configuración DNS:</div>
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                  <div className="font-medium">Tipo:</div>
-                                  <div>TXT</div>
-                                  <div className="font-medium">Nombre/Host:</div>
-                                  <div>@</div>
-                                  <div className="font-medium">Valor:</div>
-                                  <div className="break-all">{domainVerificationToken}</div>
+                                <div className="text-sm font-medium mb-2">Instrucciones de verificación:</div>
+                                <p className="text-xs mb-3">
+                                  Para verificar la propiedad de tu dominio, añade uno de los siguientes registros TXT en tu proveedor de DNS.
+                                  Después de agregar el registro, espera unos minutos y haz clic en "Verificar" nuevamente.
+                                </p>
+                                
+                                <div className="mb-3">
+                                  <div className="text-xs font-medium mb-1">Opción 1: Registro TXT en el dominio principal</div>
+                                  <div className="grid grid-cols-2 gap-2 text-xs bg-background p-2 rounded-md">
+                                    <div className="font-medium">Tipo:</div>
+                                    <div>TXT</div>
+                                    <div className="font-medium">Nombre/Host:</div>
+                                    <div>@</div>
+                                    <div className="font-medium">Valor:</div>
+                                    <div className="break-all font-mono text-xs">{domainVerificationToken}</div>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-xs font-medium mb-1">Opción 2: Registro TXT en subdominio especial</div>
+                                  <div className="grid grid-cols-2 gap-2 text-xs bg-background p-2 rounded-md">
+                                    <div className="font-medium">Tipo:</div>
+                                    <div>TXT</div>
+                                    <div className="font-medium">Nombre/Host:</div>
+                                    <div>_origo-verify</div>
+                                    <div className="font-medium">Valor:</div>
+                                    <div className="break-all font-mono text-xs">{domainVerificationToken}</div>
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-3 text-xs">
+                                  <div className="font-medium mb-1">Ayuda para proveedores DNS comunes:</div>
+                                  <ul className="list-disc list-inside space-y-1">
+                                    <li><span className="font-medium">Cloudflare:</span> DNS → Añadir registro → Selecciona TXT</li>
+                                    <li><span className="font-medium">GoDaddy:</span> DNS Management → Add → Type: TXT</li>
+                                    <li><span className="font-medium">Namecheap:</span> Advanced DNS → Add New Record → TXT Record</li>
+                                    <li><span className="font-medium">Google Domains:</span> DNS → Manage Custom Records → Create new record → TXT</li>
+                                  </ul>
                                 </div>
                               </div>
                             )}

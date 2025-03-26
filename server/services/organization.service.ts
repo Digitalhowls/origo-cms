@@ -440,8 +440,61 @@ export async function verifyDomain(req: Request, res: Response) {
     }
     
     // En una implementación real, aquí verificaríamos si el registro DNS TXT está configurado correctamente
-    // Para este ejemplo, usaremos una simulación de éxito en la verificación (50% de probabilidad)
-    const verificationSuccessful = Math.random() > 0.5;
+    // Para esto, usamos el módulo dns nativo de Node.js para verificar los registros TXT
+    // Primero verificamos si ya está marcado como verificado en la configuración
+    if (domainConfig.verified) {
+      return res.json({
+        success: true,
+        verified: true,
+        message: 'El dominio ya está verificado',
+        organization
+      });
+    }
+    
+    // Implementación real de verificación de DNS
+    const dns = require('dns');
+    const { promisify } = require('util');
+    const resolveTxt = promisify(dns.resolveTxt);
+    
+    let verificationSuccessful = false;
+    
+    try {
+      console.log(`Verificando registros DNS para dominio ${domain} con token ${verificationToken}`);
+      
+      // Intentamos verificar primero con el prefijo _origo-verify
+      try {
+        const prefixRecords = await resolveTxt(`_origo-verify.${domain}`);
+        console.log('Registros DNS TXT encontrados en _origo-verify:', prefixRecords);
+        
+        // Verificamos si alguno de los registros contiene el token
+        verificationSuccessful = prefixRecords.some(record => 
+          record.some(txtValue => txtValue.includes(verificationToken))
+        );
+        
+        if (verificationSuccessful) {
+          console.log('Verificación exitosa en _origo-verify');
+          return;
+        }
+      } catch (prefixError) {
+        console.log('No se encontraron registros TXT en _origo-verify:', prefixError.message);
+      }
+      
+      // Si no se encuentra con el prefijo, intentamos verificar en el dominio raíz
+      const rootRecords = await resolveTxt(domain);
+      console.log('Registros DNS TXT encontrados en raíz:', rootRecords);
+      
+      // Verificamos si alguno de los registros contiene el token
+      verificationSuccessful = rootRecords.some(record => 
+        record.some(txtValue => txtValue.includes(verificationToken))
+      );
+      
+      if (verificationSuccessful) {
+        console.log('Verificación exitosa en dominio raíz');
+      }
+    } catch (dnsError) {
+      console.error('Error al verificar registros DNS TXT:', dnsError);
+      verificationSuccessful = false;
+    }
     
     if (verificationSuccessful) {
       // Actualizar la configuración del dominio como verificado
@@ -568,10 +621,13 @@ export async function configureCustomDomain(req: Request, res: Response) {
       lastVerificationAttempt: new Date().toISOString()
     };
     
-    // En una implementación real, aquí se verificaría si el registro DNS existe
-    // Para este ejemplo, asumimos que no está verificado inicialmente
+    // Utilizamos DNS real para intentar verificar el dominio de forma automática
+    // Intentamos verificar si ya hay un registro TXT configurado
+    const dns = require('dns');
+    const { promisify } = require('util');
+    const resolveTxt = promisify(dns.resolveTxt);
     
-    // Actualizar la organización con la configuración de dominio
+    // Primero, actualizamos la organización con la configuración de dominio
     const updatedOrg = await storage.updateOrganizationDomains(
       currentOrgId, 
       { 
@@ -580,16 +636,85 @@ export async function configureCustomDomain(req: Request, res: Response) {
       }
     );
     
-    // Simular verificación (en un entorno real esto sería un proceso asíncrono)
-    // Por ahora, simplemente devolvemos el token para que el cliente pueda mostrarlo
+    // Intentamos verificar si ya existe un registro TXT para este dominio
+    let isPreVerified = false;
     
-    res.json({
-      success: true,
-      verified: false, // Inicialmente no está verificado
-      verificationToken,
-      domain,
-      organization: updatedOrg
-    });
+    try {
+      console.log(`Verificando si ya existen registros DNS TXT para: ${domain}`);
+      
+      // Intentamos consultar registros TXT del dominio
+      try {
+        const prefixRecords = await resolveTxt(`_origo-verify.${domain}`);
+        console.log('Registros TXT existentes en _origo-verify:', prefixRecords);
+        
+        // Si ya hay algún registro que coincida con nuestro token (poco probable pero posible)
+        isPreVerified = prefixRecords.some(record => 
+          record.some(txtValue => txtValue.includes(verificationToken))
+        );
+      } catch (prefixError) {
+        console.log('No hay registros TXT en _origo-verify.', prefixError.message);
+      }
+      
+      if (!isPreVerified) {
+        // También verificamos en el dominio raíz
+        try {
+          const rootRecords = await resolveTxt(domain);
+          console.log('Registros TXT existentes en dominio raíz:', rootRecords);
+          
+          // Verificamos si alguno coincide con nuestro token
+          isPreVerified = rootRecords.some(record => 
+            record.some(txtValue => txtValue.includes(verificationToken))
+          );
+        } catch (rootError) {
+          console.log('No hay registros TXT en el dominio raíz.', rootError.message);
+        }
+      }
+    } catch (dnsError) {
+      console.error('Error al verificar registros DNS existentes:', dnsError);
+    }
+    
+    // Si ya hemos detectado que el dominio está verificado, actualizamos el estado
+    if (isPreVerified) {
+      // Actualizar la configuración como verificada
+      const verifiedDomainConfig = {
+        ...domainConfig,
+        verified: true,
+        verifiedAt: new Date().toISOString()
+      };
+      
+      // Actualizar la organización con la nueva configuración de dominio
+      const verifiedOrg = await storage.updateOrganizationDomains(
+        currentOrgId,
+        {
+          domain,
+          domainConfig: verifiedDomainConfig
+        }
+      );
+      
+      res.json({
+        success: true,
+        verified: true,
+        verificationToken,
+        domain,
+        message: '¡Dominio verificado automáticamente!',
+        organization: verifiedOrg
+      });
+    } else {
+      // El dominio necesita verificación manual
+      res.json({
+        success: true,
+        verified: false,
+        verificationToken,
+        domain,
+        organization: updatedOrg,
+        instructions: [
+          `1. Cree un registro TXT en su proveedor DNS con el nombre: _origo-verify.${domain}`,
+          `2. Establezca el valor del registro como: ${verificationToken}`,
+          '3. Espere a que los cambios se propaguen (esto puede tomar entre 5 minutos y 48 horas)',
+          '4. Una vez configurado, haga clic en "Verificar dominio"'
+        ]
+      });
+    }
   } catch (error) {
     console.error('Error configuring custom domain:', error);
     res.status(500).json({ message: 'Error al configurar el dominio personalizado' });
