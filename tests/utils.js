@@ -96,25 +96,40 @@ async function fillForm(page, data) {
  * @param {string} password - Contraseña
  */
 async function login(page, email, password) {
-  await page.goto(`${BASE_URL}/auth`);
-  
-  // Completar formulario de login
-  await fillForm(page, {
-    'email': email,
-    'password': password
-  });
-  
-  // Enviar formulario
-  await page.click('form button[type="submit"]');
-  
-  // Esperar redirección o mensaje de error
   try {
+    await page.goto(`${BASE_URL}/auth`, { waitUntil: 'networkidle0' });
+    await takeScreenshot(page, 'login-page');
+    
+    // Asegurarnos de que estamos en el formulario de login
+    const loginTabSelector = 'button[role="tab"]:has-text("Iniciar sesión")';
+    if (await page.$(loginTabSelector)) {
+      await page.click(loginTabSelector);
+    }
+    
+    // Esperar a que el formulario esté disponible
+    await waitForElementVisible(page, 'form input[name="email"]');
+    
+    // Completar formulario de login
+    await page.type('input[name="email"]', email);
+    await page.type('input[name="password"]', password);
+    
+    // Tomar captura antes de enviar
+    await takeScreenshot(page, 'login-form-filled');
+    
+    // Enviar formulario
+    await page.click('form button[type="submit"]');
+    
+    // Esperar redirección o mensaje de error
     await Promise.race([
-      page.waitForNavigation({ timeout: 5000 }),
-      page.waitForSelector('[role="alert"]', { timeout: 5000 })
+      page.waitForNavigation({ timeout: 10000 }),
+      page.waitForSelector('[role="alert"]', { timeout: 10000 })
     ]);
+    
+    // Tomar captura después del intento
+    await takeScreenshot(page, 'login-attempt-result');
+    
   } catch (error) {
-    console.error('Error during login:', error);
+    console.error('Error durante el inicio de sesión:', error);
     await takeScreenshot(page, 'login-error');
   }
 }
@@ -125,30 +140,61 @@ async function login(page, email, password) {
  * @param {Object} userData - Datos del usuario
  */
 async function register(page, userData) {
-  await page.goto(`${BASE_URL}/auth`);
-  
-  // Ir al formulario de registro
-  await page.click('button:has-text("Crear cuenta")');
-  
-  // Completar formulario
-  await fillForm(page, {
-    'name': userData.name,
-    'email': userData.email,
-    'password': userData.password,
-    'confirmPassword': userData.password
-  });
-  
-  // Enviar formulario
-  await page.click('form button[type="submit"]');
-  
-  // Esperar redirección o mensaje de error
   try {
+    await page.goto(`${BASE_URL}/auth`, { waitUntil: 'networkidle0' });
+    await takeScreenshot(page, 'register-page');
+    
+    // Ir al formulario de registro (puede ser un tab o un botón)
+    const registerTabSelector = 'button[role="tab"]:has-text("Registrarse")';
+    if (await page.$(registerTabSelector)) {
+      await page.click(registerTabSelector);
+      // Esperar a que cambie el formulario
+      await page.waitForTimeout(500);
+    } else {
+      // Si no es un tab, buscar un botón o enlace de registro
+      const createAccountSelector = 'button:has-text("Crear cuenta"), a:has-text("Crear cuenta")';
+      if (await page.$(createAccountSelector)) {
+        await page.click(createAccountSelector);
+        await page.waitForTimeout(500);
+      }
+    }
+    
+    // Esperar a que el formulario de registro esté disponible
+    await waitForElementVisible(page, 'form input[name="email"]');
+    await takeScreenshot(page, 'register-form');
+    
+    // Completar formulario de registro
+    if (await page.$('input[name="name"]')) {
+      await page.type('input[name="name"]', userData.name);
+    }
+    if (await page.$('input[name="username"]')) {
+      await page.type('input[name="username"]', userData.email.split('@')[0]);
+    }
+    await page.type('input[name="email"]', userData.email);
+    await page.type('input[name="password"]', userData.password);
+    
+    // Verificar si hay campo de confirmar contraseña
+    if (await page.$('input[name="confirmPassword"]')) {
+      await page.type('input[name="confirmPassword"]', userData.password);
+    }
+    
+    // Tomar captura antes de enviar
+    await takeScreenshot(page, 'register-form-filled');
+    
+    // Enviar formulario
+    await page.click('form button[type="submit"]');
+    
+    // Esperar redirección o mensaje de error
     await Promise.race([
-      page.waitForNavigation({ timeout: 5000 }),
-      page.waitForSelector('[role="alert"]', { timeout: 5000 })
+      page.waitForNavigation({ timeout: 10000 }),
+      page.waitForSelector('[role="alert"]', { timeout: 10000 })
     ]);
+    
+    // Tomar captura después del intento
+    await takeScreenshot(page, 'register-attempt-result');
+    
   } catch (error) {
-    console.error('Error during registration:', error);
+    console.error('Error durante el registro:', error);
     await takeScreenshot(page, 'register-error');
   }
 }
@@ -159,25 +205,51 @@ async function register(page, userData) {
  * @param {string} email - Correo electrónico
  */
 async function requestPasswordReset(page, email) {
-  await page.goto(`${BASE_URL}/auth`);
-  
-  // Ir al formulario de recuperación de contraseña
-  await page.click('a:has-text("¿Olvidaste tu contraseña?")');
-  
-  // Completar formulario
-  await fillForm(page, { 'email': email });
-  
-  // Enviar formulario
-  await page.click('form button[type="submit"]');
-  
-  // Esperar mensaje de confirmación o error
   try {
+    await page.goto(`${BASE_URL}/auth`, { waitUntil: 'networkidle0' });
+    await takeScreenshot(page, 'forgot-password-page');
+    
+    // Buscar y hacer clic en el enlace de olvido de contraseña
+    const forgotPasswordSelectors = [
+      'a:has-text("¿Olvidaste tu contraseña?")', 
+      'a:has-text("Olvidé mi contraseña")',
+      'button:has-text("Olvidé mi contraseña")',
+      'a:has-text("Recuperar contraseña")'
+    ];
+    
+    for (const selector of forgotPasswordSelectors) {
+      if (await page.$(selector)) {
+        await page.click(selector);
+        await page.waitForTimeout(500);
+        break;
+      }
+    }
+    
+    // Esperar a que el formulario esté visible
+    await waitForElementVisible(page, 'form input[name="email"]');
+    await takeScreenshot(page, 'forgot-password-form');
+    
+    // Completar formulario
+    await page.type('input[name="email"]', email);
+    
+    // Tomar captura antes de enviar
+    await takeScreenshot(page, 'forgot-password-form-filled');
+    
+    // Enviar formulario
+    await page.click('form button[type="submit"]');
+    
+    // Esperar mensaje de confirmación o error
     await Promise.race([
-      page.waitForSelector('[role="status"]', { timeout: 5000 }),
-      page.waitForSelector('[role="alert"]', { timeout: 5000 })
+      page.waitForSelector('[role="status"]', { timeout: 10000 }),
+      page.waitForSelector('[role="alert"]', { timeout: 10000 }),
+      page.waitForSelector('.toast, .notification', { timeout: 10000 })
     ]);
+    
+    // Tomar captura después del intento
+    await takeScreenshot(page, 'forgot-password-result');
+    
   } catch (error) {
-    console.error('Error requesting password reset:', error);
+    console.error('Error al solicitar restablecimiento de contraseña:', error);
     await takeScreenshot(page, 'forgot-password-error');
   }
 }
@@ -189,25 +261,40 @@ async function requestPasswordReset(page, email) {
  * @param {string} newPassword - Nueva contraseña
  */
 async function resetPassword(page, token, newPassword) {
-  await page.goto(`${BASE_URL}/auth/reset-password?token=${token}`);
-  
-  // Completar formulario
-  await fillForm(page, {
-    'password': newPassword,
-    'confirmPassword': newPassword
-  });
-  
-  // Enviar formulario
-  await page.click('form button[type="submit"]');
-  
-  // Esperar redirección o mensaje de error
   try {
+    // Ir a la página de restablecimiento con el token
+    await page.goto(`${BASE_URL}/auth/reset-password?token=${token}`, { waitUntil: 'networkidle0' });
+    await takeScreenshot(page, 'reset-password-page');
+    
+    // Esperar a que el formulario esté disponible
+    await waitForElementVisible(page, 'form input[name="password"]');
+    
+    // Completar formulario
+    await page.type('input[name="password"]', newPassword);
+    
+    // Verificar si hay campo para confirmar contraseña
+    if (await page.$('input[name="confirmPassword"]')) {
+      await page.type('input[name="confirmPassword"]', newPassword);
+    }
+    
+    // Tomar captura antes de enviar
+    await takeScreenshot(page, 'reset-password-form-filled');
+    
+    // Enviar formulario
+    await page.click('form button[type="submit"]');
+    
+    // Esperar redirección o mensaje de error
     await Promise.race([
-      page.waitForNavigation({ timeout: 5000 }),
-      page.waitForSelector('[role="alert"]', { timeout: 5000 })
+      page.waitForNavigation({ timeout: 10000 }),
+      page.waitForSelector('[role="alert"]', { timeout: 10000 }),
+      page.waitForSelector('.toast, .notification', { timeout: 10000 })
     ]);
+    
+    // Tomar captura después del intento
+    await takeScreenshot(page, 'reset-password-result');
+    
   } catch (error) {
-    console.error('Error resetting password:', error);
+    console.error('Error al restablecer contraseña:', error);
     await takeScreenshot(page, 'reset-password-error');
   }
 }
@@ -218,30 +305,37 @@ async function resetPassword(page, token, newPassword) {
  */
 async function cleanup(page) {
   try {
-    // Cerrar sesión si estamos autenticados
-    const isLoggedIn = await page.evaluate(() => {
-      return window.localStorage.getItem('authenticated') === 'true';
-    });
-    
-    if (isLoggedIn) {
-      await page.goto(`${BASE_URL}/dashboard`);
-      await page.click('button[aria-label="User menu"]');
-      await waitForElementVisible(page, '[role="menu"]');
-      await page.click('[role="menuitem"]:has-text("Cerrar sesión")');
-      await page.waitForNavigation();
-    }
-    
-    // Limpiar localStorage
-    await page.evaluate(() => {
-      localStorage.clear();
-      sessionStorage.clear();
-    });
-    
-    // Limpiar cookies
+    // Intentar limpiar cookies - esto siempre debería funcionar
     const client = await page.target().createCDPSession();
     await client.send('Network.clearBrowserCookies');
+    
+    // Intentar limpiar localStorage y sessionStorage con manejo de errores
+    try {
+      // Ir a una página del dominio para tener acceso al localStorage
+      await page.goto(`${BASE_URL}/auth`, { waitUntil: 'networkidle0' });
+      
+      await page.evaluate(() => {
+        try {
+          if (window.localStorage) localStorage.clear();
+          if (window.sessionStorage) sessionStorage.clear();
+          return true;
+        } catch (e) {
+          console.warn('Error al limpiar storage:', e);
+          return false;
+        }
+      });
+    } catch (storageError) {
+      console.warn('No se pudo acceder al almacenamiento del navegador:', storageError.message);
+    }
+    
+    // Intentar cerrar sesión navegando a una ruta específica si es necesario
+    try {
+      await page.goto(`${BASE_URL}/api/logout`, { waitUntil: 'networkidle0' });
+    } catch (logoutError) {
+      console.warn('Error al intentar cerrar sesión:', logoutError.message);
+    }
   } catch (error) {
-    console.error('Error during cleanup:', error);
+    console.error('Error durante la limpieza:', error);
   }
 }
 

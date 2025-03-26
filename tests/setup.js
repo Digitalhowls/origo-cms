@@ -1,6 +1,7 @@
 /**
  * Configuración de pruebas para Jest y Puppeteer
  */
+import { jest } from '@jest/globals';
 
 // Configuración de la URL base para las pruebas
 const BASE_URL = process.env.TEST_URL || 'http://localhost:5000';
@@ -21,8 +22,11 @@ beforeEach(async () => {
   
   // Capturar logs de la consola del navegador
   page.on('console', msg => {
-    if (msg.type() === 'error') {
+    const msgType = msg.type();
+    if (msgType === 'error') {
       console.log(`[Browser Error] ${msg.text()}`);
+    } else if (msgType === 'warning') {
+      console.log(`[Browser Warning] ${msg.text()}`);
     }
   });
   
@@ -33,6 +37,6 @@ beforeEach(async () => {
   
   // Capturar requests fallidos
   page.on('requestfailed', request => {
-    console.log(`[Network Error] ${request.url()} ${request.failure().errorText}`);
+    console.log(`[Network Error] ${request.url()} ${request.failure()?.errorText || 'Unknown error'}`);
   });
 });
