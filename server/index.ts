@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initEmailService, createTestAccount } from "./services/email.service";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,20 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Inicializar el servicio de correo electrónico
+  try {
+    // En desarrollo, crear una cuenta de prueba de Ethereal
+    if (process.env.NODE_ENV !== 'production') {
+      const testAccount = await createTestAccount();
+      log(`Cuenta de prueba de correo creada: ${testAccount.user} / ${testAccount.pass}`);
+    } else {
+      initEmailService();
+      log('Servicio de correo electrónico inicializado para producción');
+    }
+  } catch (error) {
+    log(`Error al inicializar el servicio de correo electrónico: ${error}`);
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

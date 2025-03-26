@@ -6,6 +6,7 @@ import { db } from '../db';
 import { users, insertUserSchema, apiKeys, organizations } from '@shared/schema';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
+import { sendInvitationEmail, createTestAccount } from './email.service';
 
 // Validate user credentials
 export async function validateUser(email: string, password: string) {
@@ -77,8 +78,16 @@ export async function inviteUser(req: Request, res: Response) {
       return res.status(400).json({ message: 'El usuario ya existe' });
     }
     
+    // Obtener información del usuario que envía la invitación y su organización
+    const currentUser = req.user as any;
+    const organization = await storage.getOrganization(currentUser.organizationId);
+    
+    if (!organization) {
+      return res.status(404).json({ message: 'Organización no encontrada' });
+    }
+    
     // Generate a temporary password
-    const tempPassword = crypto.randomBytes(12).toString('hex');
+    const tempPassword = crypto.randomBytes(8).toString('hex');
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
     
     // Create the new user
@@ -88,19 +97,47 @@ export async function inviteUser(req: Request, res: Response) {
       username: email,
       password: hashedPassword,
       role,
-      organizationId: (req.user as any).organizationId,
+      organizationId: currentUser.organizationId,
     });
     
-    // Remove password from response
-    const { password, ...userResponse } = newUser;
-    
-    // In a real app, you would send an email invitation here
-    // with instructions to set up their account
-    
-    res.status(201).json({
-      user: userResponse,
-      message: 'Invitación enviada correctamente'
-    });
+    // Enviar correo electrónico de invitación
+    try {
+      // En desarrollo, podemos crear una cuenta de prueba de Ethereal para capturar los correos
+      let testAccount;
+      if (process.env.NODE_ENV !== 'production' && (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD)) {
+        testAccount = await createTestAccount();
+      }
+      
+      await sendInvitationEmail({
+        name,
+        email,
+        tempPassword,
+        inviterName: currentUser.name || 'Un administrador',
+        organizationName: organization.name,
+      });
+      
+      console.log(`Invitación enviada a ${email} con contraseña temporal: ${tempPassword}`);
+      
+      // Remove password from response
+      const { password, ...userResponse } = newUser;
+      
+      res.status(201).json({
+        user: userResponse,
+        message: 'Invitación enviada correctamente',
+        // Solo en desarrollo mostramos la contraseña temporal para pruebas
+        ...(process.env.NODE_ENV !== 'production' && { tempPassword }),
+      });
+    } catch (emailError) {
+      console.error('Error al enviar el correo de invitación:', emailError);
+      
+      // Si hay un error al enviar el correo, eliminamos el usuario creado
+      await storage.deleteUser(newUser.id);
+      
+      return res.status(500).json({ 
+        message: 'Error al enviar la invitación por correo electrónico',
+        error: emailError.message
+      });
+    }
   } catch (error) {
     console.error('Error inviting user:', error);
     res.status(500).json({ message: 'Error al invitar usuario' });
