@@ -15,6 +15,33 @@ export async function getOrganizations(req: Request, res: Response) {
   }
 }
 
+// Get organization by ID
+export async function getOrganization(req: Request, res: Response) {
+  try {
+    const organizationId = parseInt(req.params.id);
+    const userId = (req.user as any).id;
+    
+    // Check if the organization exists
+    const organization = await storage.getOrganization(organizationId);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organización no encontrada' });
+    }
+    
+    // Check if the user belongs to this organization
+    const userOrganizations = await storage.getUserOrganizations(userId);
+    const hasAccess = userOrganizations.some(org => org.id === organizationId);
+    
+    if (!hasAccess) {
+      return res.status(403).json({ message: 'No tienes acceso a esta organización' });
+    }
+    
+    res.json(organization);
+  } catch (error) {
+    console.error('Error getting organization:', error);
+    res.status(500).json({ message: 'Error al obtener la organización' });
+  }
+}
+
 // Switch to a different organization
 export async function switchOrganization(req: Request, res: Response) {
   try {
@@ -152,6 +179,144 @@ export async function updateBranding(req: Request, res: Response) {
     res.json(branding);
   } catch (error) {
     console.error('Error updating branding:', error);
+    res.status(500).json({ message: 'Error al actualizar la configuración de marca' });
+  }
+}
+
+// Update organization by ID (for detailed organization page)
+export async function updateOrganization(req: Request, res: Response) {
+  try {
+    const organizationId = parseInt(req.params.id);
+    const userId = (req.user as any).id;
+    
+    // Check if the organization exists
+    const organization = await storage.getOrganization(organizationId);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organización no encontrada' });
+    }
+    
+    // Check if the user has admin rights in this organization
+    const orgUsers = await storage.getOrganizationUsers(organizationId);
+    const userInOrg = orgUsers.find(user => user.id === userId);
+    
+    if (!userInOrg || userInOrg.role !== 'admin') {
+      return res.status(403).json({ message: 'No tienes permisos para actualizar esta organización' });
+    }
+    
+    // Validate organization data
+    const organizationSchema = z.object({
+      name: z.string().min(1, 'El nombre es obligatorio'),
+      slug: z.string().min(1, 'El slug es obligatorio').regex(/^[a-z0-9-]+$/, 'El slug solo puede contener letras minúsculas, números y guiones'),
+      domain: z.string().optional(),
+      subdomain: z.string().optional(),
+      plan: z.string().optional(),
+    });
+    
+    const validationResult = organizationSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: 'Datos de organización inválidos',
+        errors: validationResult.error.errors
+      });
+    }
+    
+    // Check if slug is already taken (but skip if it's the same as current)
+    if (validationResult.data.slug !== organization.slug) {
+      const existingOrg = await storage.getOrganizationBySlug(validationResult.data.slug);
+      if (existingOrg) {
+        return res.status(400).json({
+          message: 'El identificador (slug) ya está en uso',
+          field: 'slug'
+        });
+      }
+    }
+    
+    // Update organization
+    const updatedOrganization = await storage.updateOrganizationBranding(
+      organizationId,
+      validationResult.data
+    );
+    
+    if (!updatedOrganization) {
+      return res.status(500).json({ message: 'No se pudo actualizar la organización' });
+    }
+    
+    res.json({
+      message: 'Organización actualizada correctamente',
+      organization: updatedOrganization
+    });
+  } catch (error) {
+    console.error('Error updating organization:', error);
+    res.status(500).json({ message: 'Error al actualizar la organización' });
+  }
+}
+
+// Update organization branding by ID (for detailed organization page)
+export async function updateOrganizationBranding(req: Request, res: Response) {
+  try {
+    const organizationId = parseInt(req.params.id);
+    const userId = (req.user as any).id;
+    
+    // Check if the organization exists
+    const organization = await storage.getOrganization(organizationId);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organización no encontrada' });
+    }
+    
+    // Check if the user has admin rights in this organization
+    const orgUsers = await storage.getOrganizationUsers(organizationId);
+    const userInOrg = orgUsers.find(user => user.id === userId);
+    
+    if (!userInOrg || userInOrg.role !== 'admin') {
+      return res.status(403).json({ message: 'No tienes permisos para actualizar esta organización' });
+    }
+    
+    // Validate branding data
+    const brandingSchema = z.object({
+      logo: z.string().optional(),
+      favicon: z.string().optional(),
+      colors: z.object({
+        primary: z.string(),
+        secondary: z.string(),
+        accent: z.string(),
+      }),
+      typography: z.object({
+        fontFamily: z.string(),
+        headings: z.string(),
+      }),
+    });
+    
+    const validationResult = brandingSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: 'Datos de marca inválidos',
+        errors: validationResult.error.errors
+      });
+    }
+    
+    // Update organization branding
+    const updatedOrganization = await storage.updateOrganizationBranding(
+      organizationId,
+      validationResult.data
+    );
+    
+    if (!updatedOrganization) {
+      return res.status(500).json({ message: 'No se pudo actualizar la configuración de marca' });
+    }
+    
+    res.json({
+      message: 'Configuración de marca actualizada correctamente',
+      branding: {
+        logo: updatedOrganization.logo,
+        favicon: updatedOrganization.favicon,
+        colors: updatedOrganization.colors,
+        typography: updatedOrganization.typography
+      }
+    });
+  } catch (error) {
+    console.error('Error updating organization branding:', error);
     res.status(500).json({ message: 'Error al actualizar la configuración de marca' });
   }
 }
