@@ -1,7 +1,37 @@
-jest.setTimeout(30000);
+/**
+ * Configuración de pruebas para Jest y Puppeteer
+ */
 
-beforeAll(async () => {
-  // Esperar a que la aplicación se inicie completamente
-  await page.goto('http://localhost:5000');
-  await page.waitForTimeout(2000);
+// Configuración de la URL base para las pruebas
+global.BASE_URL = process.env.TEST_URL || 'http://localhost:5000';
+
+// Configuración adicional antes de cada prueba
+beforeEach(async () => {
+  // Configurar timeout para cada prueba
+  jest.setTimeout(30000);
+  
+  // Opciones para la navegación
+  await page.setDefaultNavigationTimeout(30000);
+  
+  // Exponer funciones para debug en la consola del navegador
+  await page.exposeFunction('__testInfo', (message) => {
+    console.log(`[Browser] ${message}`);
+  });
+  
+  // Capturar logs de la consola del navegador
+  page.on('console', msg => {
+    if (msg.type() === 'error') {
+      console.log(`[Browser Error] ${msg.text()}`);
+    }
+  });
+  
+  // Capturar errores de red
+  page.on('pageerror', error => {
+    console.log(`[Browser PageError] ${error.message}`);
+  });
+  
+  // Capturar requests fallidos
+  page.on('requestfailed', request => {
+    console.log(`[Network Error] ${request.url()} ${request.failure().errorText}`);
+  });
 });

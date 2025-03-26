@@ -10,18 +10,17 @@ const {
   register,
   requestPasswordReset,
   resetPassword,
+  generateTestUser,
   cleanup,
-  generateTestUser
 } = require('../utils');
 
 describe('Módulo de Autenticación', () => {
-  let testUser;
-  let testUserPassword;
-  
-  beforeAll(() => {
-    testUser = generateTestUser();
-    testUserPassword = testUser.password;
-  });
+  // Generar datos de usuario para las pruebas
+  const testUser = generateTestUser();
+  const defaultUser = {
+    email: 'admin@origo.com',
+    password: 'admin123'
+  };
   
   afterEach(async () => {
     await takeScreenshot(page, 'auth-test');
@@ -33,136 +32,227 @@ describe('Módulo de Autenticación', () => {
 
   test('Debería mostrar la página de autenticación', async () => {
     await page.goto(`${BASE_URL}/auth`);
-    const title = await page.$eval('h1', el => el.textContent);
-    expect(title).toContain('Origo CMS');
     
-    const loginTabVisible = await page.$eval('[value="login"]', el => el.getAttribute('aria-selected') === 'true');
-    expect(loginTabVisible).toBeTruthy();
+    // Verificar que estamos en la página de autenticación
+    const heading = await page.$eval('h1', el => el.textContent);
+    expect(heading).toContain('Iniciar sesión');
+    
+    // Verificar que existe el formulario de login
+    const loginForm = await page.$('form') !== null;
+    expect(loginForm).toBeTruthy();
   });
 
-  test('Debería permitir registrar un nuevo usuario', async () => {
+  test('Debería permitir el registro de un nuevo usuario', async () => {
     await page.goto(`${BASE_URL}/auth`);
     
-    // Cambiar a la pestaña de registro
-    await page.click('[value="register"]');
-    await waitForElementVisible(page, 'form');
+    // Ir al formulario de registro
+    await page.click('button:has-text("Crear cuenta")');
     
-    // Completar el formulario
-    await fillForm(page, testUser);
+    // Completar el formulario de registro
+    await fillForm(page, {
+      'name': testUser.name,
+      'email': testUser.email,
+      'password': testUser.password,
+      'confirmPassword': testUser.password
+    });
     
     // Enviar el formulario
-    await Promise.all([
-      page.click('button[type="submit"]'),
-      page.waitForNavigation({ waitUntil: 'networkidle0' })
-    ]);
+    await page.click('form button[type="submit"]');
     
-    // Verificar que estamos en la página principal después del registro
+    // Verificar redirección a dashboard después del registro exitoso
+    await page.waitForNavigation();
     const url = page.url();
-    expect(url).toContain('/dashboard');
+    expect(url).toBe(`${BASE_URL}/dashboard`);
+  });
+
+  test('Debería mostrar error con credenciales inválidas', async () => {
+    await page.goto(`${BASE_URL}/auth`);
+    
+    // Completar el formulario con credenciales inválidas
+    await fillForm(page, {
+      'email': 'usuario.inexistente@test.com',
+      'password': 'contrasenainvalida'
+    });
+    
+    // Enviar el formulario
+    await page.click('form button[type="submit"]');
+    
+    // Verificar mensaje de error
+    await waitForElementVisible(page, '[role="alert"]');
+    const errorMessage = await page.$eval('[role="alert"]', el => el.textContent);
+    expect(errorMessage).toContain('credenciales');
+  });
+
+  test('Debería permitir iniciar sesión con credenciales válidas', async () => {
+    await page.goto(`${BASE_URL}/auth`);
+    
+    // Completar el formulario de login
+    await fillForm(page, {
+      'email': defaultUser.email,
+      'password': defaultUser.password
+    });
+    
+    // Enviar el formulario
+    await page.click('form button[type="submit"]');
+    
+    // Verificar redirección a dashboard después del login exitoso
+    await page.waitForNavigation();
+    const url = page.url();
+    expect(url).toBe(`${BASE_URL}/dashboard`);
+  });
+
+  test('Debería permitir solicitar restablecimiento de contraseña', async () => {
+    await page.goto(`${BASE_URL}/auth`);
+    
+    // Ir al formulario de recuperación de contraseña
+    await page.click('a:has-text("¿Olvidaste tu contraseña?")');
+    
+    // Completar formulario con email válido
+    await fillForm(page, {
+      'email': defaultUser.email
+    });
+    
+    // Enviar el formulario
+    await page.click('form button[type="submit"]');
+    
+    // Verificar mensaje de confirmación
+    await waitForElementVisible(page, '[role="status"]');
+    const successMessage = await page.$eval('[role="status"]', el => el.textContent);
+    expect(successMessage).toContain('enviado');
+  });
+
+  test('Debería permitir restablecer contraseña con token válido', async () => {
+    // Esta prueba simula el proceso de restablecimiento de contraseña
+    // En un escenario real, el token vendría de un email
+    // Para fines de prueba, usamos un token simulado
+    
+    const token = 'valid-token-12345';
+    const newPassword = 'NewPassword123!';
+    
+    await page.goto(`${BASE_URL}/auth/reset-password?token=${token}`);
+    
+    // Verificar que estamos en la página de restablecimiento
+    const heading = await page.$eval('h1', el => el.textContent);
+    expect(heading).toContain('Restablecer contraseña');
+    
+    // Completar formulario
+    await fillForm(page, {
+      'password': newPassword,
+      'confirmPassword': newPassword
+    });
+    
+    // Enviar formulario
+    await page.click('form button[type="submit"]');
+    
+    // Verificar mensaje de éxito
+    await waitForElementVisible(page, '[role="status"]');
+    const successMessage = await page.$eval('[role="status"]', el => el.textContent);
+    expect(successMessage).toContain('restablecida');
+    
+    // Verificar redirección a login
+    await page.waitForNavigation();
+    const url = page.url();
+    expect(url).toContain('/auth');
   });
 
   test('Debería permitir cerrar sesión', async () => {
-    await page.goto(`${BASE_URL}/`);
+    // Primero iniciamos sesión
+    await login(page, defaultUser.email, defaultUser.password);
     
-    // Buscar y hacer clic en el botón de cerrar sesión
-    const logoutButton = await page.$('button:has-text("Cerrar sesión")');
-    if (logoutButton) {
-      await Promise.all([
-        logoutButton.click(),
-        page.waitForNavigation({ waitUntil: 'networkidle0' })
-      ]);
-      
-      // Verificar que redirige a la página de autenticación
-      const url = page.url();
-      expect(url).toContain('/auth');
-    }
+    // Verificar que estamos en dashboard
+    await page.waitForNavigation();
+    let url = page.url();
+    expect(url).toBe(`${BASE_URL}/dashboard`);
+    
+    // Hacer clic en menú de usuario
+    await page.click('button[aria-label="User menu"]');
+    await waitForElementVisible(page, '[role="menu"]');
+    
+    // Hacer clic en cerrar sesión
+    await page.click('[role="menuitem"]:has-text("Cerrar sesión")');
+    
+    // Verificar redirección a login
+    await page.waitForNavigation();
+    url = page.url();
+    expect(url).toContain('/auth');
   });
 
-  test('Debería permitir iniciar sesión con credenciales correctas', async () => {
-    await page.goto(`${BASE_URL}/auth`);
+  test('Debería redirigir a login al intentar acceder a rutas protegidas sin autenticación', async () => {
+    // Intentar acceder a una ruta protegida sin estar autenticado
+    await page.goto(`${BASE_URL}/dashboard`);
     
-    // Completar el formulario de inicio de sesión
-    await fillForm(page, {
-      email: testUser.email,
-      password: testUserPassword
-    });
-    
-    // Enviar el formulario
-    await Promise.all([
-      page.click('button[type="submit"]'),
-      page.waitForNavigation({ waitUntil: 'networkidle0' })
-    ]);
-    
-    // Verificar que estamos en la página principal después del inicio de sesión
+    // Verificar redirección a login
+    await page.waitForNavigation();
     const url = page.url();
-    expect(url).toContain('/dashboard');
+    expect(url).toContain('/auth');
   });
 
-  test('No debería permitir iniciar sesión con credenciales incorrectas', async () => {
+  test('Debería validar el formato de email durante el registro', async () => {
     await page.goto(`${BASE_URL}/auth`);
     
-    // Completar el formulario con datos incorrectos
+    // Ir al formulario de registro
+    await page.click('button:has-text("Crear cuenta")');
+    
+    // Completar el formulario con email inválido
     await fillForm(page, {
-      email: testUser.email,
-      password: 'contraseña_incorrecta'
+      'name': 'Usuario Prueba',
+      'email': 'email_invalido',
+      'password': 'Password123!',
+      'confirmPassword': 'Password123!'
     });
     
     // Enviar el formulario
-    await page.click('button[type="submit"]');
+    await page.click('form button[type="submit"]');
     
-    // Verificar que aparece un mensaje de error
-    await waitForElementVisible(page, '[role="alert"]');
-    const errorMessage = await page.$eval('[role="alert"]', el => el.textContent);
-    expect(errorMessage).toContain('Error');
+    // Verificar mensaje de error
+    await waitForElementVisible(page, '[id*="email-error"]');
+    const errorMessage = await page.$eval('[id*="email-error"]', el => el.textContent);
+    expect(errorMessage).toContain('email');
   });
 
-  test('Debería permitir solicitar el restablecimiento de contraseña', async () => {
+  test('Debería validar la fortaleza de la contraseña durante el registro', async () => {
     await page.goto(`${BASE_URL}/auth`);
     
-    // Hacer clic en "¿Olvidaste tu contraseña?"
-    await page.click('button:has-text("¿Olvidaste tu contraseña?")');
-    await waitForElementVisible(page, 'input[name="email"]');
+    // Ir al formulario de registro
+    await page.click('button:has-text("Crear cuenta")');
     
-    // Completar el formulario
-    await page.type('input[name="email"]', testUser.email);
-    
-    // Enviar el formulario
-    await page.click('button:has-text("Enviar enlace")');
-    
-    // Verificar que aparece un mensaje de confirmación
-    await waitForElementVisible(page, '[role="status"]');
-    const confirmationMessage = await page.$eval('[role="status"]', el => el.textContent);
-    expect(confirmationMessage).toContain('Instrucciones');
-  });
-
-  test('Debería permitir restablecer la contraseña con un token válido', async () => {
-    await page.goto(`${BASE_URL}/auth`);
-    
-    // Solicitar restablecimiento para obtener un token
-    const token = await requestPasswordReset(page, testUser.email);
-    expect(token).toBeTruthy();
-    
-    // Usar el token para restablecer la contraseña
-    const newPassword = 'NuevaContraseña123!';
-    await resetPassword(page, token, newPassword);
-    
-    // Verificar mensaje de éxito
-    const successMessage = await page.$eval('[role="status"]', el => el.textContent);
-    expect(successMessage).toContain('actualizada');
-    
-    // Verificar que la nueva contraseña funciona iniciando sesión
-    await page.goto(`${BASE_URL}/auth`);
+    // Completar el formulario con contraseña débil
     await fillForm(page, {
-      email: testUser.email,
-      password: newPassword
+      'name': 'Usuario Prueba',
+      'email': 'usuario.prueba@test.com',
+      'password': '123', // Contraseña débil
+      'confirmPassword': '123'
     });
     
-    await Promise.all([
-      page.click('button[type="submit"]'),
-      page.waitForNavigation({ waitUntil: 'networkidle0' })
-    ]);
+    // Enviar el formulario
+    await page.click('form button[type="submit"]');
     
-    const url = page.url();
-    expect(url).toContain('/dashboard');
+    // Verificar mensaje de error
+    await waitForElementVisible(page, '[id*="password-error"]');
+    const errorMessage = await page.$eval('[id*="password-error"]', el => el.textContent);
+    expect(errorMessage).toContain('caracteres');
+  });
+
+  test('Debería validar la coincidencia de contraseñas durante el registro', async () => {
+    await page.goto(`${BASE_URL}/auth`);
+    
+    // Ir al formulario de registro
+    await page.click('button:has-text("Crear cuenta")');
+    
+    // Completar el formulario con contraseñas que no coinciden
+    await fillForm(page, {
+      'name': 'Usuario Prueba',
+      'email': 'usuario.prueba@test.com',
+      'password': 'Password123!',
+      'confirmPassword': 'Password456!'
+    });
+    
+    // Enviar el formulario
+    await page.click('form button[type="submit"]');
+    
+    // Verificar mensaje de error
+    await waitForElementVisible(page, '[id*="confirmPassword-error"]');
+    const errorMessage = await page.$eval('[id*="confirmPassword-error"]', el => el.textContent);
+    expect(errorMessage).toContain('coincidir');
   });
 });

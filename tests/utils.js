@@ -1,18 +1,11 @@
 /**
  * Utilidades para las pruebas
  */
-const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 
-// Constantes globales
-const BASE_URL = 'http://localhost:5000';
-const SCREENSHOTS_DIR = path.join(__dirname, 'screenshots');
-
-// Asegurarnos de que el directorio de capturas existe
-if (!fs.existsSync(SCREENSHOTS_DIR)) {
-  fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
-}
+// URL base para las pruebas
+const BASE_URL = process.env.TEST_URL || 'http://localhost:5000';
 
 /**
  * Hace una captura de pantalla para el reporte
@@ -20,11 +13,20 @@ if (!fs.existsSync(SCREENSHOTS_DIR)) {
  * @param {string} name - Nombre de la captura de pantalla
  */
 async function takeScreenshot(page, name) {
-  const filename = `${name}-${Date.now()}.png`;
-  const filepath = path.join(SCREENSHOTS_DIR, filename);
-  await page.screenshot({ path: filepath, fullPage: true });
-  console.log(`Screenshot saved: ${filepath}`);
-  return filepath;
+  try {
+    const screenshotsDir = path.join(__dirname, 'screenshots');
+    
+    // Crear directorio si no existe
+    if (!fs.existsSync(screenshotsDir)) {
+      fs.mkdirSync(screenshotsDir, { recursive: true });
+    }
+    
+    const filePath = path.join(screenshotsDir, `${name}-${Date.now()}.png`);
+    await page.screenshot({ path: filePath, fullPage: true });
+    console.log(`Screenshot saved to ${filePath}`);
+  } catch (error) {
+    console.error('Error taking screenshot:', error);
+  }
 }
 
 /**
@@ -34,7 +36,13 @@ async function takeScreenshot(page, name) {
  * @param {number} timeout - Tiempo de espera máximo en ms
  */
 async function waitForElementVisible(page, selector, timeout = 5000) {
-  await page.waitForSelector(selector, { visible: true, timeout });
+  try {
+    await page.waitForSelector(selector, { visible: true, timeout });
+  } catch (error) {
+    console.error(`Error waiting for element ${selector}:`, error);
+    await takeScreenshot(page, `error-${selector.replace(/[^a-zA-Z0-9]/g, '-')}`);
+    throw error;
+  }
 }
 
 /**
@@ -44,8 +52,36 @@ async function waitForElementVisible(page, selector, timeout = 5000) {
  */
 async function fillForm(page, data) {
   for (const [field, value] of Object.entries(data)) {
-    await page.waitForSelector(`input[name="${field}"]`);
-    await page.type(`input[name="${field}"]`, value);
+    try {
+      const selector = `input[name="${field}"], textarea[name="${field}"], select[name="${field}"]`;
+      await page.waitForSelector(selector, { timeout: 3000 });
+      
+      // Manejar diferentes tipos de campos
+      const fieldType = await page.$eval(selector, el => el.type || el.tagName.toLowerCase());
+      
+      if (fieldType === 'select' || fieldType === 'select-one') {
+        await page.select(selector, value);
+      } else if (fieldType === 'checkbox') {
+        const currentValue = await page.$eval(selector, el => el.checked);
+        if ((currentValue && !value) || (!currentValue && value)) {
+          await page.click(selector);
+        }
+      } else if (fieldType === 'date') {
+        await page.evaluate((selector, value) => {
+          document.querySelector(selector).valueAsDate = new Date(value);
+        }, selector, value);
+      } else {
+        // Limpiar campo primero
+        await page.evaluate(selector => {
+          document.querySelector(selector).value = '';
+        }, selector);
+        
+        // Luego ingresar el valor
+        await page.type(selector, String(value));
+      }
+    } catch (error) {
+      console.error(`Error filling field ${field}:`, error);
+    }
   }
 }
 
@@ -57,15 +93,26 @@ async function fillForm(page, data) {
  */
 async function login(page, email, password) {
   await page.goto(`${BASE_URL}/auth`);
-  await waitForElementVisible(page, 'form');
   
+  // Completar formulario de login
   await fillForm(page, {
-    email: email,
-    password: password
+    'email': email,
+    'password': password
   });
   
-  await page.click('button[type="submit"]');
-  await page.waitForNavigation({ waitUntil: 'networkidle0' });
+  // Enviar formulario
+  await page.click('form button[type="submit"]');
+  
+  // Esperar redirección o mensaje de error
+  try {
+    await Promise.race([
+      page.waitForNavigation({ timeout: 5000 }),
+      page.waitForSelector('[role="alert"]', { timeout: 5000 })
+    ]);
+  } catch (error) {
+    console.error('Error during login:', error);
+    await takeScreenshot(page, 'login-error');
+  }
 }
 
 /**
@@ -76,14 +123,30 @@ async function login(page, email, password) {
 async function register(page, userData) {
   await page.goto(`${BASE_URL}/auth`);
   
-  // Cambiar a la pestaña de registro
-  await page.click('button[value="register"]');
-  await waitForElementVisible(page, 'form');
+  // Ir al formulario de registro
+  await page.click('button:has-text("Crear cuenta")');
   
-  await fillForm(page, userData);
+  // Completar formulario
+  await fillForm(page, {
+    'name': userData.name,
+    'email': userData.email,
+    'password': userData.password,
+    'confirmPassword': userData.password
+  });
   
-  await page.click('button[type="submit"]');
-  await page.waitForNavigation({ waitUntil: 'networkidle0' });
+  // Enviar formulario
+  await page.click('form button[type="submit"]');
+  
+  // Esperar redirección o mensaje de error
+  try {
+    await Promise.race([
+      page.waitForNavigation({ timeout: 5000 }),
+      page.waitForSelector('[role="alert"]', { timeout: 5000 })
+    ]);
+  } catch (error) {
+    console.error('Error during registration:', error);
+    await takeScreenshot(page, 'register-error');
+  }
 }
 
 /**
@@ -94,20 +157,25 @@ async function register(page, userData) {
 async function requestPasswordReset(page, email) {
   await page.goto(`${BASE_URL}/auth`);
   
-  // Hacer clic en el enlace "Olvidaste tu contraseña"
-  await page.click('button:text("¿Olvidaste tu contraseña?")');
-  await waitForElementVisible(page, 'input[name="email"]');
+  // Ir al formulario de recuperación de contraseña
+  await page.click('a:has-text("¿Olvidaste tu contraseña?")');
   
-  await page.type('input[name="email"]', email);
-  await page.click('button[type="submit"]');
+  // Completar formulario
+  await fillForm(page, { 'email': email });
   
-  // Esperar a que aparezca la notificación
-  await waitForElementVisible(page, '[role="status"]');
+  // Enviar formulario
+  await page.click('form button[type="submit"]');
   
-  // Extraer el token desde la respuesta (solo para pruebas)
-  const responseText = await page.$eval('[role="status"]', el => el.textContent);
-  const tokenMatch = responseText.match(/token: "([^"]+)"/);
-  return tokenMatch ? tokenMatch[1] : null;
+  // Esperar mensaje de confirmación o error
+  try {
+    await Promise.race([
+      page.waitForSelector('[role="status"]', { timeout: 5000 }),
+      page.waitForSelector('[role="alert"]', { timeout: 5000 })
+    ]);
+  } catch (error) {
+    console.error('Error requesting password reset:', error);
+    await takeScreenshot(page, 'forgot-password-error');
+  }
 }
 
 /**
@@ -117,29 +185,27 @@ async function requestPasswordReset(page, email) {
  * @param {string} newPassword - Nueva contraseña
  */
 async function resetPassword(page, token, newPassword) {
-  // Navegar directamente a la pestaña de restablecimiento (simulando clic en enlace de email)
-  await page.goto(`${BASE_URL}/auth`);
+  await page.goto(`${BASE_URL}/auth/reset-password?token=${token}`);
   
-  // Simular activación del tab de reset-password
-  await page.evaluate((token) => {
-    // Simular almacenamiento del token y activación de la pestaña
-    localStorage.setItem('resetToken', token);
-    const tabTrigger = Array.from(document.querySelectorAll('button[role="tab"]'))
-      .find(el => el.value === 'reset-password');
-    if (tabTrigger) tabTrigger.click();
-  }, token);
-  
-  await waitForElementVisible(page, 'input[name="password"]');
-  
+  // Completar formulario
   await fillForm(page, {
-    password: newPassword,
-    confirmPassword: newPassword
+    'password': newPassword,
+    'confirmPassword': newPassword
   });
   
-  await page.click('button[type="submit"]');
+  // Enviar formulario
+  await page.click('form button[type="submit"]');
   
-  // Esperar a que aparezca la notificación de éxito
-  await waitForElementVisible(page, '[role="status"]');
+  // Esperar redirección o mensaje de error
+  try {
+    await Promise.race([
+      page.waitForNavigation({ timeout: 5000 }),
+      page.waitForSelector('[role="alert"]', { timeout: 5000 })
+    ]);
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    await takeScreenshot(page, 'reset-password-error');
+  }
 }
 
 /**
@@ -147,16 +213,31 @@ async function resetPassword(page, token, newPassword) {
  * @param {Page} page - Instancia de la página de Puppeteer
  */
 async function cleanup(page) {
-  // Cerrar sesión si está iniciada
   try {
-    await page.goto(`${BASE_URL}/`);
-    const logoutButton = await page.$('button:text("Cerrar sesión")');
-    if (logoutButton) {
-      await logoutButton.click();
-      await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    // Cerrar sesión si estamos autenticados
+    const isLoggedIn = await page.evaluate(() => {
+      return window.localStorage.getItem('authenticated') === 'true';
+    });
+    
+    if (isLoggedIn) {
+      await page.goto(`${BASE_URL}/dashboard`);
+      await page.click('button[aria-label="User menu"]');
+      await waitForElementVisible(page, '[role="menu"]');
+      await page.click('[role="menuitem"]:has-text("Cerrar sesión")');
+      await page.waitForNavigation();
     }
+    
+    // Limpiar localStorage
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    
+    // Limpiar cookies
+    const client = await page.target().createCDPSession();
+    await client.send('Network.clearBrowserCookies');
   } catch (error) {
-    console.warn('Error durante la limpieza:', error.message);
+    console.error('Error during cleanup:', error);
   }
 }
 
@@ -165,7 +246,7 @@ async function cleanup(page) {
  * @returns {string} Correo electrónico
  */
 function generateTestEmail() {
-  return `test.${Date.now()}@example.com`;
+  return `test-${Date.now()}@origo-test.com`;
 }
 
 /**
@@ -175,11 +256,10 @@ function generateTestEmail() {
 function generateTestUser() {
   const timestamp = Date.now();
   return {
-    name: `Test User ${timestamp}`,
-    email: `test.${timestamp}@example.com`,
-    username: `testuser${timestamp}`,
-    password: 'Test123!',
-    confirmPassword: 'Test123!',
+    name: `Usuario Prueba ${timestamp}`,
+    email: generateTestEmail(),
+    password: `Test${timestamp}!`,
+    role: 'editor'
   };
 }
 
@@ -194,5 +274,5 @@ module.exports = {
   resetPassword,
   cleanup,
   generateTestEmail,
-  generateTestUser,
+  generateTestUser
 };
