@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
 import { z } from 'zod';
+import { generateToken } from '../utils/jwt-helper';
 
 // Get organizations for the current user
 export async function getOrganizations(req: Request, res: Response) {
@@ -84,8 +85,7 @@ export async function switchOrganization(req: Request, res: Response) {
     }
     
     // Generar un nuevo token JWT con el organizationId actualizado
-    // Importamos la función de generación de token aquí para evitar dependencias circulares
-    const { generateToken } = require('../utils/jwt-helper');
+    // Usamos la función de generación de token importada al inicio del archivo
     const newToken = generateToken({ ...updatedUser, organizationId });
     
     // Save the session before responding
