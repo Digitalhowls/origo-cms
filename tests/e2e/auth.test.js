@@ -107,7 +107,7 @@ describe('Módulo de Autenticación', () => {
     await page.goto(`${BASE_URL}/auth`);
     
     // Ir al formulario de recuperación de contraseña
-    await page.click('a:has-text("¿Olvidaste tu contraseña?")');
+    await page.click('button[variant="link"]:has-text("¿Olvidaste tu contraseña?")');
     
     // Completar formulario con email válido
     await fillForm(page, {
@@ -134,8 +134,8 @@ describe('Módulo de Autenticación', () => {
     await page.goto(`${BASE_URL}/auth/reset-password?token=${token}`);
     
     // Verificar que estamos en la página de restablecimiento
-    const heading = await page.$eval('h1', el => el.textContent);
-    expect(heading).toContain('Restablecer contraseña');
+    const heading = await page.$eval('h2', el => el.textContent);
+    expect(heading).toContain('Establece una nueva contraseña');
     
     // Completar formulario
     await fillForm(page, {
@@ -193,12 +193,13 @@ describe('Módulo de Autenticación', () => {
     await page.goto(`${BASE_URL}/auth`);
     
     // Ir al formulario de registro
-    await page.click('button:has-text("Crear cuenta")');
+    await page.click('[data-value="register"]');
     
     // Completar el formulario con email inválido
     await fillForm(page, {
       'name': 'Usuario Prueba',
       'email': 'email_invalido',
+      'username': 'usuario_test',
       'password': 'Password123!',
       'confirmPassword': 'Password123!'
     });
@@ -216,12 +217,13 @@ describe('Módulo de Autenticación', () => {
     await page.goto(`${BASE_URL}/auth`);
     
     // Ir al formulario de registro
-    await page.click('button:has-text("Crear cuenta")');
+    await page.click('[data-value="register"]');
     
     // Completar el formulario con contraseña débil
     await fillForm(page, {
       'name': 'Usuario Prueba',
       'email': 'usuario.prueba@test.com',
+      'username': 'usuario_prueba',
       'password': '123', // Contraseña débil
       'confirmPassword': '123'
     });
@@ -239,12 +241,13 @@ describe('Módulo de Autenticación', () => {
     await page.goto(`${BASE_URL}/auth`);
     
     // Ir al formulario de registro
-    await page.click('button:has-text("Crear cuenta")');
+    await page.click('[data-value="register"]');
     
     // Completar el formulario con contraseñas que no coinciden
     await fillForm(page, {
       'name': 'Usuario Prueba',
       'email': 'usuario.prueba@test.com',
+      'username': 'usuario_prueba',
       'password': 'Password123!',
       'confirmPassword': 'Password456!'
     });

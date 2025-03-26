@@ -101,7 +101,7 @@ async function login(page, email, password) {
     await takeScreenshot(page, 'login-page');
     
     // Asegurarnos de que estamos en el formulario de login
-    const loginTabSelector = 'button[role="tab"]:has-text("Iniciar sesión")';
+    const loginTabSelector = '[data-value="login"]';
     if (await page.$(loginTabSelector)) {
       await page.click(loginTabSelector);
     }
@@ -144,19 +144,12 @@ async function register(page, userData) {
     await page.goto(`${BASE_URL}/auth`, { waitUntil: 'networkidle0' });
     await takeScreenshot(page, 'register-page');
     
-    // Ir al formulario de registro (puede ser un tab o un botón)
-    const registerTabSelector = 'button[role="tab"]:has-text("Registrarse")';
+    // Ir al formulario de registro
+    const registerTabSelector = '[data-value="register"]';
     if (await page.$(registerTabSelector)) {
       await page.click(registerTabSelector);
       // Esperar a que cambie el formulario
       await page.waitForTimeout(500);
-    } else {
-      // Si no es un tab, buscar un botón o enlace de registro
-      const createAccountSelector = 'button:has-text("Crear cuenta"), a:has-text("Crear cuenta")';
-      if (await page.$(createAccountSelector)) {
-        await page.click(createAccountSelector);
-        await page.waitForTimeout(500);
-      }
     }
     
     // Esperar a que el formulario de registro esté disponible
