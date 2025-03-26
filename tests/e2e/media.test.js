@@ -1,14 +1,14 @@
 /**
  * Pruebas E2E para el módulo de medios
  */
-const { 
+import { 
   BASE_URL,
   takeScreenshot,
   waitForElementVisible,
   login,
   cleanup,
-} = require('../utils');
-const path = require('path');
+} from '../utils.js';
+import path from 'path';
 
 describe('Módulo de Media', () => {
   const testUser = {

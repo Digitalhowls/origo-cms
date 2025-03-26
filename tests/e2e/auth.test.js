@@ -1,7 +1,7 @@
 /**
  * Pruebas E2E para el módulo de autenticación
  */
-const { 
+import { 
   BASE_URL,
   takeScreenshot,
   waitForElementVisible,
@@ -12,7 +12,7 @@ const {
   resetPassword,
   generateTestUser,
   cleanup,
-} = require('../utils');
+} from '../utils.js';
 
 describe('Módulo de Autenticación', () => {
   // Generar datos de usuario para las pruebas

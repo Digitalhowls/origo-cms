@@ -1,14 +1,14 @@
 /**
  * Pruebas E2E para el módulo de blog
  */
-const { 
+import { 
   BASE_URL,
   takeScreenshot,
   waitForElementVisible,
   fillForm,
   login,
   cleanup,
-} = require('../utils');
+} from '../utils.js';
 
 describe('Módulo de Blog', () => {
   const testUser = {
