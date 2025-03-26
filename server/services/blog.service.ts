@@ -217,6 +217,37 @@ export async function getCategories(req: Request, res: Response) {
   }
 }
 
+// Create a category
+export async function createCategory(req: Request, res: Response) {
+  try {
+    const user = req.user as any;
+    const organizationId = user.organizationId;
+    
+    const categorySchema = z.object({
+      name: z.string().min(1, 'El nombre es requerido'),
+      slug: z.string().min(1, 'El slug es requerido'),
+      description: z.string().optional()
+    });
+    
+    const validatedData = categorySchema.parse(req.body);
+    
+    const categoryData = {
+      ...validatedData,
+      organizationId
+    };
+    
+    const newCategory = await storage.createCategory(categoryData);
+    
+    res.status(201).json(newCategory);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Datos de categoría inválidos', errors: error.errors });
+    }
+    console.error('Error creating category:', error);
+    res.status(500).json({ message: 'Error al crear la categoría' });
+  }
+}
+
 // Get tags
 export async function getTags(req: Request, res: Response) {
   try {
@@ -227,6 +258,36 @@ export async function getTags(req: Request, res: Response) {
   } catch (error) {
     console.error('Error getting tags:', error);
     res.status(500).json({ message: 'Error al obtener etiquetas' });
+  }
+}
+
+// Create a tag
+export async function createTag(req: Request, res: Response) {
+  try {
+    const user = req.user as any;
+    const organizationId = user.organizationId;
+    
+    const tagSchema = z.object({
+      name: z.string().min(1, 'El nombre es requerido'),
+      slug: z.string().min(1, 'El slug es requerido')
+    });
+    
+    const validatedData = tagSchema.parse(req.body);
+    
+    const tagData = {
+      ...validatedData,
+      organizationId
+    };
+    
+    const newTag = await storage.createTag(tagData);
+    
+    res.status(201).json(newTag);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Datos de etiqueta inválidos', errors: error.errors });
+    }
+    console.error('Error creating tag:', error);
+    res.status(500).json({ message: 'Error al crear la etiqueta' });
   }
 }
 
