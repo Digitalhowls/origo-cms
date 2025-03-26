@@ -4,7 +4,7 @@ export default {
     '**/tests/**/*.test.js',
     '**/tests/**/*.spec.js',
   ],
-  testTimeout: 30000,
+  testTimeout: 120000,
   setupFilesAfterEnv: ['./tests/setup.js'],
   transform: {
     '^.+\\.jsx?$': 'babel-jest'

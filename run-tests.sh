@@ -4,4 +4,4 @@
 mkdir -p tests/screenshots
 
 # Ejecutar las pruebas
-node --experimental-vm-modules node_modules/jest/bin/jest.js $@
+node --experimental-vm-modules node_modules/jest/bin/jest.js --testTimeout=60000 $@

@@ -16,9 +16,15 @@ beforeEach(async () => {
   await page.setDefaultNavigationTimeout(30000);
   
   // Exponer funciones para debug en la consola del navegador
-  await page.exposeFunction('__testInfo', (message) => {
-    console.log(`[Browser] ${message}`);
-  });
+  try {
+    await page.exposeFunction('__testInfo', (message) => {
+      console.log(`[Browser] ${message}`);
+    });
+  } catch (error) {
+    if (!error.message.includes('already exists')) {
+      throw error;
+    }
+  }
   
   // Capturar logs de la consola del navegador
   page.on('console', msg => {
