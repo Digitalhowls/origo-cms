@@ -117,6 +117,7 @@ export async function inviteUser(req: Request, res: Response) {
       });
       
       console.log(`Invitación enviada a ${email} con contraseña temporal: ${tempPassword}`);
+      console.log(`URL para ver el correo en Ethereal: https://ethereal.email/message`);
       
       // Remove password from response
       const { password, ...userResponse } = newUser;
@@ -126,6 +127,7 @@ export async function inviteUser(req: Request, res: Response) {
         message: 'Invitación enviada correctamente',
         // Solo en desarrollo mostramos la contraseña temporal para pruebas
         ...(process.env.NODE_ENV !== 'production' && { tempPassword }),
+        ...(process.env.NODE_ENV !== 'production' && { etherealUrl: 'https://ethereal.email/message' }),
       });
     } catch (emailError) {
       console.error('Error al enviar el correo de invitación:', emailError);
