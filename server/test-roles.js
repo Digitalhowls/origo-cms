@@ -25,17 +25,21 @@ async function login() {
       throw new Error(`Error de autenticación: ${response.statusText}`);
     }
 
-    const user = await response.json();
-    console.log('Usuario autenticado:', user);
-    userId = user.id;
+    const data = await response.json();
+    console.log('Usuario autenticado:', data);
+    
+    if (data.user) {
+      userId = data.user.id;
+      console.log('ID de usuario obtenido:', userId);
+    }
     
     // Extraer JWT token del resultado
-    if (user.token) {
-      authToken = user.token;
+    if (data.token) {
+      authToken = data.token;
       console.log('Token obtenido de la respuesta');
     }
     
-    return user;
+    return data;
   } catch (error) {
     console.error('Error al iniciar sesión:', error);
     throw error;
@@ -56,8 +60,10 @@ async function getAuthHeaders() {
 
 async function createCustomRole() {
   try {
+    // Generar un nombre único para evitar conflictos
+    const timestamp = new Date().getTime();
     const roleData = {
-      name: 'Editor de Contenido',
+      name: `Editor de Contenido-${timestamp}`,
       description: 'Puede editar contenido pero no publicar',
       organizationId,
       basedOnRole: 'editor',
@@ -135,8 +141,10 @@ async function getCustomRole(roleId) {
 
 async function updateCustomRole(roleId) {
   try {
+    // Generar un nombre único para evitar conflictos
+    const timestamp = new Date().getTime();
     const updateData = {
-      name: 'Editor de Contenido (actualizado)',
+      name: `Editor de Contenido (actualizado-${timestamp})`,
       description: 'Rol actualizado para pruebas',
       permissions: {
         'page.publish': true,
@@ -224,8 +232,8 @@ async function runTest() {
     // Asignar rol a un usuario (usamos el mismo usuario autenticado para pruebas)
     await assignRoleToUser(userId, createdRoleId);
     
-    // Eliminar rol (comentado para evitar eliminar el rol si se quiere seguir probando)
-    // await deleteCustomRole(createdRoleId);
+    // Eliminar rol
+    await deleteCustomRole(createdRoleId);
     
     console.log('Pruebas completadas con éxito');
   } catch (error) {
