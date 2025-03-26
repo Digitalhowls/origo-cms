@@ -14,6 +14,8 @@ interface PageState {
   moveBlockUp: (blockId: string) => void;
   moveBlockDown: (blockId: string) => void;
   duplicateBlock: (blockId: string) => void;
+  reorderBlocks: (activeId: string, overId: string) => void;
+  setBlocksOrder: (blocks: Block[]) => void;
 }
 
 export const usePageStore = create<PageState>((set) => ({
@@ -131,6 +133,42 @@ export const usePageStore = create<PageState>((set) => ({
     
     // Insert duplicated block after the original
     blocks.splice(index + 1, 0, duplicatedBlock);
+    
+    return {
+      currentPage: {
+        ...state.currentPage,
+        blocks,
+      }
+    };
+  }),
+  
+  // Reordenar bloques durante el arrastre y soltar
+  reorderBlocks: (activeId, overId) => set((state) => {
+    if (!state.currentPage) return { currentPage: null };
+    
+    const blocks = [...state.currentPage.blocks];
+    const activeIndex = blocks.findIndex((block) => block.id === activeId);
+    const overIndex = blocks.findIndex((block) => block.id === overId);
+    
+    if (activeIndex === -1 || overIndex === -1) {
+      return { currentPage: state.currentPage };
+    }
+
+    // Mover el bloque a la nueva posición
+    const [movedBlock] = blocks.splice(activeIndex, 1);
+    blocks.splice(overIndex, 0, movedBlock);
+    
+    return {
+      currentPage: {
+        ...state.currentPage,
+        blocks,
+      }
+    };
+  }),
+  
+  // Establecer un nuevo orden completo de bloques
+  setBlocksOrder: (blocks) => set((state) => {
+    if (!state.currentPage) return { currentPage: null };
     
     return {
       currentPage: {

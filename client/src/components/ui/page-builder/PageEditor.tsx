@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Check } from 'lucide-react';
+import { Eye, Check, GripVertical } from 'lucide-react';
 import { usePageStore } from '@/lib/store';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -12,8 +12,26 @@ import { PageData, Block } from '@shared/types';
 import HeaderBlock from './blocks/HeaderBlock';
 import FeaturesBlock from './blocks/FeaturesBlock';
 import TextMediaBlock from './blocks/TextMediaBlock';
+import SortableBlockWrapper from './SortableBlockWrapper';
 import { v4 as uuidv4 } from 'uuid';
 import { TransitionList, AOSElement } from '@/lib/animation-service';
+import { 
+  DndContext, 
+  closestCenter, 
+  KeyboardSensor, 
+  PointerSensor, 
+  useSensor, 
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface PageEditorProps {
   pageId?: number;
@@ -102,30 +120,81 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
     alert('Esta funcionalidad estaría integrada con el BlockLibrary');
   };
 
+  // Configure DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  // Handle drag end event
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      // Update store with new order
+      if (currentPage) {
+        const reordered = reorderBlocksArray(
+          [...currentPage.blocks],
+          active.id.toString(),
+          over.id.toString()
+        );
+        
+        // Update page store
+        usePageStore.getState().setBlocksOrder(reordered);
+      }
+    }
+  };
+  
+  // Helper function to reorder blocks
+  const reorderBlocksArray = (blocks: Block[], activeId: string, overId: string) => {
+    const oldIndex = blocks.findIndex((block) => block.id === activeId);
+    const newIndex = blocks.findIndex((block) => block.id === overId);
+    
+    return arrayMove(blocks, oldIndex, newIndex);
+  };
+
   // Render appropriate block based on type
   const renderBlock = (block: Block) => {
+    let blockComponent;
+    
     switch (block.type) {
       case 'hero':
-        return <HeaderBlock 
-          key={block.id} 
+        blockComponent = <HeaderBlock 
           block={block} 
           onClick={() => handleBlockClick(block.id)} 
         />;
+        break;
       case 'features':
-        return <FeaturesBlock 
-          key={block.id} 
+        blockComponent = <FeaturesBlock 
           block={block} 
           onClick={() => handleBlockClick(block.id)} 
         />;
+        break;
       case 'text-media':
-        return <TextMediaBlock 
-          key={block.id} 
+        blockComponent = <TextMediaBlock 
           block={block} 
           onClick={() => handleBlockClick(block.id)} 
         />;
+        break;
       default:
-        return <div key={block.id}>Bloque no soportado: {block.type}</div>;
+        blockComponent = <div>Bloque no soportado: {block.type}</div>;
     }
+    
+    return (
+      <SortableBlockWrapper 
+        id={block.id}
+        onSelect={() => handleBlockClick(block.id)}
+        isSelected={selectedBlockId === block.id}
+      >
+        {blockComponent}
+      </SortableBlockWrapper>
+    );
   };
 
   if (isLoading) {
@@ -173,21 +242,29 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
       <Card className="bg-white mb-6 min-h-[500px]">
         <CardContent className="p-4 md:p-6">
           {currentPage?.blocks && currentPage.blocks.length > 0 ? (
-            <TransitionList
-              items={currentPage.blocks}
-              keyExtractor={(block) => block.id}
-              renderItem={(block) => (
-                <AOSElement 
-                  animation="fade-up" 
-                  duration={600} 
-                  delay={150}
-                >
-                  {renderBlock(block)}
-                </AOSElement>
-              )}
-              classNames="block"
-              timeout={400}
-            />
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext 
+                items={currentPage.blocks.map(block => block.id)} 
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-4">
+                  {currentPage.blocks.map((block) => (
+                    <AOSElement 
+                      key={block.id}
+                      animation="fade-up" 
+                      duration={600} 
+                      delay={150}
+                    >
+                      {renderBlock(block)}
+                    </AOSElement>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           ) : (
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center text-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
