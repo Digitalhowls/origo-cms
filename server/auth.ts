@@ -142,4 +142,84 @@ export function setupAuth(app: Express) {
     }
     res.json(req.user);
   });
+  
+  // Ruta para solicitar un token de recuperación de contraseña
+  app.post('/api/forgot-password', async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: 'El correo electrónico es requerido' });
+      }
+      
+      // Verificar si el email existe
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Por razones de seguridad, no revelamos si el email existe o no
+        return res.status(200).json({ 
+          message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña' 
+        });
+      }
+      
+      // Generar token de recuperación y guardar en la base de datos
+      const tokenRecord = await storage.createPasswordResetToken(user.id);
+      
+      // En un entorno de producción, aquí enviaríamos un email
+      // Por ahora, solo devolvemos el token en la respuesta para pruebas
+      res.status(200).json({
+        message: 'Instrucciones de recuperación enviadas a tu correo',
+        token: tokenRecord.token // Solo para pruebas, en producción no se devuelve
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+  
+  // Ruta para restablecer la contraseña con un token
+  app.post('/api/reset-password', async (req, res, next) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ message: 'Token y nueva contraseña son requeridos' });
+      }
+      
+      // Verificar si el token es válido
+      const tokenRecord = await storage.getPasswordResetTokenByToken(token);
+      if (!tokenRecord) {
+        return res.status(400).json({ message: 'Token inválido o expirado' });
+      }
+      
+      // Verificar si el token ya fue usado
+      if (tokenRecord.used) {
+        return res.status(400).json({ message: 'Este token ya ha sido utilizado' });
+      }
+      
+      // Verificar si el token ha expirado (24 horas)
+      const now = new Date();
+      const tokenCreatedAt = new Date(tokenRecord.createdAt!);
+      const tokenExpiry = new Date(tokenCreatedAt.getTime() + 24 * 60 * 60 * 1000);
+      
+      if (now > tokenExpiry) {
+        return res.status(400).json({ message: 'El token ha expirado' });
+      }
+      
+      // Obtener el usuario
+      const user = await storage.getUser(tokenRecord.userId);
+      if (!user) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+      
+      // Actualizar la contraseña
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await storage.updateUser(user.id, { password: hashedPassword });
+      
+      // Marcar el token como usado
+      await storage.markTokenAsUsed(tokenRecord.id);
+      
+      res.status(200).json({ message: 'Contraseña actualizada exitosamente' });
+    } catch (error) {
+      next(error);
+    }
+  });
 }

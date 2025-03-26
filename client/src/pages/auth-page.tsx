@@ -356,6 +356,136 @@ export default function AuthPage() {
                 </CardFooter>
               </Card>
             </TabsContent>
+            
+            <TabsContent value="forgot-password" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recupera tu contraseña</CardTitle>
+                  <CardDescription>
+                    Ingresa tu correo electrónico para recibir un enlace de recuperación
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...forgotPasswordForm}>
+                    <form
+                      onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}
+                      className="space-y-4"
+                    >
+                      <FormField
+                        control={forgotPasswordForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Correo electrónico</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="correo@ejemplo.com"
+                                type="email"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={forgotPasswordMutation.isPending}
+                      >
+                        {forgotPasswordMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : null}
+                        Enviar enlace de recuperación
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                  <Button
+                    variant="link"
+                    className="px-0"
+                    onClick={() => setActiveTab("login")}
+                  >
+                    Volver a inicio de sesión
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="reset-password" className="mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Establece una nueva contraseña</CardTitle>
+                  <CardDescription>
+                    Crea una nueva contraseña segura para tu cuenta
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...resetPasswordForm}>
+                    <form
+                      onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)}
+                      className="space-y-4"
+                    >
+                      <FormField
+                        control={resetPasswordForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nueva contraseña</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="••••••••"
+                                type="password"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={resetPasswordForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirmar nueva contraseña</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="••••••••"
+                                type="password"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <input type="hidden" name="token" value={resetToken} />
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={resetPasswordMutation.isPending}
+                      >
+                        {resetPasswordMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : null}
+                        Cambiar contraseña
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+                <CardFooter className="flex justify-center">
+                  <Button
+                    variant="link"
+                    className="px-0"
+                    onClick={() => setActiveTab("login")}
+                  >
+                    Volver a inicio de sesión
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
       </div>
