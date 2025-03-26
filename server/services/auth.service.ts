@@ -3,7 +3,7 @@ import { storage } from '../storage';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { db } from '../db';
-import { users, insertUserSchema, apiKeys } from '@shared/schema';
+import { users, insertUserSchema, apiKeys, organizations } from '@shared/schema';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 
@@ -239,5 +239,77 @@ export async function deleteApiKey(req: Request, res: Response) {
   } catch (error) {
     console.error('Error deleting API key:', error);
     res.status(500).json({ message: 'Error al eliminar clave API' });
+  }
+}
+
+// Initial setup function to create admin user and organization
+export async function setupAdmin(req: Request, res: Response) {
+  try {
+    // Check if there are any users already
+    const existingUsers = await storage.getUsers({});
+    if (existingUsers.totalItems > 0) {
+      return res.status(400).json({ 
+        message: 'Ya existe al menos un usuario en el sistema',
+        totalUsers: existingUsers.totalItems
+      });
+    }
+    
+    // Validate input
+    const setupSchema = z.object({
+      email: z.string().email(),
+      password: z.string().min(6),
+      name: z.string().min(2),
+      organizationName: z.string().min(2)
+    });
+    
+    const validationResult = setupSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: 'Datos de configuración inválidos',
+        errors: validationResult.error.errors
+      });
+    }
+    
+    const { email, password, name, organizationName } = validationResult.data;
+    
+    // 1. Create organization
+    const [organization] = await db.insert(organizations).values({
+      name: organizationName,
+      slug: organizationName.toLowerCase().replace(/\s+/g, '-'),
+      plan: 'free',
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+    
+    // 2. Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // 3. Create admin user
+    const userData = {
+      email,
+      name,
+      username: email,
+      password: hashedPassword,
+      role: 'superadmin',
+      organizationId: organization.id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const newUser = await storage.createUser(userData);
+    
+    // Remove password from response
+    const { password: _, ...userResponse } = newUser;
+    
+    res.status(201).json({
+      user: userResponse,
+      organization,
+      message: 'Configuración inicial completada. Ahora puedes iniciar sesión.'
+    });
+  } catch (error) {
+    console.error('Error setting up admin:', error);
+    res.status(500).json({ message: 'Error en la configuración inicial' });
   }
 }
