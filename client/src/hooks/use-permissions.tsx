@@ -1,7 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Resource, Action } from "@shared/types";
+import { Resource, Action, RolePermissions, UserRole } from "@shared/types";
+import { useState, useEffect } from "react";
+
+// Tipo para los permisos del usuario
+interface UserPermission {
+  id: number;
+  userId: number;
+  resource: string;
+  action: string;
+  allowed: boolean;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 /**
  * Hook para gestionar permisos de usuario
@@ -9,16 +22,33 @@ import { Resource, Action } from "@shared/types";
 export function usePermissions(userId?: number) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Estado local para los permisos según el rol
+  const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
+  
+  // Obtener permisos del usuario según su rol
+  const roleQuery = useQuery({
+    queryKey: userId ? [`/api/permissions/role/${userId}`] : null,
+    enabled: !!userId,
+  });
+  
+  // Configurar los permisos del rol cuando cambia la respuesta de la API
+  useEffect(() => {
+    if (roleQuery.data?.role) {
+      const userRole = roleQuery.data.role as UserRole;
+      setRolePermissions(RolePermissions[userRole] || {});
+    }
+  }, [roleQuery.data]);
 
-  // Obtener los permisos del usuario
-  const permissionsQuery = useQuery({
+  // Obtener los permisos personalizados del usuario
+  const permissionsQuery = useQuery<UserPermission[]>({
     queryKey: userId ? [`/api/permissions/user/${userId}`] : null,
     enabled: !!userId,
   });
 
   // Verificar si un usuario tiene un permiso específico
   const checkPermissionQuery = (userId: number, resource: Resource, action: Action) => {
-    return useQuery({
+    return useQuery<boolean>({
       queryKey: [`/api/permissions/check/${userId}/${resource}/${action}`],
       enabled: !!userId,
     });
@@ -103,15 +133,31 @@ export function usePermissions(userId?: number) {
   });
 
   return {
-    permissions: permissionsQuery.data,
-    isLoadingPermissions: permissionsQuery.isLoading,
-    errorPermissions: permissionsQuery.error,
+    // Datos de permisos
+    permissionsData: permissionsQuery.data,
+    permissionsLoading: permissionsQuery.isLoading,
+    permissionsError: permissionsQuery.error,
+    
+    // Datos del rol y sus permisos base
+    roleData: roleQuery.data,
+    roleLoading: roleQuery.isLoading,
+    roleError: roleQuery.error,
+    rolePermissions,
+    
+    // Funciones de utilidad
     checkPermission: checkPermissionQuery,
+    
+    // Mutaciones para gestión de permisos
     addPermission: addPermissionMutation.mutate,
     isAddingPermission: addPermissionMutation.isPending,
     updatePermission: updatePermissionMutation.mutate,
     isUpdatingPermission: updatePermissionMutation.isPending,
     deletePermission: deletePermissionMutation.mutate,
     isDeletingPermission: deletePermissionMutation.isPending,
+    
+    // Mantenemos las propiedades anteriores para compatibilidad
+    permissions: permissionsQuery.data,
+    isLoadingPermissions: permissionsQuery.isLoading,
+    errorPermissions: permissionsQuery.error,
   };
 }

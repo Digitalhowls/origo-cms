@@ -1,239 +1,229 @@
-import { useState } from "react";
-import { usePermissions } from "@/hooks/use-permissions";
-import { Resource, Action } from "@shared/types";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
-import { UserPermission } from "@shared/schema";
-
-// Función para convertir los valores de recurso y acción a texto legible
-const resourceToString = (resource: string): string => {
-  const resourceMap: Record<string, string> = {
-    'page': 'Página',
-    'blog': 'Blog',
-    'media': 'Medios',
-    'course': 'Curso',
-    'user': 'Usuario',
-    'organization': 'Organización',
-    'setting': 'Configuración',
-    'analytics': 'Analítica',
-    'api_key': 'API Key',
-    'category': 'Categoría',
-    'tag': 'Etiqueta'
-  };
-  return resourceMap[resource] || resource;
-};
-
-const actionToString = (action: string): string => {
-  const actionMap: Record<string, string> = {
-    'create': 'Crear',
-    'read': 'Leer',
-    'update': 'Actualizar',
-    'delete': 'Eliminar',
-    'publish': 'Publicar',
-    'unpublish': 'Despublicar',
-    'invite': 'Invitar',
-    'manage': 'Gestionar',
-    'admin': 'Administrar'
-  };
-  return actionMap[action] || action;
-};
+import React, { useState } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Resource, Action } from '@shared/types';
+import { usePermissions } from '@/hooks/use-permissions';
+import { PlusCircle, Shield, Info } from 'lucide-react';
 
 interface UserPermissionsManagerProps {
   userId: number;
-  userName: string;
-  userRole: string;
 }
 
-export function UserPermissionsManager({ userId, userName, userRole }: UserPermissionsManagerProps) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newResource, setNewResource] = useState<Resource | ''>('');
-  const [newAction, setNewAction] = useState<Action | ''>('');
-  const [newAllowed, setNewAllowed] = useState(true);
+export function UserPermissionsManager({ userId }: UserPermissionsManagerProps) {
+  const { addPermission } = usePermissions(userId);
   
-  const {
-    permissions,
-    isLoadingPermissions,
-    errorPermissions,
-    addPermission,
-    isAddingPermission,
-    updatePermission,
-    isUpdatingPermission,
-    deletePermission,
-    isDeletingPermission
-  } = usePermissions(userId);
-
-  const handleAddPermission = () => {
-    if (!newResource || !newAction) return;
+  const [formState, setFormState] = useState({
+    resource: '',
+    action: '',
+    allowed: true,
+    isSubmitting: false
+  });
+  
+  // Un mapa simple para mantener las acciones disponibles para cada recurso
+  // Esto podría expandirse o provenir de la API en una implementación más completa
+  const resourceActions: Record<string, string[]> = {
+    [Resource.PAGE]: [
+      Action.CREATE,
+      Action.READ,
+      Action.UPDATE,
+      Action.DELETE,
+      Action.PUBLISH,
+      Action.UNPUBLISH
+    ],
+    [Resource.BLOG]: [
+      Action.CREATE,
+      Action.READ,
+      Action.UPDATE,
+      Action.DELETE,
+      Action.PUBLISH,
+      Action.UNPUBLISH
+    ],
+    [Resource.MEDIA]: [
+      Action.CREATE,
+      Action.READ,
+      Action.UPDATE,
+      Action.DELETE
+    ],
+    [Resource.COURSE]: [
+      Action.CREATE,
+      Action.READ,
+      Action.UPDATE,
+      Action.DELETE,
+      Action.PUBLISH,
+      Action.UNPUBLISH
+    ],
+    [Resource.USER]: [
+      Action.CREATE,
+      Action.READ,
+      Action.UPDATE,
+      Action.DELETE,
+      Action.INVITE
+    ],
+    [Resource.ORGANIZATION]: [
+      Action.READ,
+      Action.UPDATE,
+      Action.MANAGE
+    ],
+    [Resource.SETTING]: [
+      Action.READ,
+      Action.UPDATE
+    ],
+    [Resource.ANALYTICS]: [
+      Action.READ
+    ],
+    [Resource.API_KEY]: [
+      Action.CREATE,
+      Action.READ,
+      Action.DELETE
+    ],
+    [Resource.CATEGORY]: [
+      Action.CREATE,
+      Action.READ,
+      Action.UPDATE,
+      Action.DELETE
+    ],
+    [Resource.TAG]: [
+      Action.CREATE,
+      Action.READ,
+      Action.UPDATE,
+      Action.DELETE
+    ]
+  };
+  
+  const handleAddPermission = async () => {
+    if (!formState.resource || !formState.action) return;
     
-    addPermission({
-      userId,
-      resource: newResource,
-      action: newAction,
-      allowed: newAllowed,
-      description: `Permiso personalizado para ${resourceToString(newResource)} - ${actionToString(newAction)}`
-    });
+    setFormState({ ...formState, isSubmitting: true });
     
-    setIsAddDialogOpen(false);
-    resetForm();
+    try {
+      await addPermission({
+        userId,
+        resource: formState.resource,
+        action: formState.action,
+        allowed: formState.allowed
+      });
+      
+      // Reinicia el formulario
+      setFormState({
+        resource: '',
+        action: '',
+        allowed: true,
+        isSubmitting: false
+      });
+    } catch (error) {
+      console.error('Error al añadir permiso:', error);
+      setFormState({ ...formState, isSubmitting: false });
+    }
   };
-
-  const resetForm = () => {
-    setNewResource('');
-    setNewAction('');
-    setNewAllowed(true);
-  };
-
-  const handleTogglePermission = (permission: UserPermission) => {
-    updatePermission({
-      id: permission.id,
-      allowed: !permission.allowed
-    });
-  };
-
+  
+  // Obtener recursos disponibles (las claves del objeto resourceActions)
+  const resources = Object.keys(resourceActions);
+  
+  // Obtener acciones disponibles para el recurso seleccionado
+  const availableActions = formState.resource ? resourceActions[formState.resource] : [];
+  
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">Permisos personalizados para {userName}</h3>
-          <p className="text-sm text-muted-foreground">
-            Estos permisos personalizados pueden anular los permisos predeterminados del rol "{userRole}".
-          </p>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <PlusCircle className="h-5 w-5" />
+          Añadir permiso personalizado
+        </CardTitle>
+        <CardDescription>
+          Añade permisos personalizados para recursos y acciones específicas.
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="resource">Recurso</Label>
+            <Select
+              value={formState.resource}
+              onValueChange={(value) => setFormState({ ...formState, resource: value, action: '' })}
+            >
+              <SelectTrigger id="resource">
+                <SelectValue placeholder="Seleccionar recurso" />
+              </SelectTrigger>
+              <SelectContent>
+                {resources.map((resource) => (
+                  <SelectItem key={resource} value={resource}>
+                    {resource.charAt(0).toUpperCase() + resource.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="action">Acción</Label>
+            <Select
+              value={formState.action}
+              onValueChange={(value) => setFormState({ ...formState, action: value })}
+              disabled={!formState.resource || availableActions.length === 0}
+            >
+              <SelectTrigger id="action">
+                <SelectValue placeholder="Seleccionar acción" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableActions.map((action) => (
+                  <SelectItem key={action} value={action}>
+                    {action.charAt(0).toUpperCase() + action.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1">
-              <Plus className="h-4 w-4" />
-              <span>Añadir permiso</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Añadir permiso personalizado</DialogTitle>
-              <DialogDescription>
-                Los permisos personalizados pueden anular los predeterminados del rol.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="resource">Recurso</Label>
-                <Select value={newResource} onValueChange={(value) => setNewResource(value as Resource)}>
-                  <SelectTrigger id="resource">
-                    <SelectValue placeholder="Seleccionar recurso" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(Resource).map((resource) => (
-                      <SelectItem key={resource} value={resource}>
-                        {resourceToString(resource)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="action">Acción</Label>
-                <Select value={newAction} onValueChange={(value) => setNewAction(value as Action)}>
-                  <SelectTrigger id="action">
-                    <SelectValue placeholder="Seleccionar acción" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(Action).map((action) => (
-                      <SelectItem key={action} value={action}>
-                        {actionToString(action)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="allowed">Permitido</Label>
-                <Switch
-                  id="allowed"
-                  checked={newAllowed}
-                  onCheckedChange={setNewAllowed}
-                />
-              </div>
+        
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex flex-col space-y-1">
+            <Label htmlFor="permission-allowed">Permiso permitido</Label>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="permission-allowed"
+                checked={formState.allowed}
+                onCheckedChange={(checked) => setFormState({ ...formState, allowed: checked })}
+              />
+              <span className="text-sm text-gray-500">
+                {formState.allowed ? 'Permitido' : 'Denegado'}
+              </span>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleAddPermission} disabled={!newResource || !newAction || isAddingPermission}>
-                {isAddingPermission && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Guardar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {isLoadingPermissions ? (
-        <div className="flex justify-center p-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
         </div>
-      ) : errorPermissions ? (
-        <div className="flex items-center justify-center p-4 text-red-500">
-          <AlertCircle className="h-5 w-5 mr-2" />
-          <span>Error al cargar permisos: {(errorPermissions as Error).message}</span>
-        </div>
-      ) : permissions && permissions.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Recurso</TableHead>
-              <TableHead>Acción</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="w-[100px]">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {permissions.map((permission: UserPermission) => (
-              <TableRow key={permission.id}>
-                <TableCell>
-                  {resourceToString(permission.resource)}
-                </TableCell>
-                <TableCell>
-                  {actionToString(permission.action)}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={permission.allowed ? "default" : "destructive"}>
-                    {permission.allowed ? "Permitido" : "Denegado"}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Switch
-                      checked={permission.allowed}
-                      onCheckedChange={() => handleTogglePermission(permission)}
-                      disabled={isUpdatingPermission}
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deletePermission(permission.id)}
-                      disabled={isDeletingPermission}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : (
-        <div className="text-center p-4 border rounded-md bg-muted/20">
-          <p>No hay permisos personalizados para este usuario.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Este usuario tiene los permisos predeterminados de su rol: {userRole}.
+      </CardContent>
+      
+      <CardFooter className="flex justify-between bg-gray-50 rounded-b-lg border-t p-4">
+        <div className="flex items-start gap-2 text-sm text-gray-500">
+          <Info className="h-5 w-5 flex-shrink-0 text-blue-500" />
+          <p>
+            Los permisos personalizados tienen prioridad sobre los permisos del rol.
           </p>
         </div>
-      )}
-    </div>
+        
+        <Button
+          onClick={handleAddPermission}
+          disabled={!formState.resource || !formState.action || formState.isSubmitting}
+        >
+          {formState.isSubmitting ? 'Añadiendo...' : 'Añadir permiso'}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

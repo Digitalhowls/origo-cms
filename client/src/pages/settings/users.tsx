@@ -42,9 +42,12 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { UserPermissionsTab } from '@/components/permissions/user-permissions-tab';
+import { UserRole } from '@shared/types';
 import { Plus, MoreVertical, Mail, Trash, PenSquare, Search, Copy } from 'lucide-react';
 
 const UsersSettings: React.FC = () => {
@@ -461,7 +464,7 @@ const UsersSettings: React.FC = () => {
       
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[800px]">
           <DialogHeader>
             <DialogTitle>Editar usuario</DialogTitle>
             <DialogDescription>
@@ -469,62 +472,87 @@ const UsersSettings: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleUpdateUser}>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="edit-email">Email</Label>
-                <Input
-                  id="edit-email"
-                  name="email"
-                  type="email"
-                  required
-                  disabled
-                  value={editFormData.email}
-                  onChange={handleEditFormChange}
-                />
-                <p className="text-xs text-gray-500">El email no puede ser modificado.</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">Nombre</Label>
-                <Input
-                  id="edit-name"
-                  name="name"
-                  required
-                  value={editFormData.name}
-                  onChange={handleEditFormChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-role">Rol</Label>
-                <Select
-                  name="role"
-                  value={editFormData.role}
-                  onValueChange={(value) => setEditFormData({...editFormData, role: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar rol" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="editor">Editor</SelectItem>
-                    <SelectItem value="reader">Lector</SelectItem>
-                    <SelectItem value="viewer">Viewer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          <Tabs defaultValue="info" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="info">Información básica</TabsTrigger>
+              <TabsTrigger value="permissions">Permisos</TabsTrigger>
+            </TabsList>
             
-            <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
-              </Button>
-            </DialogFooter>
-          </form>
+            <TabsContent value="info">
+              <form onSubmit={handleUpdateUser}>
+                <div className="space-y-4 py-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">Email</Label>
+                    <Input
+                      id="edit-email"
+                      name="email"
+                      type="email"
+                      required
+                      disabled
+                      value={editFormData.email}
+                      onChange={handleEditFormChange}
+                    />
+                    <p className="text-xs text-gray-500">El email no puede ser modificado.</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">Nombre</Label>
+                    <Input
+                      id="edit-name"
+                      name="name"
+                      required
+                      value={editFormData.name}
+                      onChange={handleEditFormChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-role">Rol</Label>
+                    <Select
+                      name="role"
+                      value={editFormData.role}
+                      onValueChange={(value) => setEditFormData({...editFormData, role: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar rol" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="editor">Editor</SelectItem>
+                        <SelectItem value="reader">Lector</SelectItem>
+                        <SelectItem value="viewer">Viewer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <DialogFooter className="mt-6">
+                  <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </TabsContent>
+            
+            <TabsContent value="permissions">
+              {selectedUser && (
+                <UserPermissionsTab 
+                  userId={selectedUser.id}
+                  userName={selectedUser.name}
+                  userRole={selectedUser.role as UserRole}
+                />
+              )}
+              
+              <DialogFooter className="mt-6">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cerrar
+                </Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
