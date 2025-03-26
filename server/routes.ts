@@ -9,6 +9,7 @@ import * as blogService from './services/blog.service';
 import * as mediaService from './services/media.service';
 import * as coursesService from './services/courses.service';
 import * as organizationService from './services/organization.service';
+import * as permissionsService from './services/permissions.service';
 import { authMiddleware } from './middleware/auth.middleware';
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -160,6 +161,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/api-keys', authMiddleware, authService.getApiKeys);
   app.post('/api/api-keys', authMiddleware, authService.createApiKey);
   app.delete('/api/api-keys/:id', authMiddleware, authService.deleteApiKey);
+  
+  // Permissions routes
+  app.get('/api/permissions/user/:userId', authMiddleware, permissionsService.getUserPermissions);
+  app.post('/api/permissions', authMiddleware, permissionsService.addUserPermission);
+  app.patch('/api/permissions/:id', authMiddleware, permissionsService.updateUserPermission);
+  app.delete('/api/permissions/:id', authMiddleware, permissionsService.deleteUserPermission);
+  app.get('/api/permissions/check/:userId/:resource/:action', authMiddleware, permissionsService.checkPermission);
   
   // Password reset routes
   app.post('/api/forgot-password', authService.requestPasswordReset);

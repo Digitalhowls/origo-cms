@@ -16,6 +16,7 @@ import {
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   userPermissions, type UserPermission, type InsertUserPermission
 } from "@shared/schema";
+import { RolePermissions } from "@shared/types";
 import { eq, like, and, or, desc, sql, asc } from "drizzle-orm";
 import { db } from "./db";
 import * as crypto from "crypto";
@@ -746,6 +747,91 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updatedToken;
+  }
+
+  // === Permissions methods ===
+  async getUserPermissions(userId: number): Promise<UserPermission[]> {
+    return db
+      .select()
+      .from(userPermissions)
+      .where(eq(userPermissions.userId, userId))
+      .orderBy(asc(userPermissions.resource), asc(userPermissions.action));
+  }
+
+  async getPermissionsByResource(userId: number, resource: string): Promise<UserPermission[]> {
+    return db
+      .select()
+      .from(userPermissions)
+      .where(
+        and(
+          eq(userPermissions.userId, userId),
+          eq(userPermissions.resource, resource)
+        )
+      );
+  }
+
+  async hasPermission(userId: number, resource: string, action: string): Promise<boolean> {
+    // Primero obtener el usuario para verificar su rol
+    const user = await this.getUser(userId);
+    if (!user) return false;
+
+    // Si es superadmin, siempre tiene todos los permisos
+    if (user.role === 'superadmin') return true;
+
+    // Verificar permisos basados en rol del usuario
+    const rolePermissions = RolePermissions[user.role];
+    if (rolePermissions) {
+      // Verificar si tiene permiso wildcard general
+      if (rolePermissions['*'] === true) return true;
+      
+      // Verificar si tiene permiso wildcard para el recurso
+      if (rolePermissions[`${resource}.*`] === true) return true;
+      
+      // Verificar permiso específico
+      if (rolePermissions[`${resource}.${action}`] === true) return true;
+    }
+
+    // Verificar permisos personalizados del usuario (pueden anular los del rol)
+    const [permission] = await db
+      .select()
+      .from(userPermissions)
+      .where(
+        and(
+          eq(userPermissions.userId, userId),
+          eq(userPermissions.resource, resource),
+          eq(userPermissions.action, action)
+        )
+      );
+
+    // Si hay un permiso personalizado, devuelve su valor 'allowed'
+    if (permission) {
+      return permission.allowed;
+    }
+
+    // Por defecto, denegar
+    return false;
+  }
+
+  async addUserPermission(permission: InsertUserPermission): Promise<UserPermission> {
+    const [newPermission] = await db
+      .insert(userPermissions)
+      .values(permission)
+      .returning();
+    return newPermission;
+  }
+
+  async updateUserPermission(id: number, data: Partial<UserPermission>): Promise<UserPermission | undefined> {
+    const [updatedPermission] = await db
+      .update(userPermissions)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(userPermissions.id, id))
+      .returning();
+    return updatedPermission;
+  }
+
+  async deleteUserPermission(id: number): Promise<boolean> {
+    const result = await db.delete(userPermissions).where(eq(userPermissions.id, id));
+    return !!result;
   }
 }
 
