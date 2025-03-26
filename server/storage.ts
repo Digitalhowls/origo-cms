@@ -35,9 +35,12 @@ export interface IStorage {
   // Organization methods
   getOrganization(id: number): Promise<Organization | undefined>;
   getOrganizationBySlug(slug: string): Promise<Organization | undefined>;
+  getOrganizationByCustomDomain(domain: string): Promise<Organization | undefined>;
+  getOrganizationBySubdomain(subdomain: string): Promise<Organization | undefined>;
   getUserOrganizations(userId: number): Promise<Organization[]>;
   createOrganization(orgData: InsertOrganization, creatorId: number): Promise<Organization>;
   updateOrganizationBranding(id: number, branding: Partial<Organization>): Promise<Organization | undefined>;
+  updateOrganizationDomains(id: number, domainData: { domain?: string, subdomain?: string, domainConfig?: any }): Promise<Organization | undefined>;
   deleteOrganization(id: number): Promise<boolean>;
   
   // Organization Users methods
@@ -181,6 +184,16 @@ export class DatabaseStorage implements IStorage {
     return organization;
   }
   
+  async getOrganizationByCustomDomain(domain: string): Promise<Organization | undefined> {
+    const [organization] = await db.select().from(organizations).where(eq(organizations.domain, domain));
+    return organization;
+  }
+  
+  async getOrganizationBySubdomain(subdomain: string): Promise<Organization | undefined> {
+    const [organization] = await db.select().from(organizations).where(eq(organizations.subdomain, subdomain));
+    return organization;
+  }
+  
   async getUserOrganizations(userId: number): Promise<Organization[]> {
     const result = await db
       .select({
@@ -246,6 +259,30 @@ export class DatabaseStorage implements IStorage {
       .set({ ...branding, updatedAt: new Date() })
       .where(eq(organizations.id, id))
       .returning();
+    return updatedOrg;
+  }
+  
+  async updateOrganizationDomains(id: number, domainData: { domain?: string, subdomain?: string, domainConfig?: any }): Promise<Organization | undefined> {
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (domainData.domain !== undefined) {
+      updateData.domain = domainData.domain;
+    }
+    
+    if (domainData.subdomain !== undefined) {
+      updateData.subdomain = domainData.subdomain;
+    }
+    
+    if (domainData.domainConfig !== undefined) {
+      updateData.domainConfig = domainData.domainConfig;
+    }
+    
+    const [updatedOrg] = await db
+      .update(organizations)
+      .set(updateData)
+      .where(eq(organizations.id, id))
+      .returning();
+    
     return updatedOrg;
   }
   

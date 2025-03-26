@@ -22,6 +22,15 @@ export const organizations = pgTable("organizations", {
     headings: string;
   }>(),
   analyticsId: text("analytics_id"),
+  domainConfig: jsonb("domain_config").$type<{
+    enabled: boolean;
+    domain?: string;
+    verified?: boolean;
+    verificationMethod?: string;
+    verificationToken?: string;
+    sslEnabled?: boolean;
+    customNameservers?: string[];
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

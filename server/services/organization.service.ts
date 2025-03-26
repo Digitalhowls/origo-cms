@@ -326,29 +326,162 @@ export async function checkDomain(req: Request, res: Response) {
   try {
     const domainSchema = z.object({
       domain: z.string().min(1),
+      type: z.enum(['slug', 'domain', 'subdomain']).default('slug')
     });
     
     const validationResult = domainSchema.safeParse(req.body);
     
     if (!validationResult.success) {
       return res.status(400).json({
-        message: 'Dominio inválido',
+        message: 'Parámetros inválidos',
         errors: validationResult.error.errors
       });
     }
     
-    const { domain } = validationResult.data;
+    const { domain, type } = validationResult.data;
     
-    // Check if domain is already in use
-    const existingOrg = await storage.getOrganizationBySlug(domain);
+    let isAvailable = false;
+    let existingOrg = null;
+    
+    // Verificar disponibilidad según el tipo
+    if (type === 'slug') {
+      existingOrg = await storage.getOrganizationBySlug(domain);
+      isAvailable = !existingOrg;
+    } else if (type === 'domain') {
+      // Verificar si el dominio personalizado ya está en uso
+      existingOrg = await storage.getOrganizationByCustomDomain(domain);
+      isAvailable = !existingOrg;
+      
+      // Verificar que el formato del dominio sea válido
+      const domainRegex = /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+      if (!domainRegex.test(domain)) {
+        return res.status(400).json({
+          message: 'Formato de dominio inválido',
+          valid: false,
+          available: false
+        });
+      }
+    } else if (type === 'subdomain') {
+      // Verificar si el subdominio ya está en uso
+      existingOrg = await storage.getOrganizationBySubdomain(domain);
+      isAvailable = !existingOrg;
+      
+      // Verificar que el formato del subdominio sea válido
+      const subdomainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$/;
+      if (!subdomainRegex.test(domain)) {
+        return res.status(400).json({
+          message: 'Formato de subdominio inválido',
+          valid: false,
+          available: false
+        });
+      }
+    }
     
     res.json({
       domain,
-      available: !existingOrg,
+      type,
+      available: isAvailable,
+      valid: true
     });
   } catch (error) {
     console.error('Error checking domain:', error);
     res.status(500).json({ message: 'Error al verificar disponibilidad del dominio' });
+  }
+}
+
+// Configure custom domain
+export async function configureCustomDomain(req: Request, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'No autenticado' });
+    }
+    
+    const userId = (req.user as any).id;
+    const organizationId = (req.user as any).organizationId;
+    
+    // Verificar que el usuario tenga permisos para esta operación
+    const hasPermission = await storage.hasPermission(userId, 'organization', 'update');
+    if (!hasPermission) {
+      return res.status(403).json({ message: 'No tiene permisos para actualizar la configuración de la organización' });
+    }
+    
+    // Validar los datos recibidos
+    const domainSchema = z.object({
+      customDomain: z.string().optional(),
+      subdomain: z.string().optional(),
+      enableCustomDomain: z.boolean().default(false),
+      verificationMethod: z.enum(['dns', 'file']).optional(),
+      verificationToken: z.string().optional()
+    });
+    
+    const validationResult = domainSchema.safeParse(req.body);
+    
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: 'Datos inválidos',
+        errors: validationResult.error.errors
+      });
+    }
+    
+    const { customDomain, subdomain, enableCustomDomain, verificationMethod, verificationToken } = validationResult.data;
+    
+    // Obtener la organización actual
+    const organization = await storage.getOrganization(organizationId);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organización no encontrada' });
+    }
+    
+    let customDomainConfig: any = {
+      enabled: enableCustomDomain
+    };
+    
+    if (customDomain) {
+      // Verificar disponibilidad del dominio personalizado
+      const existingOrg = await storage.getOrganizationByCustomDomain(customDomain);
+      if (existingOrg && existingOrg.id !== organizationId) {
+        return res.status(400).json({ 
+          message: 'Este dominio ya está en uso por otra organización' 
+        });
+      }
+      
+      customDomainConfig.domain = customDomain;
+      customDomainConfig.verified = false;
+      
+      if (verificationMethod && verificationToken) {
+        customDomainConfig.verificationMethod = verificationMethod;
+        customDomainConfig.verificationToken = verificationToken;
+        // En una implementación real, aquí se verificaría el dominio
+        // Por ahora, simplemente guardamos la información
+      }
+    }
+    
+    if (subdomain) {
+      // Verificar disponibilidad del subdominio
+      const existingOrg = await storage.getOrganizationBySubdomain(subdomain);
+      if (existingOrg && existingOrg.id !== organizationId) {
+        return res.status(400).json({ 
+          message: 'Este subdominio ya está en uso por otra organización' 
+        });
+      }
+    }
+    
+    // Actualizar la organización con la configuración de dominio
+    const updatedOrg = await storage.updateOrganizationDomains(
+      organizationId, 
+      { 
+        domain: customDomain, 
+        subdomain, 
+        domainConfig: customDomainConfig 
+      }
+    );
+    
+    res.json({
+      success: true,
+      organization: updatedOrg
+    });
+  } catch (error) {
+    console.error('Error configuring custom domain:', error);
+    res.status(500).json({ message: 'Error al configurar el dominio personalizado' });
   }
 }
 
