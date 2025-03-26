@@ -20,13 +20,15 @@ export function setupAuth(app: Express) {
   const MemoryStoreSession = MemoryStore(session);
   
   // Configure session middleware
-  const sessionSettings = {
+  const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'origo-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: { 
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: 'lax' as 'lax',
+      httpOnly: true
     },
     store: new MemoryStoreSession({
       checkPeriod: 86400000 // prune expired entries every 24h
@@ -57,7 +59,7 @@ export function setupAuth(app: Express) {
           
           // No devolvemos la contraseña
           const { password: _, ...userWithoutPassword } = user;
-          return done(null, userWithoutPassword);
+          return done(null, userWithoutPassword as Express.User);
         } catch (error) {
           return done(error);
         }
@@ -66,7 +68,7 @@ export function setupAuth(app: Express) {
   );
 
   // Serialize user to session
-  passport.serializeUser((user, done) => done(null, user.id));
+  passport.serializeUser((user: Express.User, done) => done(null, user.id));
   
   // Deserialize user from session
   passport.deserializeUser(async (id: number, done) => {
@@ -77,7 +79,7 @@ export function setupAuth(app: Express) {
       }
       // Remove password from user object
       const { password, ...userWithoutPassword } = user;
-      done(null, userWithoutPassword);
+      done(null, userWithoutPassword as Express.User);
     } catch (error) {
       done(error);
     }
@@ -125,14 +127,27 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post('/api/auth/login', passport.authenticate('local'), (req, res) => {
-    res.json(req.user);
+  app.post('/api/auth/login', (req, res, next) => {
+    passport.authenticate('local', (err: Error | null, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) {
+        return res.status(401).json({ message: 'Credenciales incorrectas' });
+      }
+      req.login(user, (err) => {
+        if (err) return next(err);
+        return res.json(user);
+      });
+    })(req, res, next);
   });
 
   app.post('/api/auth/logout', (req, res, next) => {
     req.logout((err) => {
       if (err) return next(err);
-      res.json({ success: true });
+      req.session.destroy((err) => {
+        if (err) return next(err);
+        res.clearCookie('connect.sid');
+        res.json({ success: true });
+      });
     });
   });
 
@@ -191,7 +206,7 @@ export function setupAuth(app: Express) {
       }
       
       // Verificar si el token ya fue usado
-      if (tokenRecord.used) {
+      if (tokenRecord.usedAt) {
         return res.status(400).json({ message: 'Este token ya ha sido utilizado' });
       }
       
