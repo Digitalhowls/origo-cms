@@ -3,7 +3,8 @@
  */
 
 // Configuración de la URL base para las pruebas
-global.BASE_URL = process.env.TEST_URL || 'http://localhost:5000';
+const BASE_URL = process.env.TEST_URL || 'http://localhost:5000';
+globalThis.BASE_URL = BASE_URL;
 
 // Configuración adicional antes de cada prueba
 beforeEach(async () => {
