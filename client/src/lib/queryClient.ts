@@ -44,15 +44,16 @@ export async function apiRequest(
   const cookies = document.cookie;
   console.log("Cookies existentes:", cookies);
   
-  // Preparar headers base según si hay datos o no
-  const baseHeaders = data ? { 
-    "Content-Type": "application/json",
-    "X-Requested-With": "XMLHttpRequest",
-    "Accept": "application/json"
-  } : {
+  // Preparar headers base con valores iniciales comunes
+  const baseHeaders: Headers = {
     "X-Requested-With": "XMLHttpRequest",
     "Accept": "application/json"
   };
+  
+  // Añadir Content-Type si hay datos
+  if (data) {
+    baseHeaders["Content-Type"] = "application/json";
+  }
   
   // Añadir token JWT si existe
   const headers = addAuthHeader(baseHeaders);
@@ -97,7 +98,7 @@ export const getQueryFn: <T>(options: {
     console.log("Cookies antes de fetch:", cookies);
     
     // Preparar headers base
-    const baseHeaders = {
+    const baseHeaders: Headers = {
       "X-Requested-With": "XMLHttpRequest",
       "Accept": "application/json"
     };

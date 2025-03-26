@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect } from "react";
 import {
   useQuery,
   useMutation,
@@ -7,6 +7,13 @@ import {
 import { User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  saveAuthToken, 
+  removeAuthToken, 
+  saveUserData, 
+  removeUserData, 
+  getUserData
+} from "../lib/authStorage";
 
 type AuthContextType = {
   user: User | null;
@@ -25,6 +32,11 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  
+  // Intentar cargar el usuario desde localStorage al inicio
+  // Esto permite tener un estado inicial mientras se verifica con el servidor
+  const cachedUser = getUserData();
+  
   const {
     data: user,
     error,
@@ -35,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     staleTime: 0, // No caché
     refetchOnMount: true, // Re-consultar al montar
     refetchOnWindowFocus: true, // Re-consultar al enfocar la ventana
+    initialData: cachedUser, // Usar datos del localStorage como estado inicial
   });
 
   const loginMutation = useMutation({
@@ -45,11 +58,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Verificar si tenemos cookies después del login
       console.log("Cookies recibidas:", document.cookie);
       
-      return await res.json();
+      const data = await res.json();
+      
+      // Verificar si recibimos un token JWT
+      if (data.token) {
+        console.log("Token JWT recibido");
+        
+        // Guardar el token JWT
+        saveAuthToken(data.token);
+        
+        // Guardar los datos del usuario (sin el token)
+        const { token, ...userData } = data;
+        saveUserData(userData);
+        
+        return userData;
+      }
+      
+      return data;
     },
     onSuccess: (user: User) => {
       console.log("Login exitoso, usuario:", user);
-      console.log("Cookies después de login exitoso:", document.cookie);
       queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Sesión iniciada",
@@ -70,7 +98,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: InsertUser) => {
       console.log("Intentando registrar usuario:", credentials);
       const res = await apiRequest("POST", "/api/auth/register", credentials);
-      return await res.json();
+      
+      const data = await res.json();
+      
+      // Verificar si recibimos un token JWT
+      if (data.token) {
+        console.log("Token JWT recibido en registro");
+        
+        // Guardar el token JWT
+        saveAuthToken(data.token);
+        
+        // Guardar los datos del usuario (sin el token)
+        const { token, ...userData } = data;
+        saveUserData(userData);
+        
+        return userData;
+      }
+      
+      return data;
     },
     onSuccess: (user: User) => {
       console.log("Registro exitoso, usuario:", user);
@@ -93,11 +138,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       console.log("Intentando cerrar sesión");
-      await apiRequest("POST", "/api/auth/logout");
+      
+      try {
+        // Mantenemos la llamada al servidor para garantizar compatibilidad
+        await apiRequest("POST", "/api/auth/logout");
+      } catch (error) {
+        console.warn("Error al cerrar sesión en el servidor:", error);
+        // Continuamos con el proceso de logout aunque falle el servidor
+      }
+      
+      // Eliminar token y datos del usuario del localStorage
+      removeAuthToken();
+      removeUserData();
     },
     onSuccess: () => {
       console.log("Sesión cerrada exitosamente");
       queryClient.setQueryData(["/api/auth/me"], null);
+      
+      // Invalidar todas las consultas para forzar recargas
+      queryClient.invalidateQueries();
+      
       toast({
         title: "Sesión cerrada",
         description: "Has cerrado sesión correctamente",
@@ -105,9 +165,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     onError: (error: Error) => {
       console.error("Error al cerrar sesión:", error);
+      
+      // Intentar limpiar el localStorage de todos modos
+      removeAuthToken();
+      removeUserData();
+      queryClient.setQueryData(["/api/auth/me"], null);
+      
       toast({
         title: "Error al cerrar sesión",
-        description: error.message,
+        description: "Se ha cerrado la sesión localmente, pero hubo un error en el servidor",
         variant: "destructive",
       });
     },
@@ -153,6 +219,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Mantener localStorage actualizado cuando cambie el usuario
+  useEffect(() => {
+    if (user) {
+      saveUserData(user);
+    }
+  }, [user]);
+  
   return (
     <AuthContext.Provider
       value={{
