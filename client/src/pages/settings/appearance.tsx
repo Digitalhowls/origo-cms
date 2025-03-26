@@ -38,7 +38,13 @@ import {
   Monitor,
   Moon,
   Sun,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Globe,
+  Type,
+  Image,
+  LayoutGrid,
+  Box,
+  Columns
 } from 'lucide-react';
 
 interface AppearanceSettings {
@@ -49,6 +55,25 @@ interface AppearanceSettings {
   menuPosition: 'left' | 'right';
   menuStyle: 'vertical' | 'horizontal';
   variantStyle: 'professional' | 'tint' | 'vibrant';
+  // Configuraciones para páginas web
+  webFontFamily: 'sans' | 'serif' | 'mono' | 'custom';
+  webCustomFont: string;
+  webHeadingFont: 'sans' | 'serif' | 'mono' | 'custom';
+  webCustomHeadingFont: string;
+  webColorPalette: 'default' | 'corporate' | 'creative' | 'elegant' | 'vibrant' | 'custom';
+  webCustomColors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text: string;
+  };
+  webSpacingScale: 'compact' | 'standard' | 'airy';
+  webComponentStyle: 'flat' | 'soft' | 'neumorph' | 'glassmorphism';
+  webAnimationsLevel: 'none' | 'minimal' | 'moderate' | 'playful';
+  webLayoutType: 'responsive' | 'fixed' | 'fluid';
+  webNavStyle: 'standard' | 'minimal' | 'prominent';
+  webFooterStyle: 'simple' | 'detailed' | 'minimal';
 }
 
 const AppearanceSettings: React.FC = () => {
@@ -64,6 +89,25 @@ const AppearanceSettings: React.FC = () => {
     menuPosition: 'left',
     menuStyle: 'vertical',
     variantStyle: 'professional',
+    // Valores por defecto para web
+    webFontFamily: 'sans',
+    webCustomFont: '',
+    webHeadingFont: 'sans',
+    webCustomHeadingFont: '',
+    webColorPalette: 'default',
+    webCustomColors: {
+      primary: '#3b82f6',
+      secondary: '#6366f1',
+      accent: '#f43f5e',
+      background: '#ffffff',
+      text: '#1f2937'
+    },
+    webSpacingScale: 'standard',
+    webComponentStyle: 'flat',
+    webAnimationsLevel: 'minimal',
+    webLayoutType: 'responsive',
+    webNavStyle: 'standard',
+    webFooterStyle: 'simple'
   });
   
   // Fetch appearance settings
@@ -178,6 +222,10 @@ const AppearanceSettings: React.FC = () => {
                 <TabsTrigger value="layout">
                   <Layout className="h-4 w-4 mr-2" />
                   Diseño
+                </TabsTrigger>
+                <TabsTrigger value="web">
+                  <Globe className="h-4 w-4 mr-2" />
+                  Web
                 </TabsTrigger>
               </TabsList>
               
