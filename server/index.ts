@@ -2,8 +2,18 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initEmailService, createTestAccount } from "./services/email.service";
+import cors from 'cors';
 
 const app = express();
+
+// Configurar CORS para permitir credenciales
+app.use(cors({
+  origin: true, // Permitir solicitudes del mismo origen
+  credentials: true, // Importante para enviar cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

@@ -41,10 +41,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async (credentials: LoginData) => {
       console.log("Intentando iniciar sesión con:", credentials);
       const res = await apiRequest("POST", "/api/auth/login", credentials);
+      
+      // Verificar si tenemos cookies después del login
+      console.log("Cookies recibidas:", document.cookie);
+      
       return await res.json();
     },
     onSuccess: (user: User) => {
       console.log("Login exitoso, usuario:", user);
+      console.log("Cookies después de login exitoso:", document.cookie);
       queryClient.setQueryData(["/api/auth/me"], user);
       toast({
         title: "Sesión iniciada",

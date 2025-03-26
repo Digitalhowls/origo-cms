@@ -8,11 +8,20 @@ import { Request, Response, NextFunction } from 'express';
 export function checkAuthenticatedSession(req: Request): boolean {
   const isAuthenticated = req.isAuthenticated();
   console.log('Session check - authenticated:', isAuthenticated, '- SessionID:', req.sessionID);
+  console.log('req.user:', req.user ? 'presente' : 'ausente');
   
   if (req.headers.cookie) {
     console.log('Cookies presentes:', req.headers.cookie);
   } else {
     console.log('No hay cookies presentes en la solicitud');
+  }
+  
+  // Verificar si hay datos de sesión
+  if (req.session) {
+    console.log('ID de sesión:', req.sessionID);
+    console.log('Datos de sesión:', JSON.stringify(req.session));
+  } else {
+    console.log('No hay objeto de sesión');
   }
   
   return isAuthenticated;

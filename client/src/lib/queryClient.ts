@@ -18,12 +18,14 @@ export async function apiRequest(
     method,
     headers: data ? { 
       "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest"
+      "X-Requested-With": "XMLHttpRequest",
+      "Accept": "application/json"
     } : {
-      "X-Requested-With": "XMLHttpRequest"
+      "X-Requested-With": "XMLHttpRequest",
+      "Accept": "application/json"
     },
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    credentials: "include", // Mantener credenciales para cookies
     cache: "no-cache",
   });
 

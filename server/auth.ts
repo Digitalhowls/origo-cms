@@ -23,20 +23,20 @@ export function setupAuth(app: Express) {
   // Configure session middleware
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'origo-secret-key-very-long-and-secure-for-better-session-management',
-    resave: true, // Forzamos guardar la sesión en cada petición
-    saveUninitialized: true, // Creamos una sesión para todas las peticiones
-    rolling: true, // Renovamos el tiempo de expiración de la cookie en cada petición
+    resave: false, // No guardar la sesión si no hay cambios
+    saveUninitialized: false, // No crear sesión hasta que algo sea almacenado
+    rolling: true, // Renovamos el tiempo de expiración en cada petición
     name: 'origo.sid', // Nombre personalizado para la cookie de sesión
     cookie: { 
-      secure: process.env.NODE_ENV === 'production', // Seguro en producción, inseguro en desarrollo
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días para mayor persistencia
+      secure: process.env.NODE_ENV === 'production', // Seguro en producción
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días 
       sameSite: 'lax' as 'lax',
       httpOnly: true,
       path: '/'
     },
     store: new MemoryStoreSession({
       checkPeriod: 86400000, // limpiar sesiones expiradas cada 24h
-      ttl: 30 * 24 * 60 * 60 * 1000 // tiempo de vida igual al maxAge de la cookie
+      ttl: 30 * 24 * 60 * 60 * 1000 // tiempo de vida igual al maxAge
     })
   };
   
@@ -114,16 +114,20 @@ export function setupAuth(app: Express) {
   // Auth routes
   app.post('/api/auth/register', async (req, res, next) => {
     try {
+      console.log('Intento de registro con email:', req.body.email);
+      
       // Validación del cuerpo de la solicitud
       const { name, email, username, password } = req.body;
       
       if (!name || !email || !password) {
+        console.log('Registro fallido: campos requeridos faltantes');
         return res.status(400).json({ message: 'Faltan campos requeridos' });
       }
       
       // Verificar si el email ya está registrado
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
+        console.log('Registro fallido: email ya registrado:', email);
         return res.status(400).json({ message: 'Este correo electrónico ya está registrado' });
       }
       
@@ -140,13 +144,20 @@ export function setupAuth(app: Express) {
         organizationId: 1, // Por defecto, se asignan a la organización principal
       });
       
-      console.log('Usuario registrado:', email);
+      console.log('Usuario registrado correctamente:', email);
       
       // Login automático después del registro
       req.login(newUser, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error('Error en login automático post-registro:', err);
+          return next(err);
+        }
         
         console.log('Sesión iniciada después del registro. SessionID:', req.sessionID);
+        console.log('Datos de sesión post-registro:', JSON.stringify(req.session));
+        
+        // Establecer explícitamente passport.user (usando propiedad dinámica)
+        (req.session as any).passport = { user: newUser.id };
         
         // Eliminar la contraseña de la respuesta
         const { password, ...userWithoutPassword } = newUser;
@@ -161,18 +172,32 @@ export function setupAuth(app: Express) {
   });
 
   app.post('/api/auth/login', (req, res, next) => {
+    console.log('Intento de login con:', req.body.email);
+    
     passport.authenticate('local', (err: Error | null, user: any, info: any) => {
-      if (err) return next(err);
+      if (err) {
+        console.error('Error en autenticación:', err);
+        return next(err);
+      }
+      
       if (!user) {
+        console.log('Autenticación fallida para:', req.body.email);
         return res.status(401).json({ message: 'Credenciales incorrectas' });
       }
       
       // Login del usuario con Passport.js
       req.login(user, (err) => {
-        if (err) return next(err);
+        if (err) {
+          console.error('Error en req.login:', err);
+          return next(err);
+        }
         
         console.log('Usuario autenticado en login:', user.email);
         console.log('SessionID generado:', req.sessionID);
+        console.log('Datos de sesión post-login:', JSON.stringify(req.session));
+        
+        // Establecer explícitamente passport.user (usando propiedad dinámica)
+        (req.session as any).passport = { user: user.id };
         
         // Usamos la función helper para guardar sesión y responder
         saveSessionAndRespond(req, res, next, user);
