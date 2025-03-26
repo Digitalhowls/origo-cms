@@ -46,8 +46,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { UserPermissionsTab } from '@/components/permissions/user-permissions-tab';
-import { CustomRolesTab } from '@/components/settings/custom-roles-tab';
+import UserPermissionsTab from '@/components/permissions/user-permissions-tab';
+import CustomRolesTab from '@/components/settings/custom-roles-tab';
 import { UserRole } from '@shared/types';
 import { Plus, MoreVertical, Mail, Trash, PenSquare, Search, Copy, Users, Shield } from 'lucide-react';
 

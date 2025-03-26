@@ -232,6 +232,14 @@ async function runTest() {
     // Asignar rol a un usuario (usamos el mismo usuario autenticado para pruebas)
     await assignRoleToUser(userId, createdRoleId);
     
+    console.log('Restableciendo rol del usuario a superadmin...');
+    // Reasignar rol superadmin al usuario antes de eliminar el rol
+    await fetch(`${API_BASE}/users/${userId}`, {
+      method: 'PATCH',
+      headers: await getAuthHeaders(),
+      body: JSON.stringify({ role: 'superadmin' }),
+    });
+    
     // Eliminar rol
     await deleteCustomRole(createdRoleId);
     
