@@ -47,8 +47,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { UserPermissionsTab } from '@/components/permissions/user-permissions-tab';
+import { CustomRolesTab } from '@/components/settings/custom-roles-tab';
 import { UserRole } from '@shared/types';
-import { Plus, MoreVertical, Mail, Trash, PenSquare, Search, Copy } from 'lucide-react';
+import { Plus, MoreVertical, Mail, Trash, PenSquare, Search, Copy, Users, Shield } from 'lucide-react';
 
 const UsersSettings: React.FC = () => {
   const { toast } = useToast();
@@ -242,154 +243,174 @@ const UsersSettings: React.FC = () => {
         
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Usuarios de la organización</CardTitle>
-              <CardDescription>
-                Gestiona los usuarios que tienen acceso a tu organización y sus permisos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Filters */}
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <form onSubmit={handleSearch} className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-                    <Input
-                      type="text"
-                      placeholder="Buscar por nombre o email..."
-                      className="pl-9"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+          {/* Pestañas para gestión de usuarios y roles */}
+          <Tabs defaultValue="users" className="mb-6">
+            <TabsList className="mb-4">
+              <TabsTrigger value="users" className="flex items-center">
+                <Users className="h-4 w-4 mr-2" />
+                Usuarios
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="flex items-center">
+                <Shield className="h-4 w-4 mr-2" />
+                Roles
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="users" className="mt-0">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Usuarios de la organización</CardTitle>
+                  <CardDescription>
+                    Gestiona los usuarios que tienen acceso a tu organización y sus permisos.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Filters */}
+                  <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <form onSubmit={handleSearch} className="flex-1">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                        <Input
+                          type="text"
+                          placeholder="Buscar por nombre o email..."
+                          className="pl-9"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    </form>
+                    
+                    <div className="flex gap-2">
+                      <Select value={roleFilter} onValueChange={setRoleFilter}>
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Filtrar por rol" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos los roles</SelectItem>
+                          <SelectItem value="superadmin">Super Admin</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="editor">Editor</SelectItem>
+                          <SelectItem value="reader">Lector</SelectItem>
+                          <SelectItem value="viewer">Viewer</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </form>
-                
-                <div className="flex gap-2">
-                  <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Filtrar por rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos los roles</SelectItem>
-                      <SelectItem value="superadmin">Super Admin</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="editor">Editor</SelectItem>
-                      <SelectItem value="reader">Lector</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              {/* Users Table */}
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[300px]">Usuario</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Rol</TableHead>
-                      <TableHead>Último Acceso</TableHead>
-                      <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      Array(5).fill(0).map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
-                              <div className="h-5 bg-gray-200 rounded animate-pulse w-2/3"></div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="h-5 bg-gray-200 rounded animate-pulse w-20"></div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="h-5 bg-gray-200 rounded animate-pulse w-24"></div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="h-5 bg-gray-200 rounded animate-pulse w-10 ml-auto"></div>
-                          </TableCell>
+                  
+                  {/* Users Table */}
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[300px]">Usuario</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Rol</TableHead>
+                          <TableHead>Último Acceso</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
-                      ))
-                    ) : data?.items?.length > 0 ? (
-                      data.items.map((user: any) => (
-                        <TableRow key={user.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar>
-                                <AvatarImage src={user.avatar} alt={user.name} />
-                                <AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{user.name}</p>
-                                <p className="text-xs text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{getRoleBadge(user.role)}</TableCell>
-                          <TableCell>
-                            {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Nunca'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEditUser(user)}>
-                                  <PenSquare className="h-4 w-4 mr-2" />
-                                  Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => {
-                                  navigator.clipboard.writeText(user.email);
-                                  toast({
-                                    title: "Email copiado",
-                                    description: "Email copiado al portapapeles.",
-                                  });
-                                }}>
-                                  <Copy className="h-4 w-4 mr-2" />
-                                  Copiar email
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                  <a 
-                                    href={`mailto:${user.email}`} 
-                                    className="flex items-center"
-                                  >
-                                    <Mail className="h-4 w-4 mr-2" />
-                                    Enviar email
-                                  </a>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDeleteUser(user.id)} className="text-red-600 hover:text-red-800 focus:text-red-800">
-                                  <Trash className="h-4 w-4 mr-2" />
-                                  Eliminar
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                          No se encontraron usuarios.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {isLoading ? (
+                          Array(5).fill(0).map((_, i) => (
+                            <TableRow key={i}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
+                                  <div className="h-5 bg-gray-200 rounded animate-pulse w-2/3"></div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="h-5 bg-gray-200 rounded animate-pulse w-20"></div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="h-5 bg-gray-200 rounded animate-pulse w-24"></div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="h-5 bg-gray-200 rounded animate-pulse w-10 ml-auto"></div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : data?.items?.length > 0 ? (
+                          data.items.map((user: any) => (
+                            <TableRow key={user.id}>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar>
+                                    <AvatarImage src={user.avatar} alt={user.name} />
+                                    <AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium">{user.name}</p>
+                                    <p className="text-xs text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>{getRoleBadge(user.role)}</TableCell>
+                              <TableCell>
+                                {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Nunca'}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                                      <PenSquare className="h-4 w-4 mr-2" />
+                                      Editar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => {
+                                      navigator.clipboard.writeText(user.email);
+                                      toast({
+                                        title: "Email copiado",
+                                        description: "Email copiado al portapapeles.",
+                                      });
+                                    }}>
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      Copiar email
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                      <a 
+                                        href={`mailto:${user.email}`} 
+                                        className="flex items-center"
+                                      >
+                                        <Mail className="h-4 w-4 mr-2" />
+                                        Enviar email
+                                      </a>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDeleteUser(user.id)} className="text-red-600 hover:text-red-800 focus:text-red-800">
+                                      <Trash className="h-4 w-4 mr-2" />
+                                      Eliminar
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                              No se encontraron usuarios.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="roles" className="mt-0">
+              <CustomRolesTab />
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
       
