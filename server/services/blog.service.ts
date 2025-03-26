@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
-import { insertBlogPostSchema } from '@shared/schema';
+import { insertBlogPostSchema, insertCategorySchema, insertTagSchema } from '@shared/schema';
 import { z } from 'zod';
 
 // Get blog posts list
@@ -223,16 +223,17 @@ export async function createCategory(req: Request, res: Response) {
     const user = req.user as any;
     const organizationId = user.organizationId;
     
-    const categorySchema = z.object({
-      name: z.string().min(1, 'El nombre es requerido'),
-      slug: z.string().min(1, 'El slug es requerido'),
-      description: z.string().optional()
-    });
+    const validationResult = insertCategorySchema.safeParse(req.body);
     
-    const validatedData = categorySchema.parse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: 'Datos de categoría inválidos',
+        errors: validationResult.error.errors
+      });
+    }
     
     const categoryData = {
-      ...validatedData,
+      ...validationResult.data,
       organizationId
     };
     
@@ -267,15 +268,17 @@ export async function createTag(req: Request, res: Response) {
     const user = req.user as any;
     const organizationId = user.organizationId;
     
-    const tagSchema = z.object({
-      name: z.string().min(1, 'El nombre es requerido'),
-      slug: z.string().min(1, 'El slug es requerido')
-    });
+    const validationResult = insertTagSchema.safeParse(req.body);
     
-    const validatedData = tagSchema.parse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        message: 'Datos de etiqueta inválidos',
+        errors: validationResult.error.errors
+      });
+    }
     
     const tagData = {
-      ...validatedData,
+      ...validationResult.data,
       organizationId
     };
     
