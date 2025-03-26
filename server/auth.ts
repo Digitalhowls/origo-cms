@@ -16,17 +16,17 @@ declare global {
 }
 
 export function setupAuth(app: Express) {
-  // Initialize session storage
+  // Initialize session storage with better logging
   const MemoryStoreSession = MemoryStore(session);
   
   // Configure session middleware
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'origo-secret-key',
-    resave: false,
-    saveUninitialized: false,
+    secret: process.env.SESSION_SECRET || 'origo-secret-key-very-long-and-secure-for-better-session-management',
+    resave: true, // Cambiado a true para forzar guardar la sesión
+    saveUninitialized: true, // Cambiado a true para crear sesión para todas las peticiones
     cookie: { 
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      secure: false, // Desactivado en desarrollo para facilitar pruebas
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días para mayor persistencia
       sameSite: 'lax' as 'lax',
       httpOnly: true,
       path: '/'
@@ -37,10 +37,8 @@ export function setupAuth(app: Express) {
   };
   
   // Para entornos de desarrollo, permite que la cookie funcione sin HTTPS
-  if (process.env.NODE_ENV !== 'production') {
-    app.set('trust proxy', 1); // Confiar en el primer proxy
-  }
-
+  app.set('trust proxy', 1); // Confiar en el primer proxy
+  
   // Configurar session y passport
   app.use(session(sessionSettings));
   app.use(passport.initialize());
@@ -163,11 +161,28 @@ export function setupAuth(app: Express) {
     });
   });
 
-  app.get('/api/auth/me', (req, res) => {
+  app.get('/api/auth/me', (req, res, next) => {
+    console.log('GET /api/auth/me - SessionID:', req.sessionID);
+    console.log('Headers:', JSON.stringify(req.headers));
+    console.log('isAuthenticated:', req.isAuthenticated());
+    
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: 'No autenticado' });
     }
-    res.json(req.user);
+    
+    // Asegurarse de que la sesión siga viva
+    req.session.touch();
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error al guardar sesión en /api/auth/me:', err);
+        return next(err);
+      }
+      
+      // Devolver los datos del usuario sin la contraseña
+      const user = req.user as any;
+      console.log('Usuario autenticado en /api/auth/me:', user?.email);
+      res.json(user);
+    });
   });
   
   // Ruta para solicitar un token de recuperación de contraseña
