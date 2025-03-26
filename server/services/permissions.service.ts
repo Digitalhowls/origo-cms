@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
-import { Resource, Action } from '@shared/types';
+import { Resource, Action, UserRole } from '@shared/types';
 import { insertUserPermissionSchema } from '@shared/schema';
 import { ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
@@ -138,6 +138,45 @@ export async function deleteUserPermission(req: Request, res: Response) {
   } catch (error) {
     console.error('Error al eliminar permiso:', error);
     res.status(500).json({ error: 'Error al eliminar el permiso' });
+  }
+}
+
+/**
+ * Obtiene el rol del usuario
+ */
+export async function getUserRole(req: Request, res: Response) {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'ID de usuario inválido' });
+    }
+
+    // Verificar permiso para ver permisos o es el propio usuario
+    const canViewPermissions = await storage.hasPermission(
+      req.user!.id,
+      Resource.USER,
+      Action.MANAGE
+    );
+
+    if (!canViewPermissions && req.user!.id !== userId) {
+      return res.status(403).json({ error: 'No tienes permiso para ver el rol de este usuario' });
+    }
+
+    // Obtener el usuario
+    const user = await storage.getUser(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Devolver el rol
+    res.json({ 
+      role: user.role as UserRole, 
+      userId: user.id 
+    });
+  } catch (error) {
+    console.error('Error al obtener rol del usuario:', error);
+    res.status(500).json({ error: 'Error al obtener el rol del usuario' });
   }
 }
 

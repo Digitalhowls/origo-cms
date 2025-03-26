@@ -164,6 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Permissions routes
   app.get('/api/permissions/user/:userId', authMiddleware, permissionsService.getUserPermissions);
+  app.get('/api/permissions/role/:userId', authMiddleware, permissionsService.getUserRole);
   app.post('/api/permissions', authMiddleware, permissionsService.addUserPermission);
   app.patch('/api/permissions/:id', authMiddleware, permissionsService.updateUserPermission);
   app.delete('/api/permissions/:id', authMiddleware, permissionsService.deleteUserPermission);

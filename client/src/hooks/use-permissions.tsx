@@ -26,23 +26,28 @@ export function usePermissions(userId?: number) {
   // Estado local para los permisos según el rol
   const [rolePermissions, setRolePermissions] = useState<Record<string, boolean>>({});
   
+  // Interfaz para la respuesta de la API de rol
+  interface RoleResponse {
+    role: UserRole;
+    userId: number;
+  }
+
   // Obtener permisos del usuario según su rol
-  const roleQuery = useQuery({
-    queryKey: userId ? [`/api/permissions/role/${userId}`] : null,
+  const roleQuery = useQuery<RoleResponse>({
+    queryKey: userId ? [`/api/permissions/role/${userId}`] : [],
     enabled: !!userId,
   });
   
   // Configurar los permisos del rol cuando cambia la respuesta de la API
   useEffect(() => {
     if (roleQuery.data?.role) {
-      const userRole = roleQuery.data.role as UserRole;
-      setRolePermissions(RolePermissions[userRole] || {});
+      setRolePermissions(RolePermissions[roleQuery.data.role] || {});
     }
   }, [roleQuery.data]);
 
   // Obtener los permisos personalizados del usuario
   const permissionsQuery = useQuery<UserPermission[]>({
-    queryKey: userId ? [`/api/permissions/user/${userId}`] : null,
+    queryKey: userId ? [`/api/permissions/user/${userId}`] : [],
     enabled: !!userId,
   });
 
