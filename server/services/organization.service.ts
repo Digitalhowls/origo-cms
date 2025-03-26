@@ -443,11 +443,63 @@ export async function verifyDomain(req: Request, res: Response) {
     // Para esto, usamos el módulo dns nativo de Node.js para verificar los registros TXT
     // Primero verificamos si ya está marcado como verificado en la configuración
     if (domainConfig.verified) {
+      // Generamos instrucciones de DNS específicas para el dominio ya verificado
+      const dnsInstructions = {
+        title: 'Configuración de DNS actual',
+        description: `Tu dominio ${domain} ya está verificado correctamente. Verifica que tengas configurados estos registros DNS para que tu dominio apunte a nuestros servidores:`,
+        dns_records: [
+          {
+            type: 'A',
+            host: '@',
+            value: '162.159.152.4',
+            description: 'Registro A para el dominio raíz'
+          },
+          {
+            type: 'A',
+            host: '@',
+            value: '162.159.153.4',
+            description: 'Registro A secundario para balanceo de carga'
+          },
+          {
+            type: 'CNAME',
+            host: 'www',
+            value: domain,
+            description: 'Registro CNAME para redireccionar www a la raíz del dominio'
+          }
+        ],
+        providers: {
+          cloudflare: {
+            steps: [
+              'En el panel de Cloudflare, ve a la sección DNS',
+              'Selecciona "Añadir registro" y crea los registros A y CNAME mencionados',
+              'Asegúrate de que el proxy de Cloudflare (el icono naranja de nube) esté activado para aprovechar su CDN'
+            ]
+          },
+          godaddy: {
+            steps: [
+              'En el panel de GoDaddy, ve a "DNS Management"',
+              'Añade los registros A y CNAME en la sección "Records"',
+              'Para registros A, usa @ como Host y los valores IP proporcionados',
+              'Para el CNAME, usa www como Host y el dominio raíz como Value'
+            ]
+          },
+          general: {
+            steps: [
+              'Accede al panel de control de DNS de tu proveedor',
+              'Crea dos registros A para el dominio raíz (@) con las IPs proporcionadas',
+              'Crea un registro CNAME para "www" que apunte a tu dominio raíz',
+              'Espera a que se propaguen los cambios (puede tardar hasta 48 horas)'
+            ]
+          }
+        }
+      };
+      
       return res.json({
         success: true,
         verified: true,
         message: 'El dominio ya está verificado',
-        organization
+        organization,
+        dns_setup: dnsInstructions
       });
     }
     
@@ -513,11 +565,63 @@ export async function verifyDomain(req: Request, res: Response) {
         }
       );
       
+      // Generamos instrucciones de DNS específicas para el dominio verificado
+      const dnsInstructions = {
+        title: 'Configuración de DNS adicional',
+        description: `Tu dominio ${domain} ha sido verificado correctamente. Ahora debes configurar los siguientes registros DNS para que tu dominio apunte a nuestros servidores:`,
+        dns_records: [
+          {
+            type: 'A',
+            host: '@',
+            value: '162.159.152.4',
+            description: 'Registro A para el dominio raíz'
+          },
+          {
+            type: 'A',
+            host: '@',
+            value: '162.159.153.4',
+            description: 'Registro A secundario para balanceo de carga'
+          },
+          {
+            type: 'CNAME',
+            host: 'www',
+            value: domain,
+            description: 'Registro CNAME para redireccionar www a la raíz del dominio'
+          }
+        ],
+        providers: {
+          cloudflare: {
+            steps: [
+              'En el panel de Cloudflare, ve a la sección DNS',
+              'Selecciona "Añadir registro" y crea los registros A y CNAME mencionados',
+              'Asegúrate de que el proxy de Cloudflare (el icono naranja de nube) esté activado para aprovechar su CDN'
+            ]
+          },
+          godaddy: {
+            steps: [
+              'En el panel de GoDaddy, ve a "DNS Management"',
+              'Añade los registros A y CNAME en la sección "Records"',
+              'Para registros A, usa @ como Host y los valores IP proporcionados',
+              'Para el CNAME, usa www como Host y el dominio raíz como Value'
+            ]
+          },
+          general: {
+            steps: [
+              'Accede al panel de control de DNS de tu proveedor',
+              'Crea dos registros A para el dominio raíz (@) con las IPs proporcionadas',
+              'Crea un registro CNAME para "www" que apunte a tu dominio raíz',
+              'Espera a que se propaguen los cambios (puede tardar hasta 48 horas)'
+            ]
+          }
+        }
+      };
+      
       res.json({
         success: true,
         verified: true,
         message: '¡Dominio verificado correctamente!',
-        organization: updatedOrg
+        organization: updatedOrg,
+        dns_setup: dnsInstructions
       });
     } else {
       // Actualizar el timestamp del último intento de verificación
@@ -723,13 +827,65 @@ export async function configureCustomDomain(req: Request, res: Response) {
         }
       );
       
+      // Generamos instrucciones de DNS específicas para el dominio verificado
+      const dnsInstructions = {
+        title: 'Configuración de DNS adicional',
+        description: `Tu dominio ${domain} ha sido verificado correctamente. Ahora debes configurar los siguientes registros DNS para que tu dominio apunte a nuestros servidores:`,
+        dns_records: [
+          {
+            type: 'A',
+            host: '@',
+            value: '162.159.152.4',
+            description: 'Registro A para el dominio raíz'
+          },
+          {
+            type: 'A',
+            host: '@',
+            value: '162.159.153.4',
+            description: 'Registro A secundario para balanceo de carga'
+          },
+          {
+            type: 'CNAME',
+            host: 'www',
+            value: domain,
+            description: 'Registro CNAME para redireccionar www a la raíz del dominio'
+          }
+        ],
+        providers: {
+          cloudflare: {
+            steps: [
+              'En el panel de Cloudflare, ve a la sección DNS',
+              'Selecciona "Añadir registro" y crea los registros A y CNAME mencionados',
+              'Asegúrate de que el proxy de Cloudflare (el icono naranja de nube) esté activado para aprovechar su CDN'
+            ]
+          },
+          godaddy: {
+            steps: [
+              'En el panel de GoDaddy, ve a "DNS Management"',
+              'Añade los registros A y CNAME en la sección "Records"',
+              'Para registros A, usa @ como Host y los valores IP proporcionados',
+              'Para el CNAME, usa www como Host y el dominio raíz como Value'
+            ]
+          },
+          general: {
+            steps: [
+              'Accede al panel de control de DNS de tu proveedor',
+              'Crea dos registros A para el dominio raíz (@) con las IPs proporcionadas',
+              'Crea un registro CNAME para "www" que apunte a tu dominio raíz',
+              'Espera a que se propaguen los cambios (puede tardar hasta 48 horas)'
+            ]
+          }
+        }
+      };
+      
       res.json({
         success: true,
         verified: true,
         verificationToken,
         domain,
         message: '¡Dominio verificado automáticamente!',
-        organization: verifiedOrg
+        organization: verifiedOrg,
+        dns_setup: dnsInstructions
       });
     } else {
       // El dominio necesita verificación manual

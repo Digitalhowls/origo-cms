@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initEmailService, createTestAccount } from "./services/email.service";
 import cors from 'cors';
+import { customDomainMiddleware } from "./middleware/custom-domain.middleware";
 
 const app = express();
 
@@ -25,6 +26,9 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Aplicar middleware de dominio personalizado
+app.use(customDomainMiddleware);
 
 app.use((req, res, next) => {
   const start = Date.now();

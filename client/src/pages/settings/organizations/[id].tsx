@@ -106,6 +106,7 @@ export default function OrganizationDetailsPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [domainStatus, setDomainStatus] = useState<'pending' | 'verified' | 'failed' | null>(null);
   const [domainVerificationToken, setDomainVerificationToken] = useState<string | null>(null);
+  const [dnsSetupInstructions, setDnsSetupInstructions] = useState<any>(null);
 
   // Obtener datos de la organización
   const { 
@@ -245,6 +246,9 @@ export default function OrganizationDetailsPage() {
   // Estado para almacenar instrucciones detalladas de verificación
   const [domainVerificationInstructions, setDomainVerificationInstructions] = useState<any>(null);
   
+  // Estado para almacenar instrucciones de configuración DNS
+  const [dnsSetupInstructions, setDnsSetupInstructions] = useState<any>(null);
+  
   // Mutación para configurar dominio personalizado
   const configureDomainMutation = useMutation({
     mutationFn: async (domain: string) => {
@@ -259,6 +263,12 @@ export default function OrganizationDetailsPage() {
       
       if (data.verified) {
         setDomainStatus('verified');
+        
+        // Si hay instrucciones de configuración de DNS, las guardamos
+        if (data.dns_setup) {
+          setDnsSetupInstructions(data.dns_setup);
+        }
+        
         toast({
           title: 'Dominio verificado',
           description: data.message || 'El dominio ha sido verificado y configurado correctamente.',
@@ -679,10 +689,85 @@ export default function OrganizationDetailsPage() {
                               Deberás configurar los registros DNS de tu dominio para apuntar a nuestros servidores.
                             </FormDescription>
                             {domainStatus === 'verified' && (
-                              <div className="mt-2 text-sm text-green-600 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                Dominio verificado correctamente
-                              </div>
+                              <>
+                                <div className="mt-2 text-sm text-green-600 flex items-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                  Dominio verificado correctamente
+                                </div>
+                                {dnsSetupInstructions && (
+                                  <div className="mt-4 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
+                                    <h3 className="text-sm font-medium text-green-800 dark:text-green-300 mb-2">
+                                      {dnsSetupInstructions.title}
+                                    </h3>
+                                    <p className="text-xs text-green-700 dark:text-green-400 mb-3">
+                                      {dnsSetupInstructions.description}
+                                    </p>
+                                    <div className="space-y-3">
+                                      <div className="bg-white dark:bg-green-900/50 p-3 rounded-md border border-green-200 dark:border-green-800">
+                                        <h4 className="text-xs font-medium text-green-800 dark:text-green-300 mb-2">Registros DNS requeridos:</h4>
+                                        <div className="space-y-2">
+                                          {dnsSetupInstructions.dns_records.map((record: any, index: number) => (
+                                            <div key={index} className="flex items-start gap-2 text-xs">
+                                              <div className="bg-green-100 dark:bg-green-800 text-green-800 dark:text-green-300 font-mono px-2 py-1 rounded-md">
+                                                {record.type}
+                                              </div>
+                                              <div className="flex-1">
+                                                <p className="font-medium">{record.host}</p>
+                                                <p className="text-green-700 dark:text-green-400">{record.value}</p>
+                                                <p className="text-xs text-green-600 dark:text-green-500 mt-1">{record.description}</p>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      
+                                      <div className="bg-white dark:bg-green-900/50 p-3 rounded-md border border-green-200 dark:border-green-800">
+                                        <h4 className="text-xs font-medium text-green-800 dark:text-green-300 mb-2">Instrucciones para tu proveedor DNS:</h4>
+                                        <div className="space-y-1">
+                                          <Accordion type="single" collapsible className="w-full">
+                                            <AccordionItem value="cloudflare" className="border-green-200 dark:border-green-800">
+                                              <AccordionTrigger className="text-xs font-medium text-green-800 dark:text-green-300 py-2">
+                                                Cloudflare
+                                              </AccordionTrigger>
+                                              <AccordionContent>
+                                                <ul className="space-y-1 text-xs text-green-700 dark:text-green-400 list-disc pl-4">
+                                                  {dnsSetupInstructions.providers.cloudflare.steps.map((step: string, idx: number) => (
+                                                    <li key={idx}>{step}</li>
+                                                  ))}
+                                                </ul>
+                                              </AccordionContent>
+                                            </AccordionItem>
+                                            <AccordionItem value="godaddy" className="border-green-200 dark:border-green-800">
+                                              <AccordionTrigger className="text-xs font-medium text-green-800 dark:text-green-300 py-2">
+                                                GoDaddy
+                                              </AccordionTrigger>
+                                              <AccordionContent>
+                                                <ul className="space-y-1 text-xs text-green-700 dark:text-green-400 list-disc pl-4">
+                                                  {dnsSetupInstructions.providers.godaddy.steps.map((step: string, idx: number) => (
+                                                    <li key={idx}>{step}</li>
+                                                  ))}
+                                                </ul>
+                                              </AccordionContent>
+                                            </AccordionItem>
+                                            <AccordionItem value="general" className="border-green-200 dark:border-green-800">
+                                              <AccordionTrigger className="text-xs font-medium text-green-800 dark:text-green-300 py-2">
+                                                Instrucciones generales
+                                              </AccordionTrigger>
+                                              <AccordionContent>
+                                                <ul className="space-y-1 text-xs text-green-700 dark:text-green-400 list-disc pl-4">
+                                                  {dnsSetupInstructions.providers.general.steps.map((step: string, idx: number) => (
+                                                    <li key={idx}>{step}</li>
+                                                  ))}
+                                                </ul>
+                                              </AccordionContent>
+                                            </AccordionItem>
+                                          </Accordion>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </>
                             )}
                             {domainStatus === 'pending' && (
                               <div className="mt-2 text-sm text-orange-500 flex items-center">
