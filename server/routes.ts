@@ -152,13 +152,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Blog routes
   app.get('/api/blog', authMiddleware, blogService.getPosts);
-  app.get('/api/blog/:id', authMiddleware, blogService.getPost);
   app.post('/api/blog', authMiddleware, blogService.createPost);
+  app.get('/api/blog/categories', authMiddleware, blogService.getCategories);
+  app.get('/api/blog/tags', authMiddleware, blogService.getTags);
+  app.get('/api/blog/:id', authMiddleware, blogService.getPost);
   app.patch('/api/blog/:id', authMiddleware, blogService.updatePost);
   app.delete('/api/blog/:id', authMiddleware, blogService.deletePost);
   app.post('/api/blog/:id/duplicate', authMiddleware, blogService.duplicatePost);
-  app.get('/api/blog/categories', authMiddleware, blogService.getCategories);
-  app.get('/api/blog/tags', authMiddleware, blogService.getTags);
   app.get('/api/preview/blog/:slug', authMiddleware, blogService.previewPost);
   
   // Media routes
