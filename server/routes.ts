@@ -171,6 +171,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/permissions/:id', authMiddleware, permissionsService.deleteUserPermission);
   app.get('/api/permissions/check/:userId/:resource/:action', authMiddleware, permissionsService.checkPermission);
   
+  // Custom Roles routes
+  app.get('/api/roles/organization/:organizationId', authMiddleware, rolesService.getCustomRoles);
+  app.get('/api/roles/:id', authMiddleware, rolesService.getCustomRole);
+  app.post('/api/roles', authMiddleware, rolesService.createCustomRole);
+  app.patch('/api/roles/:id', authMiddleware, rolesService.updateCustomRole);
+  app.delete('/api/roles/:id', authMiddleware, rolesService.deleteCustomRole);
+  app.get('/api/roles/:id/permissions', authMiddleware, rolesService.getRolePermissions);
+  app.post('/api/roles/:id/assign/:userId', authMiddleware, rolesService.assignRoleToUser);
+  
   // Password reset routes
   app.post('/api/forgot-password', authService.requestPasswordReset);
   app.post('/api/reset-password', authService.resetPassword);
