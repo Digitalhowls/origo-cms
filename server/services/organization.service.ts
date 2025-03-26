@@ -539,12 +539,44 @@ export async function verifyDomain(req: Request, res: Response) {
         success: false,
         verified: false,
         message: 'No se pudo verificar el dominio. Por favor, asegúrese de haber configurado correctamente el registro DNS TXT.',
-        instructions: [
-          `1. Cree un registro TXT en su proveedor DNS con el nombre: _origo-verify.${domain}`,
-          `2. Establezca el valor del registro como: ${verificationToken}`,
-          '3. Espere a que los cambios se propaguen (esto puede tomar entre 5 minutos y 48 horas)',
-          '4. Intente verificar nuevamente'
-        ]
+        instructions: {
+          title: 'Error de verificación de dominio',
+          description: 'No se pudo verificar tu dominio. Por favor, asegúrate de que has configurado correctamente el registro TXT en tu proveedor de DNS y que los cambios se han propagado.',
+          options: [
+            {
+              title: 'Opción 1: Registro TXT en el subdominio especial (Recomendado)',
+              steps: [
+                'Inicia sesión en el panel de control de tu proveedor de DNS',
+                `Crea un nuevo registro TXT con el nombre/host: _origo-verify`,
+                `Establece el valor/contenido: ${verificationToken}`,
+                'Guarda los cambios y espera unos minutos para que se propaguen (puede tardar hasta 48 horas en algunos proveedores)'
+              ]
+            },
+            {
+              title: 'Opción 2: Registro TXT en el dominio principal',
+              steps: [
+                'Inicia sesión en el panel de control de tu proveedor de DNS',
+                `Crea un nuevo registro TXT con el nombre/host: @ (dominio raíz)`,
+                `Establece el valor/contenido: ${verificationToken}`,
+                'Guarda los cambios y espera unos minutos para que se propaguen (puede tardar hasta 48 horas en algunos proveedores)'
+              ]
+            }
+          ],
+          providers: {
+            cloudflare: 'DNS → Añadir registro → Selecciona TXT → Nombre: _origo-verify o @ → Contenido: ' + verificationToken.substring(0, 10) + '... → TTL: Auto',
+            godaddy: 'DNS Management → Add → Type: TXT → Name: _origo-verify o @ → Value: ' + verificationToken.substring(0, 10) + '... → TTL: 1 Hour',
+            namecheap: 'Advanced DNS → Add New Record → Type: TXT Record → Host: _origo-verify o @ → Value: ' + verificationToken.substring(0, 10) + '... → TTL: Automatic',
+            googleDomains: 'DNS → Resource Records → Create → Resource Type: TXT → Name: _origo-verify o @ → Contents: ' + verificationToken.substring(0, 10) + '... → TTL: 1h',
+            plesk: 'Domains → example.com → DNS Settings → Add Record → Type: TXT → Record: _origo-verify o @ → Value: ' + verificationToken.substring(0, 10) + '...',
+            cpanel: 'Domains → Zone Editor → Manage → Add Record → Type: TXT → Name: _origo-verify o @ → Record: ' + verificationToken.substring(0, 10) + '...'
+          },
+          verification_tips: [
+            'Asegúrate de usar el formato exacto para el registro TXT, sin espacios adicionales',
+            'Algunos proveedores DNS requieren que elimines el nombre de dominio del registro (usa solo "_origo-verify" en lugar de "_origo-verify.tudominio.com")',
+            'Puedes verificar si tus registros DNS están configurados correctamente usando herramientas como "dig" o sitios web como dnschecker.org o mxtoolbox.com',
+            'Si has esperado más de 48 horas y aún no puedes verificar tu dominio, contacta a soporte'
+          ]
+        }
       });
     }
   } catch (error) {
@@ -707,12 +739,45 @@ export async function configureCustomDomain(req: Request, res: Response) {
         verificationToken,
         domain,
         organization: updatedOrg,
-        instructions: [
-          `1. Cree un registro TXT en su proveedor DNS con el nombre: _origo-verify.${domain}`,
-          `2. Establezca el valor del registro como: ${verificationToken}`,
-          '3. Espere a que los cambios se propaguen (esto puede tomar entre 5 minutos y 48 horas)',
-          '4. Una vez configurado, haga clic en "Verificar dominio"'
-        ]
+        message: 'Configuración de dominio iniciada. Por favor, sigue las instrucciones para verificar tu dominio.',
+        instructions: {
+          title: 'Verificación de dominio',
+          description: 'Para verificar la propiedad de tu dominio, necesitas añadir un registro TXT en tu proveedor de DNS. Sigue estas instrucciones para completar la verificación:',
+          options: [
+            {
+              title: 'Opción 1: Registro TXT en el subdominio especial (Recomendado)',
+              steps: [
+                'Inicia sesión en el panel de control de tu proveedor de DNS',
+                `Crea un nuevo registro TXT con el nombre/host: _origo-verify`,
+                `Establece el valor/contenido: ${verificationToken}`,
+                'Guarda los cambios y espera unos minutos para que se propaguen (puede tardar hasta 48 horas en algunos proveedores)'
+              ]
+            },
+            {
+              title: 'Opción 2: Registro TXT en el dominio principal',
+              steps: [
+                'Inicia sesión en el panel de control de tu proveedor de DNS',
+                `Crea un nuevo registro TXT con el nombre/host: @ (dominio raíz)`,
+                `Establece el valor/contenido: ${verificationToken}`,
+                'Guarda los cambios y espera unos minutos para que se propaguen (puede tardar hasta 48 horas en algunos proveedores)'
+              ]
+            }
+          ],
+          providers: {
+            cloudflare: 'DNS → Añadir registro → Selecciona TXT → Nombre: _origo-verify o @ → Contenido: ' + verificationToken.substring(0, 10) + '... → TTL: Auto',
+            godaddy: 'DNS Management → Add → Type: TXT → Name: _origo-verify o @ → Value: ' + verificationToken.substring(0, 10) + '... → TTL: 1 Hour',
+            namecheap: 'Advanced DNS → Add New Record → Type: TXT Record → Host: _origo-verify o @ → Value: ' + verificationToken.substring(0, 10) + '... → TTL: Automatic',
+            googleDomains: 'DNS → Resource Records → Create → Resource Type: TXT → Name: _origo-verify o @ → Contents: ' + verificationToken.substring(0, 10) + '... → TTL: 1h',
+            plesk: 'Domains → example.com → DNS Settings → Add Record → Type: TXT → Record: _origo-verify o @ → Value: ' + verificationToken.substring(0, 10) + '...',
+            cpanel: 'Domains → Zone Editor → Manage → Add Record → Type: TXT → Name: _origo-verify o @ → Record: ' + verificationToken.substring(0, 10) + '...'
+          },
+          verification_tips: [
+            'Los cambios DNS pueden tardar entre unos minutos y 48 horas en propagarse por internet',
+            'Si usas un subdominio (_origo-verify), asegúrate de no añadir tu dominio después (solo "_origo-verify", no "_origo-verify.tudominio.com")',
+            'El valor del registro TXT debe ser exactamente igual al token proporcionado, sin espacios adicionales',
+            'Puedes verificar la propagación de tus registros DNS en dnschecker.org o mxtoolbox.com'
+          ]
+        }
       });
     }
   } catch (error) {
