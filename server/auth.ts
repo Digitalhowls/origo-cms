@@ -76,19 +76,28 @@ export function setupAuth(app: Express) {
   );
 
   // Serialize user to session
-  passport.serializeUser((user: Express.User, done) => done(null, user.id));
+  passport.serializeUser((user: Express.User, done) => {
+    console.log('Serializando usuario a sesión:', user.id);
+    done(null, user.id);
+  });
   
   // Deserialize user from session
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log('Deserializando usuario desde sesión. ID:', id);
       const user = await storage.getUser(id);
+      
       if (!user) {
+        console.log('Usuario no encontrado en deserialización. ID:', id);
         return done(null, false);
       }
+      
       // Remove password from user object
       const { password, ...userWithoutPassword } = user;
+      console.log('Usuario deserializado correctamente:', userWithoutPassword.email);
       done(null, userWithoutPassword as Express.User);
     } catch (error) {
+      console.error('Error al deserializar usuario:', error);
       done(error);
     }
   });
