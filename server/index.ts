@@ -8,11 +8,20 @@ const app = express();
 
 // Configurar CORS para permitir credenciales
 app.use(cors({
-  origin: true, // Permitir solicitudes del mismo origen
+  origin: function (origin, callback) {
+    // Permitir cualquier origen en desarrollo
+    callback(null, true);
+  },
   credentials: true, // Importante para enviar cookies
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
+
+// Añadir encabezados de seguridad para cookies
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true');
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

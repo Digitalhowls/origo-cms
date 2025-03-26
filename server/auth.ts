@@ -23,16 +23,16 @@ export function setupAuth(app: Express) {
   // Configure session middleware
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'origo-secret-key-very-long-and-secure-for-better-session-management',
-    resave: false, // No guardar la sesión si no hay cambios
-    saveUninitialized: false, // No crear sesión hasta que algo sea almacenado
+    resave: true, // Guardar la sesión en cada petición para asegurar persistencia
+    saveUninitialized: true, // Crear sesión en todas las peticiones para debugging
     rolling: true, // Renovamos el tiempo de expiración en cada petición
     name: 'origo.sid', // Nombre personalizado para la cookie de sesión
     cookie: { 
       // Para entornos de Replit, debemos configurar así:
-      secure: false, // En desarrollo no requerimos HTTPS, pero en prod debe ser true 
+      secure: false, // En desarrollo no requerimos HTTPS
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 días 
-      sameSite: 'lax', // 'lax' funciona mejor para la mayoría de casos
-      httpOnly: true, // Solo el servidor puede acceder a la cookie
+      sameSite: 'none' as 'none', // 'none' para permitir cookies cross-site en Replit
+      httpOnly: false, // Permitir acceso desde JavaScript para depuración
       path: '/'
     },
     store: new MemoryStoreSession({
@@ -218,9 +218,9 @@ export function setupAuth(app: Express) {
         // Borrar la cookie con el mismo nombre que configuramos
         res.clearCookie('origo.sid', {
           path: '/',
-          httpOnly: true,
+          httpOnly: false,
           secure: false,
-          sameSite: 'lax'
+          sameSite: 'none'
         });
         
         console.log('Sesión destruida correctamente');
