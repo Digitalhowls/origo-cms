@@ -4,7 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { User, InsertUser } from "@shared/schema";
+import { User, InsertUser, Organization } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -24,6 +24,7 @@ type AuthContextType = {
   registerMutation: UseMutationResult<User, Error, InsertUser>;
   forgotPasswordMutation: UseMutationResult<{ message: string; token?: string }, Error, { email: string }>;
   resetPasswordMutation: UseMutationResult<{ message: string }, Error, { token: string; password: string }>;
+  switchOrganizationMutation: UseMutationResult<{ message: string; organization: Organization; token: string }, Error, number>;
 };
 
 type LoginData = Pick<InsertUser, "email" | "password">;
@@ -226,6 +227,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
   });
+  
+  const switchOrganizationMutation = useMutation({
+    mutationFn: async (organizationId: number) => {
+      console.log(`Cambiando a la organización ${organizationId}`);
+      const res = await apiRequest("POST", `/api/organizations/switch/${organizationId}`);
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Respuesta de cambio de organización:", data);
+      
+      // Si recibimos un nuevo token JWT, lo guardamos
+      if (data.token) {
+        console.log("Nuevo token JWT recibido tras cambio de organización");
+        saveAuthToken(data.token);
+        
+        // Actualizar los datos del usuario actual con la nueva organización
+        if (user) {
+          const updatedUser = {
+            ...user,
+            organizationId: data.organization.id
+          };
+          saveUserData(updatedUser);
+          queryClient.setQueryData(["/api/auth/me"], updatedUser);
+        }
+        
+        // Invalidar todas las consultas para que se recarguen con el nuevo contexto de organización
+        queryClient.invalidateQueries();
+        
+        toast({
+          title: "Organización cambiada",
+          description: `Ahora estás trabajando en: ${data.organization.name}`,
+        });
+      } else {
+        console.warn("No se recibió un nuevo token JWT tras cambiar de organización");
+        toast({
+          title: "Organización cambiada",
+          description: data.message,
+        });
+      }
+    },
+    onError: (error: Error) => {
+      console.error("Error al cambiar de organización:", error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo cambiar de organización",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Mantener localStorage actualizado cuando cambie el usuario
   useEffect(() => {
@@ -245,6 +295,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         registerMutation,
         forgotPasswordMutation,
         resetPasswordMutation,
+        switchOrganizationMutation,
       }}
     >
       {children}

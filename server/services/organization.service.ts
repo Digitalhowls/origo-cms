@@ -76,6 +76,18 @@ export async function switchOrganization(req: Request, res: Response) {
     
     console.log(`Contexto de organización actualizado: ID=${organizationId}`);
     
+    // Actualizar el usuario con el nuevo organizationId
+    const updatedUser = await storage.updateUser(userId, { organizationId });
+    if (!updatedUser) {
+      console.error(`Error al actualizar organizationId en usuario ${userId}`);
+      return res.status(500).json({ message: 'Error al cambiar de organización' });
+    }
+    
+    // Generar un nuevo token JWT con el organizationId actualizado
+    // Importamos la función de generación de token aquí para evitar dependencias circulares
+    const { generateToken } = require('../utils/jwt-helper');
+    const newToken = generateToken({ ...updatedUser, organizationId });
+    
     // Save the session before responding
     req.session.save((err) => {
       if (err) {
@@ -85,7 +97,8 @@ export async function switchOrganization(req: Request, res: Response) {
       
       res.json({ 
         message: 'Organización cambiada correctamente',
-        organization
+        organization,
+        token: newToken // Devolver el nuevo token para que el cliente lo actualice
       });
     });
   } catch (error) {

@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, PlusCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Organization {
   id: number;
@@ -23,6 +24,7 @@ interface Organization {
 
 export const OrganizationSwitcher: React.FC = () => {
   const { toast } = useToast();
+  const { switchOrganizationMutation } = useAuth();
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
 
   // Fetch organizations for the current user
@@ -40,31 +42,27 @@ export const OrganizationSwitcher: React.FC = () => {
   const handleOrganizationChange = (org: Organization) => {
     setCurrentOrganization(org);
     
-    // API call to switch organization context
-    fetch(`/api/organizations/switch/${org.id}`, {
-      method: 'POST',
-      credentials: 'include',
-    })
-      .then(response => {
-        if (!response.ok) throw new Error('Failed to switch organization');
-        return response.json();
-      })
-      .then(() => {
-        toast({
-          title: "Organización cambiada",
-          description: `Has cambiado a ${org.name}`,
-        });
-        // Refresh the page to reflect organization change
-        window.location.reload();
-      })
-      .catch(error => {
+    // Usar la mutación del hook useAuth para cambiar de organización
+    switchOrganizationMutation.mutate(org.id, {
+      onSuccess: () => {
+        // No es necesario mostrar una notificación porque la mutación ya lo hace
+        // La mutación también actualiza el token JWT en localStorage
+        
+        // Refresh the page to reflect organization change after a short delay
+        // para permitir que las queries sean invalidadas
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      },
+      onError: (error) => {
         console.error('Error switching organization:', error);
         toast({
           title: "Error",
           description: "No se pudo cambiar de organización",
           variant: "destructive",
         });
-      });
+      }
+    });
   };
 
   const handleCreateNewOrganization = () => {
