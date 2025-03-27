@@ -11,7 +11,8 @@ import {
   Palette, 
   Monitor, 
   Key, 
-  ChevronDown 
+  ChevronDown,
+  Download
 } from 'lucide-react';
 import { OrganizationSwitcher } from '../organization/OrganizationSwitcher';
 import { UserMenu } from '../user/UserMenu';
@@ -87,6 +88,12 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
       path: '/settings/integrations',
       icon: <Monitor className="h-5 w-5" />,
       active: location === '/settings/integrations',
+    },
+    {
+      name: 'Importar',
+      path: '/settings/import',
+      icon: <Download className="h-5 w-5" />,
+      active: location === '/settings/import',
     },
     {
       name: 'API',

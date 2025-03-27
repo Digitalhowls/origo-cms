@@ -16,6 +16,7 @@ import * as templatesService from './services/templates.service';
 import * as smartAreasService from './services/smart-areas.service';
 import * as exportImportService from './services/export-import.service';
 import * as layoutTemplatesService from './services/layout-templates.service';
+import * as wordpressImportService from './services/wordpress-import.service';
 import { authMiddleware } from './middleware/auth.middleware';
 import { organizationContextMiddleware, requireOrganizationContext } from './middleware/organization.middleware';
 import { customDomainMiddleware } from './middleware/custom-domain.middleware';
@@ -241,6 +242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/layout-templates/:id', authMiddleware, layoutTemplatesService.updateLayoutTemplate);
   app.delete('/api/layout-templates/:id', authMiddleware, layoutTemplatesService.deleteLayoutTemplate);
   app.post('/api/layout-templates/:id/popularity', authMiddleware, layoutTemplatesService.incrementTemplatePopularity);
+  
+  // WordPress Import routes
+  app.post('/api/wordpress/import/check-connection', authMiddleware, wordpressImportService.checkWordPressImportConnection);
+  app.post('/api/wordpress/import/start', authMiddleware, requireOrganizationContext, wordpressImportService.startWordPressImport);
+  app.get('/api/wordpress/import/status', authMiddleware, wordpressImportService.getWordPressImportStatus);
 
   // Create HTTP server
   const httpServer = createServer(app);
