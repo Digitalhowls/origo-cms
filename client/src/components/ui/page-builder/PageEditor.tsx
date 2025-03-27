@@ -8,11 +8,12 @@ import { Eye, Check, GripVertical, X, Split, RefreshCw } from 'lucide-react';
 import { usePageStore } from '@/lib/store';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { PageData, Block } from '@shared/types';
+import { PageData, Block, BlockType } from '@shared/types';
 import HeaderBlock from './blocks/HeaderBlock';
 import FeaturesBlock from './blocks/FeaturesBlock';
 import TextMediaBlock from './blocks/TextMediaBlock';
 import TestimonialBlock from './blocks/TestimonialBlock';
+import AccordionBlock from './blocks/AccordionBlock';
 import SortableBlockWrapper from './SortableBlockWrapper';
 import { PreviewContainer } from './preview';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,28 +43,39 @@ export const renderBlock = (block: Block, options?: { isPreview?: boolean; isSel
   const handleClick = isPreview ? () => {} : () => {};
   
   switch (block.type) {
+    case BlockType.HEADER:
     case 'hero':
       blockComponent = <HeaderBlock 
         block={block} 
         onClick={handleClick} 
       />;
       break;
+    case BlockType.FEATURES:
     case 'features':
       blockComponent = <FeaturesBlock 
         block={block} 
         onClick={handleClick} 
       />;
       break;
+    case BlockType.TEXT_MEDIA:
     case 'text-media':
       blockComponent = <TextMediaBlock 
         block={block} 
         onClick={handleClick} 
       />;
       break;
+    case BlockType.TESTIMONIAL:
     case 'testimonial':
       blockComponent = <TestimonialBlock 
         block={block} 
         onClick={handleClick} 
+      />;
+      break;
+    case BlockType.ACCORDION:
+      blockComponent = <AccordionBlock 
+        block={block} 
+        onClick={handleClick} 
+        isPreview={isPreview}
       />;
       break;
     default:

@@ -13,9 +13,62 @@ interface BlockTemplate {
   icon: JSX.Element;
   defaultContent: any;
   defaultSettings: any;
+  data?: any;
 }
 
 const blockTemplates: BlockTemplate[] = [
+  {
+    type: BlockType.ACCORDION,
+    title: 'Acordeón',
+    description: 'Secciones plegables para mostrar información organizada o FAQ',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    ),
+    defaultContent: {},
+    defaultSettings: {
+      spacing: {
+        marginTop: 10,
+        marginBottom: 10,
+      },
+      appearance: {
+        textColor: '#1F2937',
+        backgroundColor: 'white',
+      },
+    },
+    data: {
+      title: 'Preguntas Frecuentes',
+      description: 'Respuestas a las dudas más comunes',
+      items: [
+        {
+          id: uuidv4(),
+          title: '¿Cómo funciona este servicio?',
+          content: 'Nuestro servicio funciona de manera muy sencilla. Una vez que te registras, tendrás acceso completo a todas nuestras herramientas y recursos.',
+          isOpen: true
+        },
+        {
+          id: uuidv4(),
+          title: '¿Cuál es el costo de la suscripción?',
+          content: 'Ofrecemos diferentes planes de suscripción adaptados a tus necesidades. Puedes consultar los precios detallados en nuestra página de planes.',
+          isOpen: false
+        },
+        {
+          id: uuidv4(),
+          title: '¿Puedo cancelar en cualquier momento?',
+          content: 'Sí, puedes cancelar tu suscripción en cualquier momento sin ningún cargo adicional ni penalización.',
+          isOpen: false
+        }
+      ],
+      settings: {
+        style: 'basic',
+        allowMultiple: true,
+        defaultValues: [],
+        showControls: true,
+        headerTag: 'h3'
+      }
+    },
+  },
   {
     type: BlockType.HEADER,
     title: 'Encabezado',
@@ -236,6 +289,7 @@ const BlockLibrary: React.FC = () => {
       type: block.type,
       content: { ...block.defaultContent },
       settings: { ...block.defaultSettings },
+      data: block.data || undefined
     };
     
     addBlock(newBlock);

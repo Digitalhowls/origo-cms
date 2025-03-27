@@ -4,6 +4,23 @@ export interface Block {
   type: BlockType;
   content: any;
   settings: any;
+  data?: {
+    title?: string;
+    description?: string;
+    items?: Array<{
+      id: string;
+      title: string;
+      content: string;
+      isOpen?: boolean;
+    }>;
+    settings?: {
+      style?: 'basic' | 'bordered' | 'shadowed' | 'faq';
+      allowMultiple?: boolean;
+      defaultValues?: string[];
+      showControls?: boolean;
+      headerTag?: string;
+    };
+  };
 }
 
 export enum BlockType {
@@ -22,6 +39,7 @@ export enum BlockType {
   FAQ = 'faq',
   HERO = 'hero',
   STATS = 'stats',
+  ACCORDION = 'accordion',
 }
 
 export interface PageData {

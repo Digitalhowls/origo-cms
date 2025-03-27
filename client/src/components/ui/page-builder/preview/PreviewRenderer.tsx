@@ -1,10 +1,11 @@
 import React from 'react';
-import { Block } from '@shared/types';
+import { Block, BlockType } from '@shared/types';
 import { cn } from '@/lib/utils';
 import HeaderBlock from '../blocks/HeaderBlock';
 import FeaturesBlock from '../blocks/FeaturesBlock';
 import TextMediaBlock from '../blocks/TextMediaBlock';
 import TestimonialBlock from '../blocks/TestimonialBlock';
+import AccordionBlock from '../blocks/AccordionBlock';
 
 export interface PreviewRendererProps {
   blocks: Block[];
@@ -33,14 +34,17 @@ const PreviewRenderer: React.FC<PreviewRendererProps> = ({
     const handleClick = () => {};
     
     switch (block.type) {
+      case BlockType.HEADER:
       case 'hero':
         return <HeaderBlock block={block} onClick={handleClick} />;
-      case 'features':
+      case BlockType.FEATURES:
         return <FeaturesBlock block={block} onClick={handleClick} />;
-      case 'text-media':
+      case BlockType.TEXT_MEDIA:
         return <TextMediaBlock block={block} onClick={handleClick} />;
-      case 'testimonial':
+      case BlockType.TESTIMONIAL:
         return <TestimonialBlock block={block} onClick={handleClick} />;
+      case BlockType.ACCORDION:
+        return <AccordionBlock block={block} onClick={handleClick} isPreview={true} />;
       default:
         return <div>Bloque no soportado: {block.type}</div>;
     }
