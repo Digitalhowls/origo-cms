@@ -1,9 +1,36 @@
 // Page Builder Types
+// Grid Types
+export interface GridCell {
+  id: string;
+  rowStart: number;
+  rowEnd: number;
+  colStart: number;
+  colEnd: number;
+}
+
+export interface Grid {
+  id: string;
+  name?: string;
+  columns: number;
+  rows: number;
+  columnWidths?: string[];
+  rowHeights?: string[];
+  gap?: number;
+  padding?: number;
+  cells?: GridCell[];
+  responsive?: {
+    tablet?: Partial<Grid>;
+    mobile?: Partial<Grid>;
+  };
+}
+
 export interface Block {
   id: string;
   type: BlockType;
   content: any;
   settings: any;
+  animation?: AnimationProps;
+  gridPosition?: GridCell;
   data?: {
     title?: string;
     description?: string;
@@ -109,6 +136,7 @@ export interface PageData {
   slug: string;
   status: 'draft' | 'published' | 'archived';
   blocks: Block[];
+  grid?: Grid; // Configuración del sistema de rejilla
   seo?: {
     metaTitle?: string;
     metaDescription?: string;
@@ -137,7 +165,10 @@ export enum HistoryActionType {
   IMPORTED = 'imported',
   AUTO_SAVED = 'auto_saved',
   SAVED_TEMPLATE = 'saved_template',
-  UPDATE_ANIMATION = 'update_animation'
+  UPDATE_ANIMATION = 'update_animation',
+  UPDATE_GRID = 'update_grid',
+  ADD_GRID = 'add_grid',
+  UPDATE_BLOCK_POSITION = 'update_block_position'
 }
 
 // Tipos de animación

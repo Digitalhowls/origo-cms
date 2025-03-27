@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { PageData, Block, BlockType, HistoryActionType } from '@shared/types';
+import { PageData, Block, BlockType, HistoryActionType, Grid, GridCell } from '@shared/types';
 import { historyService } from './history-service';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -12,18 +12,119 @@ interface PageState {
   addBlock: (block: Block) => void;
   updateBlock: (block: Block) => void;
   updateBlockAnimation: (blockId: string, animation: any) => void;
+  updateBlockGridPosition: (blockId: string, position: GridCell) => void;
   removeBlock: (blockId: string) => void;
   moveBlockUp: (blockId: string) => void;
   moveBlockDown: (blockId: string) => void;
   duplicateBlock: (blockId: string) => void;
   reorderBlocks: (activeId: string, overId: string) => void;
   setBlocksOrder: (blocks: Block[]) => void;
+  
+  // Grid management
+  updatePageGrid: (grid: Grid) => void;
+  resetPageGrid: () => void;
+}
+
+// Builder store que combina PageState con otras funcionalidades
+interface BuilderState extends PageState {
+  selectedBlockId: string | null;
+  setSelectedBlockId: (id: string | null) => void;
+  selectedTab: string;
+  setSelectedTab: (tab: string) => void;
+  viewMode: 'edit' | 'preview';
+  setViewMode: (mode: 'edit' | 'preview') => void;
+  previewDevice: 'desktop' | 'tablet' | 'mobile';
+  setPreviewDevice: (device: 'desktop' | 'tablet' | 'mobile') => void;
 }
 
 export const usePageStore = create<PageState>((set) => ({
   currentPage: null,
   
   setCurrentPage: (page) => set({ currentPage: page }),
+  
+  // Actualizar la posición de un bloque en la rejilla
+  updateBlockGridPosition: (blockId, position) => set((state) => {
+    if (!state.currentPage) return { currentPage: null };
+    
+    const blocks = state.currentPage.blocks.map((block) => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          gridPosition: position
+        };
+      }
+      return block;
+    });
+    
+    const updatedPage = {
+      ...state.currentPage,
+      blocks,
+    };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.UPDATE_BLOCK_POSITION,
+      `Posición del bloque actualizada en la rejilla`
+    );
+    
+    return { currentPage: updatedPage };
+  }),
+  
+  // Actualizar la configuración de la rejilla de la página
+  updatePageGrid: (grid) => set((state) => {
+    if (!state.currentPage) return { currentPage: null };
+    
+    // Si ya había una rejilla, es una actualización, si no, es una adición
+    const actionType = state.currentPage.grid ? HistoryActionType.UPDATE_GRID : HistoryActionType.ADD_GRID;
+    
+    const updatedPage = {
+      ...state.currentPage,
+      grid
+    };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      actionType,
+      actionType === HistoryActionType.ADD_GRID 
+        ? `Sistema de rejilla añadido a la página` 
+        : `Configuración de rejilla actualizada`
+    );
+    
+    return { currentPage: updatedPage };
+  }),
+  
+  // Eliminar la configuración de rejilla de la página
+  resetPageGrid: () => set((state) => {
+    if (!state.currentPage || !state.currentPage.grid) return { currentPage: state.currentPage };
+    
+    // Crear una copia de la página sin la rejilla
+    const { grid, ...pageWithoutGrid } = state.currentPage;
+    
+    // Limpiar las posiciones de rejilla de los bloques
+    const blocksWithoutGridPositions = state.currentPage.blocks.map(block => {
+      if (block.gridPosition) {
+        const { gridPosition, ...blockWithoutGrid } = block;
+        return blockWithoutGrid;
+      }
+      return block;
+    });
+    
+    const updatedPage = {
+      ...pageWithoutGrid,
+      blocks: blocksWithoutGridPositions
+    } as PageData;
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.UPDATE_GRID,
+      `Sistema de rejilla desactivado`
+    );
+    
+    return { currentPage: updatedPage };
+  }),
   
   updateBlockAnimation: (blockId, animation) => set((state) => {
     if (!state.currentPage) return { currentPage: null };
@@ -298,6 +399,29 @@ export const usePageStore = create<PageState>((set) => ({
     return { currentPage: updatedPage };
   }),
 }));
+
+// Builder Store que combina la funcionalidad de PageState con otras para la edición
+export const useBuildStore = create<BuilderState>((set, get) => ({
+  // Page State
+  ...usePageStore.getState(),
+  
+  // UI State
+  selectedBlockId: null,
+  setSelectedBlockId: (id) => set({ selectedBlockId: id }),
+  selectedTab: 'content',
+  setSelectedTab: (tab) => set({ selectedTab: tab }),
+  viewMode: 'edit' as const,
+  setViewMode: (mode) => set({ viewMode: mode }),
+  previewDevice: 'desktop' as const,
+  setPreviewDevice: (device) => set({ previewDevice: device }),
+}));
+
+// Sincronizar los stores cuando el estado de página cambia
+usePageStore.subscribe((state) => {
+  if (state.currentPage !== useBuildStore.getState().currentPage) {
+    useBuildStore.setState({ currentPage: state.currentPage });
+  }
+});
 
 // Media Store
 interface MediaState {
