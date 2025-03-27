@@ -15,6 +15,7 @@ import * as tenantService from './services/tenant.service';
 import * as templatesService from './services/templates.service';
 import * as smartAreasService from './services/smart-areas.service';
 import * as exportImportService from './services/export-import.service';
+import * as layoutTemplatesService from './services/layout-templates.service';
 import { authMiddleware } from './middleware/auth.middleware';
 import { organizationContextMiddleware, requireOrganizationContext } from './middleware/organization.middleware';
 import { customDomainMiddleware } from './middleware/custom-domain.middleware';
@@ -231,6 +232,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Export/Import routes
   app.get('/api/export/:type/:id', authMiddleware, exportImportService.exportTemplate);
   app.post('/api/import', authMiddleware, exportImportService.uploadZipMiddleware, exportImportService.importTemplate);
+
+  // Layout Templates routes
+  app.get('/api/layout-templates', authMiddleware, requireOrganizationContext, layoutTemplatesService.getLayoutTemplates);
+  app.get('/api/layout-templates/featured', authMiddleware, requireOrganizationContext, layoutTemplatesService.getFeaturedTemplates);
+  app.get('/api/layout-templates/:id', authMiddleware, layoutTemplatesService.getLayoutTemplate);
+  app.post('/api/layout-templates', authMiddleware, requireOrganizationContext, layoutTemplatesService.createLayoutTemplate);
+  app.patch('/api/layout-templates/:id', authMiddleware, layoutTemplatesService.updateLayoutTemplate);
+  app.delete('/api/layout-templates/:id', authMiddleware, layoutTemplatesService.deleteLayoutTemplate);
+  app.post('/api/layout-templates/:id/popularity', authMiddleware, layoutTemplatesService.incrementTemplatePopularity);
 
   // Create HTTP server
   const httpServer = createServer(app);

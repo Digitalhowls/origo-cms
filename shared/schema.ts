@@ -429,3 +429,32 @@ export const insertSmartAreaSchema = createInsertSchema(smartAreas).omit({
 });
 export type SmartArea = typeof smartAreas.$inferSelect;
 export type InsertSmartArea = z.infer<typeof insertSmartAreaSchema>;
+
+// Layout Templates (plantillas predefinidas de diseños)
+export const layoutTemplates = pgTable("layout_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  preview: text("preview"),
+  category: text("category").notNull(), // landing, blog, ecommerce, portfolio, etc.
+  tags: text("tags").array(),
+  thumbnail: text("thumbnail"), // URL de una miniatura para mostrar en la galería
+  structure: jsonb("structure").notNull(), // Estructura del layout (columnas, filas, áreas, etc.)
+  content: jsonb("content").notNull(), // Bloques predefinidos en el layout
+  popularity: integer("popularity").default(0), // Para ordenar por más utilizadas
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  createdById: integer("created_by_id").references(() => users.id).notNull(),
+  isSystem: boolean("is_system").default(false), // Si es true, es una plantilla del sistema y no se puede eliminar
+  isPublic: boolean("is_public").default(false), // Si es true, está disponible para todos los usuarios
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertLayoutTemplateSchema = createInsertSchema(layoutTemplates).omit({
+  id: true,
+  popularity: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type LayoutTemplate = typeof layoutTemplates.$inferSelect;
+export type InsertLayoutTemplate = z.infer<typeof insertLayoutTemplateSchema>;

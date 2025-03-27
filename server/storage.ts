@@ -18,7 +18,8 @@ import {
   customRoles, type CustomRole, type InsertCustomRole,
   rolePermissions, type RolePermission, type InsertRolePermission,
   blockTemplates, type BlockTemplate, type InsertBlockTemplate,
-  smartAreas, type SmartArea, type InsertSmartArea
+  smartAreas, type SmartArea, type InsertSmartArea,
+  layoutTemplates, type LayoutTemplate, type InsertLayoutTemplate
 } from "@shared/schema";
 import { RolePermissions, CustomRoleDefinition } from "@shared/types";
 import { eq, like, and, or, desc, sql, asc } from "drizzle-orm";
@@ -135,6 +136,22 @@ export interface IStorage {
   updateSmartArea(id: number, smartAreaData: Partial<SmartArea>): Promise<SmartArea | undefined>;
   deleteSmartArea(id: number): Promise<boolean>;
   getGlobalSmartAreas(organizationId: number, options?: { pageId?: number, pageType?: string }): Promise<SmartArea[]>;
+  
+
+
+  // Layout Templates methods
+  getLayoutTemplates(organizationId: number, filters?: { 
+    category?: string; 
+    includeSystem?: boolean; 
+    includePublic?: boolean;
+    search?: string 
+  }): Promise<LayoutTemplate[]>;
+  getLayoutTemplate(id: number): Promise<LayoutTemplate | undefined>;
+  createLayoutTemplate(template: InsertLayoutTemplate): Promise<LayoutTemplate>;
+  updateLayoutTemplate(id: number, templateData: Partial<InsertLayoutTemplate>): Promise<LayoutTemplate | undefined>;
+  deleteLayoutTemplate(id: number): Promise<boolean>;
+  incrementLayoutTemplatePopularity(id: number): Promise<void>;
+  getFeaturedLayoutTemplates(organizationId: number, category?: string, limit?: number): Promise<LayoutTemplate[]>;
 }
 
 export class DatabaseStorage implements IStorage {

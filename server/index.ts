@@ -4,6 +4,8 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initEmailService, createTestAccount } from "./services/email.service";
 import cors from 'cors';
 import { customDomainMiddleware } from "./middleware/custom-domain.middleware";
+// Importar implementación de métodos para layout templates
+import "./layout-templates";
 
 const app = express();
 
