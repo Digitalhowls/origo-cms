@@ -1,14 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Edit, Copy, Trash, ChevronUp, ChevronDown } from 'lucide-react';
+import { GripVertical, Edit, Copy, Trash, ChevronUp, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { usePageStore } from '@/lib/store';
+import { Block, BlockType } from '@shared/types';
+import { BlockActionsMenu } from './block-export-import/BlockActionsMenu';
 
 interface SortableBlockWrapperProps {
   id: string;
   children: React.ReactNode;
   onSelect?: () => void;
   isSelected?: boolean;
+  block: Block;
+  pageId?: number;
 }
 
 const SortableBlockWrapper: React.FC<SortableBlockWrapperProps> = ({
@@ -16,6 +20,8 @@ const SortableBlockWrapper: React.FC<SortableBlockWrapperProps> = ({
   children,
   onSelect,
   isSelected = false,
+  block,
+  pageId = 0
 }) => {
   const {
     attributes,
@@ -30,7 +36,8 @@ const SortableBlockWrapper: React.FC<SortableBlockWrapperProps> = ({
     moveBlockUp, 
     moveBlockDown, 
     duplicateBlock, 
-    removeBlock 
+    removeBlock,
+    addBlock
   } = usePageStore();
 
   const style = {
@@ -39,6 +46,20 @@ const SortableBlockWrapper: React.FC<SortableBlockWrapperProps> = ({
     zIndex: isDragging ? 10 : 1,
     position: 'relative' as 'relative',
     marginBottom: '1rem',
+  };
+
+  const handleImportSuccess = (blockTemplate: any) => {
+    if (blockTemplate && blockTemplate.block) {
+      // Crear un nuevo ID para el bloque importado
+      const newBlock = {
+        ...blockTemplate.block,
+        id: crypto.randomUUID()
+      };
+      
+      // Añadir el bloque importado después del bloque actual
+      // Usamos la nueva versión de addBlock que acepta un segundo parámetro
+      addBlock(newBlock, id);
+    }
   };
 
   return (
@@ -103,6 +124,19 @@ const SortableBlockWrapper: React.FC<SortableBlockWrapperProps> = ({
         >
           <Trash className="h-4 w-4" />
         </button>
+        
+        {/* Menú de acciones adicionales */}
+        <BlockActionsMenu 
+          block={block}
+          pageId={pageId}
+          onDuplicate={duplicateBlock}
+          onDelete={(blockId) => {
+            if (window.confirm('¿Estás seguro de que deseas eliminar este bloque?')) {
+              removeBlock(blockId);
+            }
+          }}
+          onImportSuccess={handleImportSuccess}
+        />
       </div>
 
       {/* The actual block content */}

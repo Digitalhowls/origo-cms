@@ -46,16 +46,53 @@ export async function exportTemplate(req: Request, res: Response) {
     const { id, type } = req.params;
     
     // Validar que se ha especificado un tipo válido
-    if (type !== 'template' && type !== 'smartarea') {
-      return res.status(400).json({ error: "Invalid export type. Use 'template' or 'smartarea'" });
+    if (type !== 'template' && type !== 'smartarea' && type !== 'block') {
+      return res.status(400).json({ error: "Invalid export type. Use 'template', 'smartarea', or 'block'" });
     }
     
-    // Obtener el template o smartarea
-    let item: BlockTemplate | SmartArea | undefined;
+    // Obtener el template, smartarea o bloque individual
+    let item: BlockTemplate | SmartArea | any;
     if (type === 'template') {
       item = await storage.getBlockTemplate(parseInt(id));
-    } else {
+    } else if (type === 'smartarea') {
       item = await storage.getSmartArea(parseInt(id));
+    } else if (type === 'block') {
+      // Para bloques individuales, necesitamos obtener la página y extraer el bloque específico
+      const pageId = req.query.pageId ? parseInt(req.query.pageId as string) : undefined;
+      if (!pageId) {
+        return res.status(400).json({ error: "pageId query parameter is required for block export" });
+      }
+      
+      const page = await storage.getPage(pageId);
+      if (!page) {
+        return res.status(404).json({ error: "Page not found" });
+      }
+      
+      // Verificar que la página pertenezca a la organización
+      if (page.organizationId !== organization.id) {
+        return res.status(403).json({ error: "Not authorized to access this page" });
+      }
+      
+      // Obtenemos el contenido de la página y convertimos a objeto para acceder a los bloques
+      const pageContent = typeof page.content === 'string' 
+        ? JSON.parse(page.content) 
+        : page.content;
+        
+      // Encontrar el bloque específico por su ID
+      const block = pageContent.blocks?.find((b: any) => b.id === id);
+      if (!block) {
+        return res.status(404).json({ error: "Block not found in the specified page" });
+      }
+      
+      // Crear un objeto similar a BlockTemplate/SmartArea para mantener consistencia
+      item = {
+        name: block.type + '-' + id.substring(0, 8),
+        description: `Block exported from page "${page.title}"`,
+        organizationId: organization.id,
+        block: block,
+        content: block, // Para mantener la consistencia con el código posterior
+        category: 'exported-block'
+      };
     }
     
     if (!item) {
@@ -193,7 +230,7 @@ export async function importTemplate(req: Request, res: Response) {
       return res.status(400).json({ error: "Missing required data in export file" });
     }
     
-    // Crear el template o smart area según el tipo
+    // Crear el template, smart area o bloque según el tipo
     let result;
     if (importData.type === 'template') {
       // Crear block template
@@ -205,8 +242,7 @@ export async function importTemplate(req: Request, res: Response) {
         organizationId: organization.id,
         createdById: req.user?.id || 0,
         category: importData.category || 'imported',
-        tags: [],
-        usageCount: 0
+        tags: []
       });
     } else if (importData.type === 'smartarea') {
       // Crear smart area
@@ -220,6 +256,18 @@ export async function importTemplate(req: Request, res: Response) {
         status: 'draft',
         isGlobal: false,
         displayConditions: null
+      });
+    } else if (importData.type === 'block') {
+      // Para bloques individuales, guardamos como template pero con una categoría especial
+      result = await storage.createBlockTemplate({
+        name: importData.name,
+        block: importData.content,
+        preview: null,
+        description: importData.description || 'Bloque importado',
+        organizationId: organization.id,
+        createdById: req.user?.id || 0,
+        category: 'imported-block',
+        tags: []
       });
     } else {
       return res.status(400).json({ error: "Invalid import type" });
@@ -319,7 +367,13 @@ function extractResourceIdFromUrl(url: string): string | null {
  * Función auxiliar para extraer archivos ZIP
  */
 async function extractZip(zipPath: string, destPath: string): Promise<void> {
-  // Implementación temporal para evitar error de compilación
-  // En una implementación real, se usaría node:tar o una biblioteca de ZIP
-  throw new Error("ZIP extraction not implemented");
+  // Importamos la biblioteca de forma dinámica para evitar problemas de dependencias
+  const extract = require('extract-zip');
+  
+  try {
+    await extract(zipPath, { dir: destPath });
+  } catch (error: any) {
+    console.error('Error extracting ZIP file:', error);
+    throw new Error(`Failed to extract ZIP file: ${error.message || 'Unknown error'}`);
+  }
 }

@@ -9,7 +9,7 @@ interface PageState {
   updatePageTitle: (title: string) => void;
   updatePageSlug: (slug: string) => void;
   updatePageStatus: (status: 'draft' | 'published' | 'archived') => void;
-  addBlock: (block: Block) => void;
+  addBlock: (block: Block, afterBlockId?: string | null) => void;
   updateBlock: (block: Block) => void;
   updateBlockAnimation: (blockId: string, animation: any) => void;
   updateBlockGridPosition: (blockId: string, position: GridCell) => void;
@@ -202,12 +202,32 @@ export const usePageStore = create<PageState>((set) => ({
     return { currentPage: updatedPage };
   }),
   
-  addBlock: (block) => set((state) => {
+  addBlock: (block, afterBlockId = null) => set((state) => {
     if (!state.currentPage) return { currentPage: null };
+    
+    let updatedBlocks;
+    
+    if (afterBlockId) {
+      // Si se especifica afterBlockId, inserta el bloque después de ese bloque
+      const index = state.currentPage.blocks.findIndex(b => b.id === afterBlockId);
+      if (index !== -1) {
+        updatedBlocks = [
+          ...state.currentPage.blocks.slice(0, index + 1),
+          block,
+          ...state.currentPage.blocks.slice(index + 1)
+        ];
+      } else {
+        // Si no se encuentra el bloque de referencia, añade al final
+        updatedBlocks = [...(state.currentPage.blocks || []), block];
+      }
+    } else {
+      // Si no se especifica afterBlockId, añade al final como antes
+      updatedBlocks = [...(state.currentPage.blocks || []), block];
+    }
     
     const updatedPage = {
       ...state.currentPage,
-      blocks: [...(state.currentPage.blocks || []), block],
+      blocks: updatedBlocks,
     };
     
     // Registrar cambio en historial

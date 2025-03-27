@@ -128,6 +128,8 @@ export const renderBlock = (block: Block, options?: { isPreview?: boolean; isSel
       id={block.id}
       onSelect={() => {}} // Será sobrescrito desde el componente
       isSelected={isSelected}
+      block={block}
+      pageId={0} // El pageId se pasa desde el componente parent
     >
       {blockComponent}
     </SortableBlockWrapper>
@@ -427,6 +429,8 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
                               id={block.id}
                               onSelect={() => handleBlockClick(block.id)}
                               isSelected={selectedBlockId === block.id}
+                              block={block}
+                              pageId={currentPage?.id || 0}
                             >
                               {renderBlock(block)}
                             </SortableBlockWrapper>
@@ -619,6 +623,8 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
                         id={block.id}
                         onSelect={() => handleBlockClick(block.id)}
                         isSelected={selectedBlockId === block.id}
+                        block={block}
+                        pageId={currentPage?.id || 0}
                       >
                         {renderBlock(block)}
                       </SortableBlockWrapper>
