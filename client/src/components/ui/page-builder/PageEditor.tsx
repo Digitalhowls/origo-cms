@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Check, GripVertical } from 'lucide-react';
+import { Eye, Check, GripVertical, X, Split, RefreshCw } from 'lucide-react';
 import { usePageStore } from '@/lib/store';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import FeaturesBlock from './blocks/FeaturesBlock';
 import TextMediaBlock from './blocks/TextMediaBlock';
 import TestimonialBlock from './blocks/TestimonialBlock';
 import SortableBlockWrapper from './SortableBlockWrapper';
+import { PreviewContainer } from './preview';
 import { v4 as uuidv4 } from 'uuid';
 import { TransitionList, AOSElement } from '@/lib/animation-service';
 import { 
@@ -29,10 +30,61 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+
+// Render appropriate block based on type - exported for use in preview
+export const renderBlock = (block: Block, options?: { isPreview?: boolean; isSelected?: boolean }) => {
+  const { isPreview = false, isSelected = false } = options || {};
+  let blockComponent;
+  
+  // Si estamos en modo de vista previa, no necesitamos manejar clics
+  const handleClick = isPreview ? () => {} : () => {};
+  
+  switch (block.type) {
+    case 'hero':
+      blockComponent = <HeaderBlock 
+        block={block} 
+        onClick={handleClick} 
+      />;
+      break;
+    case 'features':
+      blockComponent = <FeaturesBlock 
+        block={block} 
+        onClick={handleClick} 
+      />;
+      break;
+    case 'text-media':
+      blockComponent = <TextMediaBlock 
+        block={block} 
+        onClick={handleClick} 
+      />;
+      break;
+    case 'testimonial':
+      blockComponent = <TestimonialBlock 
+        block={block} 
+        onClick={handleClick} 
+      />;
+      break;
+    default:
+      blockComponent = <div>Bloque no soportado: {block.type}</div>;
+  }
+  
+  // En modo vista previa, no envolvemos con SortableBlockWrapper
+  if (isPreview) {
+    return blockComponent;
+  }
+  
+  return (
+    <SortableBlockWrapper 
+      id={block.id}
+      onSelect={() => {}} // Será sobrescrito desde el componente
+      isSelected={isSelected}
+    >
+      {blockComponent}
+    </SortableBlockWrapper>
+  );
+};
 
 interface PageEditorProps {
   pageId?: number;
@@ -44,16 +96,20 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   
+  // Estado para el modo de vista previa
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'split' | 'fullscreen'>('split');
+  
   // Fetch page data if editing an existing page
   const { data: pageData, isLoading } = useQuery({
-    queryKey: pageId ? [`/api/pages/${pageId}`] : null,
+    queryKey: pageId ? [`/api/pages/${pageId}`] : ['empty'],
     enabled: !!pageId,
   });
 
   // Initialize page or set from fetched data
   useEffect(() => {
     if (pageId && pageData) {
-      setCurrentPage(pageData);
+      setCurrentPage(pageData as PageData);
     } else if (!pageId) {
       setCurrentPage({
         title: 'Nueva página',
@@ -76,7 +132,7 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
     onSuccess: () => {
       toast({
         title: "Éxito",
-        description: currentPage.status === 'published' 
+        description: currentPage?.status === 'published' 
           ? "La página ha sido publicada correctamente" 
           : "La página ha sido guardada como borrador",
       });
@@ -106,9 +162,15 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
     savePageMutation.mutate('published');
   };
 
-  const handlePreview = () => {
+  const handleRealtimePreview = () => {
+    setShowPreview(true);
+  };
+
+  const handleExternalPreview = () => {
     // Open preview in new tab
-    window.open(`/api/preview/pages/${currentPage.slug}`, '_blank');
+    if (currentPage?.slug) {
+      window.open(`/api/preview/pages/${currentPage.slug}`, '_blank');
+    }
   };
 
   const handleBlockClick = (blockId: string) => {
@@ -160,54 +222,171 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
     return arrayMove(blocks, oldIndex, newIndex);
   };
 
-  // Render appropriate block based on type
-  const renderBlock = (block: Block) => {
-    let blockComponent;
-    
-    switch (block.type) {
-      case 'hero':
-        blockComponent = <HeaderBlock 
-          block={block} 
-          onClick={() => handleBlockClick(block.id)} 
-        />;
-        break;
-      case 'features':
-        blockComponent = <FeaturesBlock 
-          block={block} 
-          onClick={() => handleBlockClick(block.id)} 
-        />;
-        break;
-      case 'text-media':
-        blockComponent = <TextMediaBlock 
-          block={block} 
-          onClick={() => handleBlockClick(block.id)} 
-        />;
-        break;
-      case 'testimonial':
-        blockComponent = <TestimonialBlock 
-          block={block} 
-          onClick={() => handleBlockClick(block.id)} 
-        />;
-        break;
-      default:
-        blockComponent = <div>Bloque no soportado: {block.type}</div>;
-    }
-    
-    return (
-      <SortableBlockWrapper 
-        id={block.id}
-        onSelect={() => handleBlockClick(block.id)}
-        isSelected={selectedBlockId === block.id}
-      >
-        {blockComponent}
-      </SortableBlockWrapper>
-    );
-  };
-
   if (isLoading) {
     return <div className="flex justify-center p-10">Cargando...</div>;
   }
 
+  // En modo de pantalla dividida, el editor y la vista previa se muestran lado a lado
+  if (showPreview && previewMode === 'split' && currentPage) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* Toolbar */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Editor de Página</h2>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setPreviewMode('fullscreen')}
+              title="Pantalla completa"
+            >
+              <Split className="h-4 w-4 mr-1" />
+              Vista Dividida
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setShowPreview(false)}
+              title="Cerrar vista previa"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Cerrar Vista Previa
+            </Button>
+          </div>
+        </div>
+
+        {/* Split view container */}
+        <div className="flex h-[calc(100vh-200px)] gap-4">
+          {/* Editor Panel - 50% width */}
+          <div className="w-1/2 overflow-auto pr-2">
+            {/* Page Meta */}
+            <Card className="bg-white mb-6">
+              <CardContent className="pt-6">
+                <div className="flex flex-col space-y-4">
+                  <div>
+                    <Label htmlFor="page-title" className="block text-sm font-medium text-gray-700 mb-1">
+                      Título de la página
+                    </Label>
+                    <Input
+                      id="page-title"
+                      className="block w-full"
+                      value={currentPage.title || ''}
+                      onChange={handleTitleChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="page-slug" className="block text-sm font-medium text-gray-700 mb-1">
+                      URL amigable
+                    </Label>
+                    <div className="flex rounded-md shadow-sm">
+                      <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
+                        /
+                      </span>
+                      <Input
+                        id="page-slug"
+                        className="rounded-none rounded-r-md"
+                        value={currentPage.slug || ''}
+                        onChange={handleSlugChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Page Builder Canvas */}
+            <Card className="bg-white mb-6">
+              <CardContent className="p-4">
+                {currentPage.blocks && currentPage.blocks.length > 0 ? (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext 
+                      items={currentPage.blocks.map(block => block.id)} 
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-4">
+                        {currentPage.blocks.map((block) => (
+                          <div key={block.id}>
+                            <SortableBlockWrapper 
+                              id={block.id}
+                              onSelect={() => handleBlockClick(block.id)}
+                              isSelected={selectedBlockId === block.id}
+                            >
+                              {renderBlock(block)}
+                            </SortableBlockWrapper>
+                          </div>
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">Añadir nuevo bloque</h3>
+                    <p className="text-gray-500 mb-4">Arrastra un bloque aquí o haz clic para seleccionar</p>
+                    <Button variant="outline" onClick={handleAddEmptyBlock}>
+                      Seleccionar bloque
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-4 mb-6">
+              <Button variant="outline" onClick={handleSaveDraft} disabled={savePageMutation.isPending}>
+                Guardar borrador
+              </Button>
+              <Button onClick={handlePublish} disabled={savePageMutation.isPending}>
+                <Check className="h-5 w-5 mr-1" />
+                Publicar
+              </Button>
+            </div>
+          </div>
+
+          {/* Preview Panel - 50% width */}
+          <div className="w-1/2 overflow-auto border rounded-md bg-gray-50">
+            <PreviewContainer
+              blocks={currentPage.blocks || []}
+              title={currentPage.title || ''}
+              selectedBlockId={selectedBlockId}
+              onBlockSelect={setSelectedBlockId}
+              onClose={() => setShowPreview(false)}
+              defaultMode="split"
+              className="h-full"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // En modo de pantalla completa, solo se muestra la vista previa
+  if (showPreview && previewMode === 'fullscreen' && currentPage) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white">
+        <PreviewContainer
+          blocks={currentPage.blocks || []}
+          title={currentPage.title || ''}
+          selectedBlockId={selectedBlockId}
+          onBlockSelect={setSelectedBlockId}
+          onClose={() => {
+            setPreviewMode('split');
+            setShowPreview(false);
+          }}
+          defaultMode="fullscreen"
+          className="h-full"
+        />
+      </div>
+    );
+  }
+
+  // Vista normal del editor
   return (
     <>
       {/* Page Meta */}
@@ -266,7 +445,13 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
                       duration={600} 
                       delay={150}
                     >
-                      {renderBlock(block)}
+                      <SortableBlockWrapper 
+                        id={block.id}
+                        onSelect={() => handleBlockClick(block.id)}
+                        isSelected={selectedBlockId === block.id}
+                      >
+                        {renderBlock(block)}
+                      </SortableBlockWrapper>
                     </AOSElement>
                   ))}
                 </div>
@@ -292,9 +477,13 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
         <Button variant="outline" onClick={handleSaveDraft} disabled={savePageMutation.isPending}>
           Guardar borrador
         </Button>
-        <Button variant="outline" onClick={handlePreview} className="text-primary">
+        <Button variant="outline" onClick={handleRealtimePreview} className="text-primary">
+          <RefreshCw className="h-5 w-5 mr-1" />
+          Vista previa en tiempo real
+        </Button>
+        <Button variant="outline" onClick={handleExternalPreview} className="text-primary">
           <Eye className="h-5 w-5 mr-1" />
-          Vista previa
+          Vista previa externa
         </Button>
         <Button onClick={handlePublish} disabled={savePageMutation.isPending}>
           <Check className="h-5 w-5 mr-1" />
