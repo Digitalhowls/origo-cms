@@ -1,9 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Block, BlockType } from '@shared/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ArrowRightCircle, MoveRight, ExternalLink } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Tipos de íconos disponibles
+export enum CTAIconType {
+  ARROW_RIGHT = 'ArrowRight',
+  ARROW_RIGHT_CIRCLE = 'ArrowRightCircle',
+  MOVE_RIGHT = 'MoveRight',
+  EXTERNAL_LINK = 'ExternalLink',
+  ARROW_UP_RIGHT = 'ArrowUpRight',
+  CHEVRON_RIGHT = 'ChevronRight',
+  CORNER_UP_RIGHT = 'CornerUpRight',
+  ROCKET = 'Rocket',
+  ZAPS = 'Zap',
+  SPARKLES = 'Sparkles',
+  BOLT = 'Bolt',
+  STAR = 'Star'
+}
+
+// Tipos de efectos de hover
+export enum CTAHoverEffect {
+  NONE = 'none',
+  SCALE = 'scale',
+  LIFT = 'lift',
+  GLOW = 'glow',
+  COLOR_SHIFT = 'colorShift',
+  SHADOW = 'shadow',
+  UNDERLINE = 'underline',
+  BORDER = 'border'
+}
+
+// Tipos de contador
+export enum CTACounterType {
+  NONE = 'none',
+  COUNTDOWN = 'countdown',
+  REMAINING_ITEMS = 'remainingItems',
+  PERCENTAGE_FILLED = 'percentageFilled'
+}
 
 // Definición de estilos de CTA disponibles
 export enum CTAStyle {
@@ -61,6 +97,7 @@ export interface CTAData {
     customTextColor?: string;
     customButtonColor?: string;
     showIcon?: boolean;
+    iconType?: string;
     iconPosition?: 'left' | 'right';
     bgImage?: string;
     fullHeight?: boolean;
@@ -71,6 +108,14 @@ export interface CTAData {
     animation?: 'none' | 'fade' | 'slideUp' | 'pulse';
     showBorder?: boolean;
     borderColor?: string;
+    hoverEffect?: CTAHoverEffect;
+    counterType?: CTACounterType;
+    counterValue?: number;
+    counterEndDate?: string;
+    gradient?: boolean;
+    gradientFrom?: string;
+    gradientTo?: string;
+    gradientDirection?: string;
   };
 }
 
@@ -88,11 +133,19 @@ const CTABlock: React.FC<{ block: Block }> = ({ block }) => {
       size: CTASize.MEDIUM,
       colorScheme: CTAColorScheme.PRIMARY,
       showIcon: true,
+      iconType: CTAIconType.ARROW_RIGHT,
       iconPosition: 'right',
       spacing: 'normal',
       rounded: true,
       shadow: false,
       animation: 'none',
+      hoverEffect: CTAHoverEffect.NONE,
+      counterType: CTACounterType.NONE,
+      counterValue: 0,
+      gradient: false,
+      gradientFrom: '#4f46e5',
+      gradientTo: '#818cf8',
+      gradientDirection: 'to-r',
     },
   };
 
@@ -186,11 +239,111 @@ const CTABlock: React.FC<{ block: Block }> = ({ block }) => {
       'loose': 'p-10',
     };
     
+    // Función para obtener el ícono seleccionado de Lucide
+    const getIcon = (iconType: string | undefined) => {
+      if (!iconType) return LucideIcons.ArrowRight;
+      
+      const IconComponent = (LucideIcons as any)[iconType] || LucideIcons.ArrowRight;
+      return IconComponent;
+    };
+    
+    // Obtener el ícono configurado o uno predeterminado
+    const selectedIconType = settings.iconType || CTAIconType.ARROW_RIGHT;
+    const IconComponent = getIcon(selectedIconType);
+    
     // Icono a mostrar si showIcon es true
     const ButtonIcon = settings.iconPosition === 'left' ? 
-      settings.showIcon && <ArrowRightCircle className="mr-2 h-4 w-4" /> : 
-      settings.showIcon && <ArrowRight className="ml-2 h-4 w-4" />;
+      settings.showIcon && <IconComponent className="mr-2 h-4 w-4" /> : 
+      settings.showIcon && <IconComponent className="ml-2 h-4 w-4" />;
     
+    // Renderizar el contador si está habilitado
+    const renderCounter = () => {
+      const counterType = settings.counterType || CTACounterType.NONE;
+      if (counterType === CTACounterType.NONE) return null;
+      
+      // Estado para el contador
+      const [counterValue, setCounterValue] = useState(settings.counterValue || 0);
+      
+      // Efecto para el contador de cuenta regresiva
+      useEffect(() => {
+        if (counterType === CTACounterType.COUNTDOWN && settings.counterEndDate) {
+          const endDate = new Date(settings.counterEndDate).getTime();
+          const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = Math.max(0, endDate - now);
+            
+            // Convertir a días
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            setCounterValue(days);
+            
+            if (distance <= 0) {
+              clearInterval(interval);
+            }
+          }, 1000);
+          
+          return () => clearInterval(interval);
+        }
+      }, [counterType, settings.counterEndDate]);
+      
+      // Render del contador según el tipo
+      switch (counterType) {
+        case CTACounterType.COUNTDOWN:
+          return (
+            <div className="text-sm font-semibold mt-2 text-muted-foreground">
+              {counterValue} días restantes
+            </div>
+          );
+        case CTACounterType.REMAINING_ITEMS:
+          return (
+            <div className="text-sm font-semibold mt-2 text-muted-foreground">
+              Solo quedan {counterValue} disponibles
+            </div>
+          );
+        case CTACounterType.PERCENTAGE_FILLED:
+          return (
+            <div className="w-full mt-2">
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Completado: {counterValue}%</span>
+                <span>{counterValue}% de 100%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full" 
+                  style={{ width: `${counterValue}%` }}
+                />
+              </div>
+            </div>
+          );
+        default:
+          return null;
+      }
+    };
+
+    // Determinar las clases de hover para el botón
+    const getHoverClasses = () => {
+      const hoverEffect = settings.hoverEffect || CTAHoverEffect.NONE;
+      
+      switch (hoverEffect) {
+        case CTAHoverEffect.SCALE:
+          return 'transition-transform hover:scale-105';
+        case CTAHoverEffect.LIFT:
+          return 'transition-transform hover:-translate-y-1';
+        case CTAHoverEffect.GLOW:
+          return 'transition-shadow hover:shadow-lg hover:shadow-primary/30';
+        case CTAHoverEffect.COLOR_SHIFT:
+          return 'transition-colors hover:bg-primary-foreground hover:text-primary';
+        case CTAHoverEffect.SHADOW:
+          return 'transition-shadow hover:shadow-xl';
+        case CTAHoverEffect.UNDERLINE:
+          return 'hover:underline hover:underline-offset-4';
+        case CTAHoverEffect.BORDER:
+          return 'hover:border-2 hover:border-primary';
+        case CTAHoverEffect.NONE:
+        default:
+          return '';
+      }
+    };
+
     // Renderizar el botón primario
     const renderPrimaryButton = () => (
       <Button
@@ -199,9 +352,17 @@ const CTABlock: React.FC<{ block: Block }> = ({ block }) => {
           buttonSize,
           settings.colorScheme === CTAColorScheme.CUSTOM ? '' : colorClasses.button,
           settings.rounded ? 'rounded-full' : '',
-          settings.shadow ? 'shadow-lg' : ''
+          settings.shadow ? 'shadow-lg' : '',
+          getHoverClasses()
         )}
-        style={customButtonStyles}
+        style={{
+          ...customButtonStyles,
+          // Aplicar gradiente si está habilitado
+          ...(settings.gradient && {
+            background: `linear-gradient(${settings.gradientDirection || 'to-r'}, ${settings.gradientFrom || '#4f46e5'}, ${settings.gradientTo || '#818cf8'})`,
+            border: 'none'
+          })
+        }}
         asChild
       >
         <a href={data.primaryButtonUrl} target="_blank" rel="noopener noreferrer">
@@ -258,6 +419,9 @@ const CTABlock: React.FC<{ block: Block }> = ({ block }) => {
           {renderPrimaryButton()}
           {renderSecondaryButton()}
         </div>
+        
+        {/* Mostrar el contador si está habilitado */}
+        {renderCounter()}
       </div>
     );
     
@@ -339,7 +503,7 @@ const CTABlock: React.FC<{ block: Block }> = ({ block }) => {
             {!settings.bgImage && (
               <div className="flex-1 bg-muted flex items-center justify-center p-10">
                 <div className="text-center">
-                  <ExternalLink className="h-20 w-20 text-muted-foreground mb-4" />
+                  <LucideIcons.ExternalLink className="h-20 w-20 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground text-sm">Imagen decorativa</p>
                 </div>
               </div>
