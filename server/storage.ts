@@ -25,10 +25,16 @@ import { RolePermissions, CustomRoleDefinition } from "@shared/types";
 import { eq, like, and, or, desc, sql, asc } from "drizzle-orm";
 import { db } from "./db";
 import * as crypto from "crypto";
+import session from "express-session";
+import createMemoryStore from "memorystore";
 
 export interface IStorage {
+  // Session store for authentication
+  sessionStore: any;
+
   // User methods
   getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
@@ -155,9 +161,19 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Session store for authentication
+  sessionStore = new (createMemoryStore(session))({
+    checkPeriod: 86400000 // Eliminar sesiones expiradas cada 24 horas
+  });
+
   // === User methods ===
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
 
