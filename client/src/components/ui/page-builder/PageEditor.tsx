@@ -14,6 +14,7 @@ import FeaturesBlock from './blocks/FeaturesBlock';
 import TextMediaBlock from './blocks/TextMediaBlock';
 import TestimonialBlock from './blocks/TestimonialBlock';
 import AccordionBlock from './blocks/AccordionBlock';
+import TabsBlock from './blocks/TabsBlock';
 import SortableBlockWrapper from './SortableBlockWrapper';
 import { PreviewContainer } from './preview';
 import { v4 as uuidv4 } from 'uuid';
@@ -73,6 +74,13 @@ export const renderBlock = (block: Block, options?: { isPreview?: boolean; isSel
       break;
     case BlockType.ACCORDION:
       blockComponent = <AccordionBlock 
+        block={block} 
+        onClick={handleClick} 
+        isPreview={isPreview}
+      />;
+      break;
+    case BlockType.TABS:
+      blockComponent = <TabsBlock 
         block={block} 
         onClick={handleClick} 
         isPreview={isPreview}

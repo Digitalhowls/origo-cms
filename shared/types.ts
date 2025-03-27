@@ -12,13 +12,24 @@ export interface Block {
       title: string;
       content: string;
       isOpen?: boolean;
+      icon?: string;  // Para pestañas con ícono
     }>;
     settings?: {
-      style?: 'basic' | 'bordered' | 'shadowed' | 'faq';
+      // Estilos comunes y configuraciones para todos los bloques
+      style?: 'basic' | 'bordered' | 'shadowed' | 'faq' | 'default' | 'boxed' | 'underline' | 'pills' | 'minimal';
+      
+      // Configuraciones específicas para el bloque acordeón
       allowMultiple?: boolean;
       defaultValues?: string[];
       showControls?: boolean;
       headerTag?: string;
+      
+      // Configuraciones específicas para el bloque de pestañas
+      orientation?: 'horizontal' | 'vertical';
+      defaultTab?: string;
+      showIcons?: boolean;
+      fullWidth?: boolean;
+      animationType?: 'fade' | 'slide' | 'scale' | 'none';
     };
   };
 }
@@ -40,6 +51,7 @@ export enum BlockType {
   HERO = 'hero',
   STATS = 'stats',
   ACCORDION = 'accordion',
+  TABS = 'tabs',
 }
 
 export interface PageData {

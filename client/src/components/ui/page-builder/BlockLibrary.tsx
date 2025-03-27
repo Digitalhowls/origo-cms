@@ -18,6 +18,59 @@ interface BlockTemplate {
 
 const blockTemplates: BlockTemplate[] = [
   {
+    type: BlockType.TABS,
+    title: 'Pestañas',
+    description: 'Organiza contenido en pestañas navegables con diferentes estilos',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+      </svg>
+    ),
+    defaultContent: {},
+    defaultSettings: {
+      spacing: {
+        marginTop: 10,
+        marginBottom: 10,
+      },
+      appearance: {
+        textColor: '#1F2937',
+        backgroundColor: 'white',
+      },
+    },
+    data: {
+      title: 'Información en Pestañas',
+      description: 'Contenido organizado por categorías',
+      items: [
+        {
+          id: uuidv4(),
+          title: 'Características',
+          content: '<p>Nuestra plataforma ofrece una amplia gama de características diseñadas para mejorar tu experiencia.</p><ul><li>Interfaz intuitiva y fácil de usar</li><li>Personalización completa</li><li>Análisis avanzados</li><li>Soporte 24/7</li></ul>',
+          icon: '🚀'
+        },
+        {
+          id: uuidv4(),
+          title: 'Beneficios',
+          content: '<p>Al elegir nuestro servicio, disfrutarás de beneficios exclusivos que te ayudarán a maximizar tu inversión.</p><ul><li>Ahorro de tiempo significativo</li><li>Mayor productividad</li><li>Reducción de costos operativos</li><li>Mejora en la toma de decisiones</li></ul>',
+          icon: '💎'
+        },
+        {
+          id: uuidv4(),
+          title: 'Precios',
+          content: '<p>Ofrecemos planes flexibles adaptados a cualquier presupuesto, desde individuos hasta grandes empresas.</p><div class="grid grid-cols-3 gap-4 mt-4"><div class="border p-4 rounded-lg text-center"><h4 class="font-bold">Básico</h4><p class="text-2xl font-bold my-2">$19/mes</p><p>Para individuos</p></div><div class="border p-4 rounded-lg text-center bg-blue-50"><h4 class="font-bold">Premium</h4><p class="text-2xl font-bold my-2">$49/mes</p><p>Para equipos pequeños</p></div><div class="border p-4 rounded-lg text-center"><h4 class="font-bold">Empresarial</h4><p class="text-2xl font-bold my-2">$99/mes</p><p>Para organizaciones</p></div></div>',
+          icon: '💰'
+        }
+      ],
+      settings: {
+        style: 'boxed',
+        orientation: 'horizontal',
+        defaultTab: '',
+        showIcons: true,
+        fullWidth: true,
+        animationType: 'fade'
+      }
+    },
+  },
+  {
     type: BlockType.ACCORDION,
     title: 'Acordeón',
     description: 'Secciones plegables para mostrar información organizada o FAQ',

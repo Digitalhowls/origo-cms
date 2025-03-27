@@ -28,3 +28,47 @@
 .animate-bounce-x {
   animation: bounce-x 1s ease-in-out infinite;
 }
+
+/* Animaciones para pestañas */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.tab-fade-animation {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-slide-animation {
+  animation: slideIn 0.3s ease-out;
+}
+
+.tab-scale-animation {
+  animation: scaleIn 0.3s ease-out;
+}
