@@ -242,6 +242,14 @@ export class HistoryService {
   public getHistory(): HistoryEntry[] {
     return [...this.entries];
   }
+  
+  /**
+   * Obtiene una línea de tiempo del historial para mostrar en la interfaz
+   * Alias de getHistory para mantener consistencia con la interfaz de usuario
+   */
+  public getTimeline(): HistoryEntry[] {
+    return this.getHistory();
+  }
 
   /**
    * Limpia todo el historial para la página actual
