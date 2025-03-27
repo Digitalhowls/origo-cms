@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, Check, GripVertical, X, Split, RefreshCw, History, Save, Library, LayoutGrid } from 'lucide-react';
 import { useBuildStore } from '@/lib/store';
+import GridPanel from './grid/GridPanel';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { PageData, Block, BlockType, HistoryActionType } from '@shared/types';
@@ -139,7 +140,7 @@ interface PageEditorProps {
 
 const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   const { toast } = useToast();
-  const { setCurrentPage, currentPage, updatePageTitle, updatePageSlug, addBlock } = usePageStore();
+  const { setCurrentPage, currentPage, updatePageTitle, updatePageSlug, addBlock } = useBuildStore();
   const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   
@@ -154,6 +155,9 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   
   // Estado para el panel de historial
   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+  
+  // Estado para el panel de grid
+  const [isGridPanelOpen, setIsGridPanelOpen] = useState(false);
   
   // Fetch page data if editing an existing page
   const { data: pageData, isLoading } = useQuery({
@@ -315,7 +319,7 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
         );
         
         // Update page store
-        usePageStore.getState().setBlocksOrder(reordered);
+        useBuildStore.getState().setBlocksOrder(reordered);
       }
     }
   };
@@ -552,7 +556,16 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
                 </Button>
               )}
             </div>
-            <div>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsGridPanelOpen(!isGridPanelOpen)} 
+                title="Configurar grid"
+              >
+                <LayoutGrid className="h-4 w-4 mr-1" />
+                Grid
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -664,6 +677,90 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
           </DialogHeader>
           
           <HistoryPanel />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Panel de Grid */}
+      <Dialog open={isGridPanelOpen} onOpenChange={setIsGridPanelOpen}>
+        <DialogContent className="max-w-md max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Configuración del Grid</DialogTitle>
+            <DialogDescription>
+              Personaliza el sistema de rejilla para diferentes dispositivos
+            </DialogDescription>
+          </DialogHeader>
+          
+          {currentPage && (
+            <GridPanel 
+              grid={currentPage.grid || {
+                id: 'default-grid',
+                columns: 12,
+                rows: 6, // Añadido el campo obligatorio rows
+                gap: 16,
+                padding: 16,
+                columnWidths: Array(12).fill('1fr'),
+                rowHeights: Array(6).fill('auto'), // Añadido el campo rowHeights
+                cells: [], // Añadido el array de celdas vacío
+                responsive: {
+                  tablet: {
+                    columns: 6,
+                    rows: 4,
+                    gap: 12,
+                    padding: 12
+                  },
+                  mobile: {
+                    columns: 3,
+                    rows: 3,
+                    gap: 8,
+                    padding: 8
+                  }
+                }
+              }}
+              onUpdate={(updatedGrid) => {
+                // Actualizar el grid en la página
+                if (currentPage) {
+                  const updatedPage = {
+                    ...currentPage,
+                    grid: updatedGrid
+                  };
+                  setCurrentPage(updatedPage);
+                }
+              }}
+              onReset={() => {
+                // Restablecer el grid a los valores predeterminados
+                if (currentPage) {
+                  const updatedPage = {
+                    ...currentPage,
+                    grid: {
+                      id: 'default-grid',
+                      columns: 12,
+                      rows: 6,
+                      gap: 16,
+                      padding: 16,
+                      columnWidths: Array(12).fill('1fr'),
+                      rowHeights: Array(6).fill('auto'),
+                      cells: [],
+                      responsive: {
+                        tablet: {
+                          columns: 6,
+                          rows: 4,
+                          gap: 12,
+                          padding: 12
+                        },
+                        mobile: {
+                          columns: 3,
+                          rows: 3,
+                          gap: 8,
+                          padding: 8
+                        }
+                      }
+                    }
+                  };
+                  setCurrentPage(updatedPage);
+                }
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>

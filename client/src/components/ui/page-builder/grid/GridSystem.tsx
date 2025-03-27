@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Grid } from '@shared/types';
-import { GridCell } from './GridCell';
+import GridCell from './GridCell';
 
 interface GridSystemProps {
   children?: ReactNode;
