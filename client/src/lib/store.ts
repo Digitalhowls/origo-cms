@@ -11,6 +11,7 @@ interface PageState {
   updatePageStatus: (status: 'draft' | 'published' | 'archived') => void;
   addBlock: (block: Block) => void;
   updateBlock: (block: Block) => void;
+  updateBlockAnimation: (blockId: string, animation: any) => void;
   removeBlock: (blockId: string) => void;
   moveBlockUp: (blockId: string) => void;
   moveBlockDown: (blockId: string) => void;
@@ -23,6 +24,37 @@ export const usePageStore = create<PageState>((set) => ({
   currentPage: null,
   
   setCurrentPage: (page) => set({ currentPage: page }),
+  
+  updateBlockAnimation: (blockId, animation) => set((state) => {
+    if (!state.currentPage) return { currentPage: null };
+    
+    const blocks = state.currentPage.blocks.map((block) => {
+      if (block.id === blockId) {
+        return {
+          ...block,
+          settings: {
+            ...(block.settings || {}),
+            animation,
+          },
+        };
+      }
+      return block;
+    });
+    
+    const updatedPage = {
+      ...state.currentPage,
+      blocks,
+    };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.UPDATE_BLOCK,
+      `Animación de bloque actualizada: ${animation.type} (${animation.subType})`
+    );
+    
+    return { currentPage: updatedPage };
+  }),
   
   updatePageTitle: (title) => set((state) => {
     if (!state.currentPage) return { currentPage: null };

@@ -136,7 +136,44 @@ export enum HistoryActionType {
   SAVED_SNAPSHOT = 'saved_snapshot',
   IMPORTED = 'imported',
   AUTO_SAVED = 'auto_saved',
-  SAVED_TEMPLATE = 'saved_template'
+  SAVED_TEMPLATE = 'saved_template',
+  UPDATE_ANIMATION = 'update_animation'
+}
+
+// Tipos de animación
+export enum AnimationType {
+  FADE = 'fade',
+  SLIDE = 'slide',
+  SCALE = 'scale',
+  ROTATE = 'rotate',
+  FLIP = 'flip',
+  SPECIAL = 'special'
+}
+
+// Tipos de eventos que pueden desencadenar animaciones
+export enum AnimationTrigger {
+  LOAD = 'load',
+  SCROLL = 'scroll',
+  CLICK = 'click',
+  HOVER = 'hover',
+  MOUSE_ENTER = 'mouseenter',
+  MOUSE_LEAVE = 'mouseleave'
+}
+
+// Interface para las propiedades de animación
+export interface AnimationProps {
+  type: AnimationType;
+  subType: string;
+  trigger: AnimationTrigger;
+  duration: number;
+  delay: number;
+  easing: string;
+  direction?: string;
+  iterations?: number;
+  reverse?: boolean;
+  autoplay?: boolean;
+  offset?: number;
+  custom?: Record<string, any>;
 }
 
 // Media Types

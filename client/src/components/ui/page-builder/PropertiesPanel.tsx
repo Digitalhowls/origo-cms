@@ -5,9 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { X, Wand, LayoutIcon, SlidersHorizontal } from 'lucide-react';
 import { usePageStore } from '@/lib/store';
 import { Block, BlockType } from '@shared/types';
+import AnimationPanel from './AnimationPanel';
 
 interface PropertiesPanelProps {
   blockId: string | null;
@@ -852,49 +854,79 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ blockId, onClose }) =
         </Button>
       </div>
 
-      <div className="p-4 space-y-6 flex-1 overflow-y-auto">
+      <div className="p-4 flex-1 overflow-y-auto">
         {/* Block type */}
-        <div>
-          <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">Tipo de bloque</h3>
+        <div className="mb-4">
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800">
             {block.type}
           </span>
         </div>
 
-        {/* Spacing */}
-        <div>
-          <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">Espaciado</h3>
-          <div className="grid grid-cols-2 gap-4">
+        <Tabs defaultValue="content" className="w-full">
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="content">
+              <LayoutIcon className="h-4 w-4 mr-1" />
+              Contenido
+            </TabsTrigger>
+            <TabsTrigger value="style">
+              <SlidersHorizontal className="h-4 w-4 mr-1" />
+              Estilo
+            </TabsTrigger>
+            <TabsTrigger value="animation">
+              <Wand className="h-4 w-4 mr-1" />
+              Animación
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="content" className="space-y-6">
+            {/* Block specific properties */}
             <div>
-              <Label htmlFor="margin-top">Margen superior</Label>
-              <Input
-                type="number"
-                id="margin-top"
-                value={localSettings.spacing?.marginTop || 0}
-                onChange={(e) => handleSettingChange(['spacing', 'marginTop'], parseInt(e.target.value))}
-                className="mt-1"
-              />
+              <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">Contenido</h3>
+              <div className="space-y-4">
+                {renderBlockProperties()}
+              </div>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="style" className="space-y-6">
+            {/* Spacing */}
             <div>
-              <Label htmlFor="margin-bottom">Margen inferior</Label>
-              <Input
-                type="number"
-                id="margin-bottom"
-                value={localSettings.spacing?.marginBottom || 0}
-                onChange={(e) => handleSettingChange(['spacing', 'marginBottom'], parseInt(e.target.value))}
-                className="mt-1"
-              />
+              <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">Espaciado</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="margin-top">Margen superior</Label>
+                  <Input
+                    type="number"
+                    id="margin-top"
+                    value={localSettings.spacing?.marginTop || 0}
+                    onChange={(e) => handleSettingChange(['spacing', 'marginTop'], parseInt(e.target.value))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="margin-bottom">Margen inferior</Label>
+                  <Input
+                    type="number"
+                    id="margin-bottom"
+                    value={localSettings.spacing?.marginBottom || 0}
+                    onChange={(e) => handleSettingChange(['spacing', 'marginBottom'], parseInt(e.target.value))}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Block specific properties */}
-        <div>
-          <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">Contenido</h3>
-          <div className="space-y-4">
-            {renderBlockProperties()}
-          </div>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="animation" className="space-y-6">
+            {/* Animación */}
+            <div>
+              <h3 className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-2">Configuración de animación</h3>
+              <div className="space-y-4">
+                {blockId && <AnimationPanel blockId={blockId} />}
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Background settings */}
         <div>
