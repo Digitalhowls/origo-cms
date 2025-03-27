@@ -33,7 +33,7 @@ export const usePageStore = create<PageState>((set) => ({
     historyService.addEntry(
       updatedPage,
       HistoryActionType.UPDATE_PAGE_META,
-      'Título de página actualizado'
+      `Título de página actualizado a "${title}"`
     );
     
     return { currentPage: updatedPage };
@@ -48,7 +48,7 @@ export const usePageStore = create<PageState>((set) => ({
     historyService.addEntry(
       updatedPage,
       HistoryActionType.UPDATE_PAGE_META,
-      'URL de página actualizada'
+      `URL de página actualizada a "${slug}"`
     );
     
     return { currentPage: updatedPage };
@@ -63,7 +63,7 @@ export const usePageStore = create<PageState>((set) => ({
     historyService.addEntry(
       updatedPage,
       HistoryActionType.UPDATE_PAGE_META,
-      'Estado de página actualizado'
+      `Estado de página actualizado a "${status}"`
     );
     
     return { currentPage: updatedPage };
