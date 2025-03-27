@@ -152,6 +152,9 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
   const [blockToSaveAsTemplate, setBlockToSaveAsTemplate] = useState<Block | null>(null);
   
+  // Estado para el panel de historial
+  const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+  
   // Fetch page data if editing an existing page
   const { data: pageData, isLoading } = useQuery({
     queryKey: pageId ? [`/api/pages/${pageId}`] : ['empty'],
@@ -166,10 +169,10 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
       // Inicializar el historial de versiones con la página cargada
       historyService.init(pageData as PageData);
     } else if (!pageId) {
-      const newPage = {
+      const newPage: PageData = {
         title: 'Nueva página',
         slug: 'nueva-pagina',
-        status: 'draft',
+        status: 'draft' as 'draft',
         blocks: [],
       };
       setCurrentPage(newPage);
@@ -271,16 +274,11 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
     addBlock(newBlock);
     
     // Registra en el historial
-    historyService.addEntry({
-      id: uuidv4(),
-      timestamp: new Date().toISOString(),
-      label: `Bloque añadido desde plantilla: ${block.type}`,
-      state: currentPage as PageData,
-      type: HistoryActionType.ADD_BLOCK,
-      // Información adicional sobre la acción para cumplir con los parámetros requeridos
-      blockId: newBlock.id,
-      previousValue: null,
-    });
+    historyService.addEntry(
+      currentPage as PageData, 
+      HistoryActionType.ADD_BLOCK, 
+      `Bloque añadido desde plantilla: ${block.type}`
+    );
     
     // Cierra el diálogo
     setIsTemplateLibraryOpen(false);
@@ -555,7 +553,12 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
               )}
             </div>
             <div>
-              <Button variant="outline" size="sm" onClick={() => {}} title="Ver historial de cambios">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsHistoryPanelOpen(!isHistoryPanelOpen)} 
+                title="Ver historial de cambios"
+              >
                 <History className="h-4 w-4 mr-1" />
                 Historial
               </Button>
@@ -626,6 +629,43 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
           Publicar
         </Button>
       </div>
+      
+      {/* Diálogo para guardar un bloque como plantilla */}
+      <SaveTemplateDialog 
+        open={isSaveTemplateDialogOpen}
+        onOpenChange={setIsSaveTemplateDialogOpen}
+        block={blockToSaveAsTemplate as Block}
+        organizationId={1} // TODO: Obtener el ID de organización actual del contexto
+        userId={1} // TODO: Obtener el ID de usuario actual del contexto
+      />
+      
+      {/* Biblioteca de plantillas */}
+      <Dialog open={isTemplateLibraryOpen} onOpenChange={setIsTemplateLibraryOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Biblioteca de plantillas</DialogTitle>
+            <DialogDescription>
+              Selecciona una plantilla para añadirla a tu página
+            </DialogDescription>
+          </DialogHeader>
+          
+          <TemplatesLibrary onSelectTemplate={handleAddTemplateBlock} />
+        </DialogContent>
+      </Dialog>
+      
+      {/* Panel de historial */}
+      <Dialog open={isHistoryPanelOpen} onOpenChange={setIsHistoryPanelOpen}>
+        <DialogContent className="max-w-md max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Historial de cambios</DialogTitle>
+            <DialogDescription>
+              Ver y restaurar versiones anteriores de la página
+            </DialogDescription>
+          </DialogHeader>
+          
+          <HistoryPanel />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
