@@ -23,9 +23,9 @@
 - [x] Implementar sistema base de bloques del constructor visual
 - [x] Añadir funcionalidad de arrastrar y soltar con @dnd-kit
 - [x] Crear componente de bloques para testimonios
-- [ ] Desarrollar vista previa en tiempo real
-- [ ] Implementar sistema de plantillas predefinidas
-- [ ] Añadir bloques acordeón/FAQ e interactivos
+- [x] Desarrollar vista previa en tiempo real
+- [x] Implementar sistema de plantillas predefinidas
+- [x] Añadir bloques acordeón/FAQ e interactivos
 - [ ] Crear sistema de estilos globales para bloques
 
 ## 3. Fase de Extensión - Módulos Adicionales
@@ -39,9 +39,9 @@
 ### 3.2 Mejora del Editor y Experiencia de Usuario
 - [ ] Implementar barra de herramientas contextual
 - [ ] Crear panel de estructura de página con jerarquía de bloques
-- [ ] Añadir historial visual y previsualización de cambios
+- [x] Añadir historial visual y previsualización de cambios
 - [ ] Desarrollar controles de espaciado visual
-- [ ] Implementar previsualización responsiva para diferentes dispositivos
+- [x] Implementar previsualización responsiva para diferentes dispositivos
 - [ ] Crear modo de enfoque para edición sin distracciones
 
 ### 3.3 Biblioteca de Medios Avanzada
@@ -134,19 +134,19 @@
 ## A. Bloques de Contenido a Implementar
 
 ### A.1 Bloques de Contenido Básico
-- [ ] **Bloque Acordeón/FAQ**: Elementos desplegables para preguntas frecuentes
+- [x] **Bloque Acordeón/FAQ**: Elementos desplegables para preguntas frecuentes
   - Múltiples estilos de acordeón (básico, con iconos, con bordes)
   - Animaciones al expandir/contraer
   - Opciones para expandir todo/contraer todo
   - Enlace directo a elementos específicos del acordeón
   
-- [ ] **Bloque de Pestañas**: Sistema de navegación por pestañas
+- [x] **Bloque de Pestañas**: Sistema de navegación por pestañas
   - Pestañas horizontales y verticales
   - Iconos personalizables para cada pestaña
   - Animaciones de transición entre pestañas
   - Comportamiento responsivo configurable
   
-- [ ] **Bloque de Tabla**: Para mostrar información tabular estilizada
+- [x] **Bloque de Tabla**: Para mostrar información tabular estilizada
   - Tablas responsivas con scroll horizontal en móvil
   - Encabezados fijos al hacer scroll
   - Filas alternadas, resaltado al hover
@@ -326,7 +326,7 @@
   - Colapsar/expandir secciones
   - Búsqueda y filtros
   
-- [ ] **Historial Visual**: Previsualización de cambios anteriores
+- [x] **Historial Visual**: Previsualización de cambios anteriores
   - Miniaturas de versiones anteriores
   - Comparación visual antes/después
   - Información de tiempo y usuario
