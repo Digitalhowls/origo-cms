@@ -19,7 +19,7 @@ import TabsBlock from './blocks/TabsBlock';
 import TableBlock from './blocks/TableBlock';
 import GalleryBlock from './blocks/GalleryBlock';
 import SortableBlockWrapper from './SortableBlockWrapper';
-import { PreviewContainer } from './preview';
+import { PreviewContainer, LivePreviewContainer } from './preview';
 import HistoryPanel from './HistoryPanel';
 import { historyService } from '@/lib/history-service';
 import { SaveTemplateDialog } from './SaveTemplateDialog';
@@ -148,6 +148,9 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<'split' | 'fullscreen'>('split');
   
+  // Estado para el modo de vista previa en tiempo real
+  const [showLivePreview, setShowLivePreview] = useState(false);
+  
   // Estado para los diálogos de plantillas
   const [isTemplateLibraryOpen, setIsTemplateLibraryOpen] = useState(false);
   const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
@@ -229,7 +232,7 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   };
 
   const handleRealtimePreview = () => {
-    setShowPreview(true);
+    setShowLivePreview(true);
   };
 
   const handleExternalPreview = () => {
@@ -490,6 +493,22 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
             setShowPreview(false);
           }}
           defaultMode="fullscreen"
+          className="h-full"
+        />
+      </div>
+    );
+  }
+  
+  // Modo de vista previa en tiempo real
+  if (showLivePreview && currentPage) {
+    return (
+      <div className="fixed inset-0 z-50 bg-white">
+        <LivePreviewContainer
+          blocks={currentPage.blocks || []}
+          title={currentPage.title || ''}
+          onClose={() => setShowLivePreview(false)}
+          defaultMode="fullscreen"
+          syncInterval={1000} // Sincronización cada 1 segundo
           className="h-full"
         />
       </div>

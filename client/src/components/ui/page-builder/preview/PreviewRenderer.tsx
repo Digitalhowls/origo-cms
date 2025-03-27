@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { Block, BlockType, AnimationProps, AnimationTrigger } from '@shared/types';
 import { cn } from '@/lib/utils';
 import HeaderBlock from '../blocks/HeaderBlock';
@@ -24,6 +24,7 @@ export interface PreviewRendererProps {
   selectedBlockId?: string | null;
   onBlockSelect?: (blockId: string) => void;
   previewMode?: 'desktop' | 'tablet' | 'mobile';
+  isLivePreview?: boolean; // Indica si es una vista previa en tiempo real
 }
 
 /**
@@ -36,8 +37,12 @@ const PreviewRenderer: React.FC<PreviewRendererProps> = ({
   className,
   selectedBlockId,
   onBlockSelect,
-  previewMode = 'desktop'
+  previewMode = 'desktop',
+  isLivePreview = false
 }) => {
+  // Referencia al contenedor para poder scrollear a elementos específicos
+  const previewRef = useRef<HTMLDivElement>(null);
+  
   // Inicializar las animaciones cuando el componente se monta
   useEffect(() => {
     initializeAnimations();
@@ -152,32 +157,54 @@ const PreviewRenderer: React.FC<PreviewRendererProps> = ({
     }
   };
 
+  // Efecto para manejar el scroll automático cuando se selecciona un bloque
+  useEffect(() => {
+    if (selectedBlockId && previewRef.current) {
+      const selectedElement = previewRef.current.querySelector(`[data-block-id="${selectedBlockId}"]`);
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [selectedBlockId]);
+
   return (
-    <div className={cn(
-      'preview-container overflow-auto flex flex-col items-center bg-gray-100 p-4',
-      className
-    )}>
+    <div 
+      ref={previewRef}
+      className={cn(
+        'preview-container overflow-auto flex flex-col items-center bg-gray-100 p-4',
+        isLivePreview && 'preview-container-live',
+        className
+      )}
+    >
       <div 
         className="preview-content bg-white transition-all duration-300"
         style={getPreviewStyles()}
       >
         <div className="preview-header border-b p-4">
           <h1 className="text-2xl font-bold">{title}</h1>
+          {isLivePreview && (
+            <div className="flex items-center mt-1 text-sm text-green-600">
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+              Actualización en tiempo real
+            </div>
+          )}
         </div>
         <div className="preview-body">
           {blocks.map((block) => (
             <div 
               key={block.id}
+              data-block-id={block.id}
               className={cn(
                 'preview-block relative transition-all',
-                selectedBlockId === block.id && 'ring-2 ring-primary ring-offset-2'
+                selectedBlockId === block.id && 'ring-2 ring-primary ring-offset-2',
+                isLivePreview && selectedBlockId === block.id && 'bg-blue-50'
               )}
               onClick={() => onBlockSelect && onBlockSelect(block.id)}
             >
               {renderPreviewBlock(block, selectedBlockId === block.id)}
               {selectedBlockId === block.id && (
                 <div className="absolute top-0 right-0 bg-primary text-white text-xs px-2 py-1 rounded-bl">
-                  Seleccionado
+                  {isLivePreview ? 'Editando...' : 'Seleccionado'}
                 </div>
               )}
             </div>
@@ -187,6 +214,9 @@ const PreviewRenderer: React.FC<PreviewRendererProps> = ({
       <div className="preview-info text-sm text-gray-500 mt-4">
         {previewMode !== 'desktop' && (
           <p>Simulando visualización en {previewMode === 'mobile' ? 'móvil' : 'tablet'}</p>
+        )}
+        {isLivePreview && (
+          <p className="mt-1 text-green-600">Vista previa sincronizada con el editor</p>
         )}
       </div>
     </div>
