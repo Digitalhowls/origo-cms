@@ -24,6 +24,9 @@
 - [x] Añadir funcionalidad de arrastrar y soltar con @dnd-kit
 - [x] Crear componente de bloques para testimonios
 - [ ] Desarrollar vista previa en tiempo real
+- [ ] Implementar sistema de plantillas predefinidas
+- [ ] Añadir bloques acordeón/FAQ e interactivos
+- [ ] Crear sistema de estilos globales para bloques
 
 ## 3. Fase de Extensión - Módulos Adicionales
 ### 3.1 Sistema de Blog Avanzado
@@ -31,191 +34,377 @@
 - [ ] Implementar programación de publicaciones
 - [ ] Añadir funcionalidad de comentarios
 - [ ] Desarrollar herramientas SEO específicas para blog
+- [ ] Crear bloques específicos para blog (compartir, autor, artículos relacionados)
 
-### 3.2 Sistema de Cursos
-- [ ] Implementar estructura de módulos y lecciones
-- [ ] Añadir soporte para contenido multimedia
-- [ ] Desarrollar seguimiento de progreso del estudiante
-- [ ] Implementar certificados de finalización
+### 3.2 Mejora del Editor y Experiencia de Usuario
+- [ ] Implementar barra de herramientas contextual
+- [ ] Crear panel de estructura de página con jerarquía de bloques
+- [ ] Añadir historial visual y previsualización de cambios
+- [ ] Desarrollar controles de espaciado visual
+- [ ] Implementar previsualización responsiva para diferentes dispositivos
+- [ ] Crear modo de enfoque para edición sin distracciones
 
 ### 3.3 Biblioteca de Medios Avanzada
 - [ ] Optimización automática de imágenes
 - [ ] Procesamiento de archivos de video
 - [ ] Organización con carpetas y etiquetas
 - [ ] Implementar CDN para archivos grandes
+- [ ] Añadir efectos y filtros para imágenes
+- [ ] Crear galería y carrusel de imágenes interactivo
 
-## 4. Fase de Perfeccionamiento
-### 4.1 Analíticas y Reportes
+### 3.4 Sistema de Cursos
+- [ ] Implementar estructura de módulos y lecciones
+- [ ] Añadir soporte para contenido multimedia
+- [ ] Desarrollar seguimiento de progreso del estudiante
+- [ ] Implementar certificados de finalización
+
+## 4. Fase de Perfeccionamiento e Integración
+### 4.1 Personalización y Estilos Avanzados
+- [ ] Desarrollar sistema de paletas de colores
+- [ ] Implementar variables CSS para consistencia
+- [ ] Crear biblioteca de estilos predefinidos (textos, botones, bordes)
+- [ ] Añadir presets de animación
+- [ ] Implementar efectos hover y scroll
+- [ ] Desarrollar sistema de tipografía avanzada
+- [ ] Crear divisores de sección con formas personalizables
+
+### 4.2 Analíticas y Reportes
 - [ ] Implementar panel de analíticas
 - [ ] Desarrollar informes personalizados
 - [ ] Integración con Google Analytics
 - [ ] Seguimiento de conversiones
+- [ ] Añadir inspector de rendimiento y pruebas de velocidad
+- [ ] Implementar validador de enlaces y pruebas de accesibilidad
 
-### 4.2 API y Extensibilidad
-- [ ] Completar documentación de API
-- [ ] Desarrollar sistema de plugins/extensiones
-- [ ] Implementar webhooks personalizados
-- [ ] Crear SDK para desarrolladores
+### 4.3 Integraciones de Terceros
+- [ ] Integración con redes sociales
+- [ ] Conexión con servicios de email marketing
+- [ ] Integración con CRMs y sistemas de pago
+- [ ] Implementación de mapas interactivos
+- [ ] Añadir soporte para chat en vivo
+- [ ] Crear integración con calendarios y eventos
 
-### 4.3 Rendimiento y Escalabilidad
+### 4.4 Rendimiento y Escalabilidad
 - [ ] Optimización de consultas a la base de datos
 - [ ] Implementar caché de contenido
 - [ ] Añadir soporte para distribución global (CDN)
 - [ ] Desarrollar arquitectura para alta disponibilidad
+- [ ] Implementar carga diferida de recursos
+- [ ] Optimización para Core Web Vitals
+- [ ] Añadir compresión y minificación automáticas
+
+### 4.5 API y Extensibilidad
+- [ ] Completar documentación de API
+- [ ] Desarrollar sistema de plugins/extensiones
+- [ ] Implementar webhooks personalizados
+- [ ] Crear SDK para desarrolladores
+- [ ] Añadir lógica condicional para contenido dinámico
+- [ ] Implementar sistema para contenido personalizado por usuario
+- [ ] Desarrollar API para integraciones headless
 
 ## 5. Fase de Lanzamiento y Mantenimiento
-- [ ] Preparación para producción (hardening)
-- [ ] Pruebas de seguridad y penetración
-- [ ] Documentación completa para usuarios
+### 5.1 Preparación para Producción
+- [ ] Auditoría de seguridad y corrección de vulnerabilidades
+- [ ] Pruebas de rendimiento y optimización
+- [ ] Implementación de límites de recursos y protección contra abusos
+- [ ] Configuración de monitoreo y alertas
+- [ ] Establecer política de copias de seguridad
+- [ ] Preparar plan de recuperación ante desastres
+
+### 5.2 Documentación y Capacitación
+- [ ] Crear documentación completa para usuarios
+- [ ] Desarrollar tutoriales en video
+- [ ] Implementar sistema de ayuda contextual
+- [ ] Crear plantillas de ejemplo para casos de uso comunes
+- [ ] Documentación técnica para desarrolladores
+- [ ] Preparar material para capacitación
+
+### 5.3 Mejora Continua
 - [x] Configuración de pruebas automatizadas E2E
 - [ ] Establecer pipeline de CI/CD
-- [ ] Planificación de actualizaciones continuas
+- [ ] Implementar sistema de retroalimentación de usuarios
+- [ ] Crear proceso de priorización de características
+- [ ] Desarrollar plan de versiones y actualizaciones
+- [ ] Establecer métricas de éxito y seguimiento
 
 ---
 
-# Inspiración y Características de Kallyas (WordPress)
+# Detalles de Implementación - Inspirado en Kallyas (WordPress)
 
-## A. Tipos de Bloques a Implementar
+## A. Bloques de Contenido a Implementar
 
 ### A.1 Bloques de Contenido Básico
 - [ ] **Bloque Acordeón/FAQ**: Elementos desplegables para preguntas frecuentes
+  - Múltiples estilos de acordeón (básico, con iconos, con bordes)
+  - Animaciones al expandir/contraer
+  - Opciones para expandir todo/contraer todo
+  - Enlace directo a elementos específicos del acordeón
+  
 - [ ] **Bloque de Pestañas**: Sistema de navegación por pestañas
+  - Pestañas horizontales y verticales
+  - Iconos personalizables para cada pestaña
+  - Animaciones de transición entre pestañas
+  - Comportamiento responsivo configurable
+  
 - [ ] **Bloque de Tabla**: Para mostrar información tabular estilizada
+  - Tablas responsivas con scroll horizontal en móvil
+  - Encabezados fijos al hacer scroll
+  - Filas alternadas, resaltado al hover
+  - Opciones para ordenar columnas
+  
 - [ ] **Bloque de Número/Contador**: Para mostrar estadísticas y cifras importantes
+  - Animación de conteo
+  - Prefijos y sufijos personalizables (%, $, etc.)
+  - Integración con scroll para iniciar animación
+  - Iconos o gráficos asociados
+  
 - [ ] **Bloque de Cuenta Regresiva**: Para eventos próximos y promociones
+  - Estilos flip, numéricos y analógicos
+  - Acciones automáticas al finalizar
+  - Personalización completa de la visualización
+  - Sincronización con zona horaria
+  
 - [ ] **Bloque de Cronología/Timeline**: Para mostrar evolución temporal, historias e hitos
+  - Líneas de tiempo verticales y horizontales
+  - Marcadores personalizables
+  - Visualización responsiva adaptable
+  - Elementos multimedia integrados
+  
 - [ ] **Bloque de Citas/Blockquote**: Estilos avanzados para citas y testimonios
+  - Múltiples estilos de diseño
+  - Opción para avatar/imagen del autor
+  - Efectos visuales para resaltar la cita
+  - Integración con redes sociales
+  
 - [ ] **Bloque de Listados**: Con diferentes iconos, viñetas y estilos
+  - Iconos personalizables
+  - Listas anidadas y multinivel
+  - Animaciones al aparecer
+  - Estilos de diseño avanzados
 
 ### A.2 Bloques de Presentación
 - [ ] **Carrusel de Imágenes**: Con múltiples estilos y configuraciones
+  - Auto-reproducción con opciones de pausa
+  - Navegación por puntos, flechas o miniaturas
+  - Efectos de transición personalizables
+  - Lightbox integrado para ver imágenes ampliadas
+  
 - [ ] **Carrusel de Contenido**: Para mostrar cualquier tipo de bloque en formato rotativo
+  - Soporta cualquier tipo de contenido (texto, imágenes, cards)
+  - Opciones de diseño y animación avanzadas
+  - Controles de navegación personalizables
+  - Adaptable a diferentes tamaños de pantalla
+  
 - [ ] **Grids y Masonry**: Para organizar contenido en cuadrículas personalizables
+  - Distribución dinámica tipo masonry
+  - Filtros interactivos por categoría/etiqueta
+  - Animaciones al filtrar y reorganizar
+  - Carga progresiva o paginación
+  
 - [ ] **Bloque de Portafolio**: Con filtros, etiquetas, y animaciones
+  - Múltiples estilos de visualización
+  - Filtrado dinámico por categorías
+  - Detalles en modal o página dedicada
+  - Organización por categorías y etiquetas
+  
 - [ ] **Bloque de Equipo**: Para mostrar miembros del equipo con información detallada
+  - Cards con foto, nombre, cargo y descripción
+  - Enlaces a redes sociales
+  - Vista de detalle expandible
+  - Organización por departamentos o roles
+  
 - [ ] **Bloque de Comparativa**: Para comparar planes, productos o servicios
+  - Tablas de comparación responsivas
+  - Resaltado de características principales
+  - Marcadores visuales (checks, cruces)
+  - Botones de acción directa
+  
 - [ ] **Bloque de Precios**: Tablas de precios avanzadas con opciones destacadas
+  - Planes destacados visualmente
+  - Toggles para precios mensuales/anuales
+  - Badges para ofertas o características especiales
+  - Botones de CTA personalizables
 
 ### A.3 Bloques Interactivos
 - [ ] **Bloque de Búsqueda Avanzada**: Con filtros y autocompletado
+  - Sugerencias en tiempo real
+  - Filtros avanzados por categoría o tipo
+  - Historial de búsquedas recientes
+  - Resultados destacados o patrocinados
+  
 - [ ] **Bloque de Compartir en Redes**: Con animaciones y estilos personalizables
+  - Múltiples redes sociales configurables
+  - Contador de compartidos
+  - Flotante o fijo, vertical u horizontal
+  - Personalización completa de colores e iconos
+  
 - [ ] **Bloque de Formulario de Contacto**: Con validación y opciones de personalización
+  - Validación de campos en tiempo real
+  - Integración con servicios de email
+  - Protección anti-spam y captcha
+  - Notificaciones personalizables
+  
 - [ ] **Bloque de Mapa Interactivo**: Con marcadores personalizados y controles
+  - Múltiples ubicaciones con información
+  - Marcadores personalizados y clusters
+  - Controles de zoom y navegación
+  - Vista Street View integrada
+  
 - [ ] **Bloque de Gráficos**: Para visualizar datos (barras, líneas, circular)
+  - Múltiples tipos de gráficos
+  - Animación al cargar
+  - Interactividad al hover/clic
+  - Datos estáticos o dinámicos vía API
+  
 - [ ] **Bloque de Registro/Login**: Para integrar acceso de usuarios
+  - Formularios estilizados
+  - Integración con sistema de autenticación
+  - Recuperación de contraseña
+  - Social login opcional
+  
 - [ ] **Bloque de Elementos Flotantes**: Elementos que aparecen al hacer scroll
+  - Configuración de posición y comportamiento
+  - Condiciones de aparición personalizables
+  - Animaciones de entrada/salida
+  - Opciones de cerrar/descartar
 
 ### A.4 Bloques de Layout
 - [ ] **Secciones con Parallax**: Efectos de desplazamiento a diferentes velocidades
+  - Parallax de fondo, objetos y texto
+  - Control de velocidad y profundidad
+  - Soporte para dispositivos móviles
+  - Opciones de degradados y superposiciones
+  
 - [ ] **Divisores de Sección**: Con formas, ondas y diseños personalizables
+  - Biblioteca de formas prediseñadas
+  - Personalización de altura y color
+  - Superposición entre secciones
+  - Animaciones opcionales
+  
 - [ ] **Contenedores con Formas**: Marcos con formas especiales (círculos, polígonos)
+  - Formas personalizables
+  - Opciones de borde y sombra
+  - Rotación y transformación
+  - Comportamiento responsivo
+  
 - [ ] **Fondos Animados**: Efectos de partículas, ondas y animaciones
+  - Partículas interactivas
+  - Gradientes animados
+  - Efectos de ondas y formas
+  - Optimización para rendimiento
+  
 - [ ] **Columnas Anidadas**: Sistema avanzado de columnas dentro de columnas
+  - Nestable hasta 3 niveles
+  - Controles de alineación y distribución
+  - Comportamiento responsivo configurable
+  - Espaciado personalizable
+  
 - [ ] **Secciones Sticky**: Contenido que permanece visible durante el scroll
+  - Configuración de límites y offset
+  - Comportamiento en diferentes dispositivos
+  - Interacción con otros elementos
+  - Animaciones de entrada/salida
 
-## B. Características del Editor
+## B. Mejora de la Experiencia de Edición
 
 ### B.1 Mejoras de Interfaz
 - [ ] **Modo Oscuro**: Opción de tema oscuro para el editor
+  - Detección automática de preferencia del sistema
+  - Toggle personalizado para cambiar modo
+  - Persistencia de la preferencia
+  - Optimización para reducir fatiga visual
+  
 - [ ] **Barra de Herramientas Contextual**: Aparece cerca del bloque seleccionado
+  - Aparece al seleccionar un bloque
+  - Muestra solo las opciones relevantes
+  - Posicionamiento inteligente en pantalla
+  - Acceso rápido a acciones comunes
+  
 - [ ] **Panel de Estructura de Página**: Muestra la jerarquía de los bloques
+  - Vista de árbol navegable
+  - Arrastrar y soltar para reorganizar
+  - Colapsar/expandir secciones
+  - Búsqueda y filtros
+  
 - [ ] **Historial Visual**: Previsualización de cambios anteriores
+  - Miniaturas de versiones anteriores
+  - Comparación visual antes/después
+  - Información de tiempo y usuario
+  - Restauración selectiva de elementos
+  
 - [ ] **Guardado Automático**: Con notificaciones no intrusivas
+  - Guardado periódico en segundo plano
+  - Indicador de estado de guardado
+  - Notificaciones no intrusivas
+  - Recuperación de sesión interrumpida
+  
 - [ ] **Atajos de Teclado**: Panel de ayuda con todos los atajos disponibles
+  - Referencia completa de atajos
+  - Personalizables por el usuario
+  - Indicadores visuales de acciones disponibles
+  - Modo de accesibilidad mejorada
+  
 - [ ] **Modo de Enfoque**: Para editar un bloque sin distracciones
+  - Oscurece el resto de la página
+  - Acceso directo a todas las opciones del bloque
+  - Navegación rápida entre bloques
+  - Vista previa contextual
 
-### B.2 Funcionalidades de Edición Avanzada
-- [ ] **Editor Inline**: Edición de texto directamente en la vista
-- [ ] **Controles de Espaciado Visual**: Arrastrar para ajustar márgenes y padding
-- [ ] **Medidas Relativas**: Soporte para unidades vh, vw, rem, em además de px
-- [ ] **Historial de Sesiones**: Recuperar estados de ediciones anteriores
-- [ ] **Clonación Inteligente**: Duplicar con o sin contenido específico
-- [ ] **Modo de Comparación**: Comparar diferentes versiones lado a lado
-- [ ] **Papelera/Recuperación**: Sistema para recuperar bloques eliminados
+## C. Sistemas de Gestión y Productividad
 
-### B.3 Previsualización y Pruebas
-- [ ] **Previsualización Responsiva**: Botones para simular diferentes dispositivos
-- [ ] **Previsualización de Animaciones**: Reproducir efectos y animaciones
-- [ ] **Previsualización de Velocidad**: Simulación de carga a diferentes velocidades
-- [ ] **Prueba de Accesibilidad**: Verificación de contraste y navegación
-- [ ] **Validador de Enlaces**: Comprobación de enlaces rotos
-- [ ] **Inspector de Rendimiento**: Análisis de impacto en rendimiento
-- [ ] **Modo de Prueba A/B**: Comparación de diferentes versiones
+### C.1 Sistema de Plantillas y Reutilización
+- [ ] **Biblioteca de Plantillas**: Colección de diseños predefinidos
+  - Categorización por tipo y uso
+  - Previsualización interactiva
+  - Personalización al importar
+  - Actualizaciones y versiones
+  
+- [ ] **Bloques Guardados**: Sistema para guardar configuraciones personalizadas
+  - Guardar como bloque reutilizable
+  - Biblioteca personal de componentes
+  - Categorización y etiquetado
+  - Actualización global o individual
+  
+- [ ] **Plantillas Temáticas**: Conjuntos completos de diseño coordinado
+  - Estilos coherentes en todos los bloques
+  - Previsualización del tema completo
+  - Migración entre temas
+  - Personalización por sección
 
-## C. Personalización y Estilos
+### C.2 Optimización y Rendimiento
+- [ ] **Sistema de Optimización de Imágenes**: Procesamiento automático
+  - Compresión automática sin pérdida visible
+  - Generación de formatos modernos (WebP, AVIF)
+  - Redimensionamiento inteligente
+  - Carga diferida integrada
+  
+- [ ] **Carga Optimizada de Recursos**: Mejora de velocidad
+  - Priorización de contenido visible
+  - Carga diferida de elementos no críticos
+  - Preconexión a recursos externos
+  - Desactivación selectiva en dispositivos lentos
+  
+- [ ] **Análisis de Rendimiento**: Herramientas de diagnóstico
+  - Métricas de Core Web Vitals
+  - Sugerencias de optimización
+  - Comparación con benchmarks
+  - Histórico de mejoras
 
-### C.1 Sistema de Estilos Globales
-- [ ] **Paletas de Color**: Gestión de paletas temáticas
-- [ ] **Variables CSS**: Sistema de variables para consistencia
-- [ ] **Estilos de Texto Predefinidos**: Encabezados, párrafos, listas
-- [ ] **Estilos de Botones**: Biblioteca de estilos de botones
-- [ ] **Presets de Animación**: Biblioteca de animaciones predefinidas
-- [ ] **Estilos de Borde y Sombra**: Biblioteca de efectos visuales
-- [ ] **Patrones de Fondo**: Biblioteca de fondos y texturas
-
-### C.2 Opciones de Personalización por Bloque
-- [ ] **Efectos de Hover**: Cambios visuales al pasar el cursor
-- [ ] **Efectos de Scroll**: Animaciones basadas en la posición de scroll
-- [ ] **Transiciones Personalizadas**: Editor de transiciones
-- [ ] **Filtros de Imagen**: Ajustes avanzados (brillo, contraste, saturación)
-- [ ] **Máscaras y Recortes**: Formas para recortar contenido
-- [ ] **Capas de Superposición**: Efectos de color o degradado sobre contenido
-- [ ] **Ajustes de Opacidad**: Por elementos y grupos
-
-### C.3 Tipografía Avanzada
-- [ ] **Biblioteca de Fuentes**: Integración con Google Fonts y opciones personalizadas
-- [ ] **Ajustes Tipográficos Avanzados**: Kerning, tracking, line-height
-- [ ] **Estilos Responsivos**: Tamaños diferentes según el dispositivo
-- [ ] **Efectos de Texto**: Sombras, relieves, degradados
-- [ ] **Texto en Rutas**: Texto que sigue formas curvas
-- [ ] **Ajustes OpenType**: Ligaduras, alternativas estilísticas, fracciones
-- [ ] **Animaciones de Texto**: Efectos de escritura, revelado
-
-## D. Gestión y Organización del Contenido
-
-### D.1 Sistemas de Plantillas
-- [ ] **Plantillas de Página**: Diseños completos predefinidos
-- [ ] **Plantillas de Sección**: Componentes de página reusables
-- [ ] **Bloques Guardados**: Biblioteca de bloques personalizados
-- [ ] **Plantillas Temáticas**: Conjuntos de estilos coordinados
-- [ ] **Exportación/Importación**: Compartir plantillas entre sitios
-- [ ] **Versiones de Plantillas**: Control de versiones de los diseños
-- [ ] **Categorización de Plantillas**: Por industria, función, estilo
-
-### D.2 Organización y Workflow
-- [ ] **Etiquetado de Bloques**: Sistema para categorizar y buscar bloques
-- [ ] **Grupos y Capas**: Organización jerárquica del contenido
-- [ ] **Comentarios y Notas**: Anotaciones para trabajo colaborativo
-- [ ] **Bloqueo de Elementos**: Prevenir ediciones accidentales
-- [ ] **Permisos por Bloque**: Control de acceso granular
-- [ ] **Flujo de Aprobación**: Sistema de revisiones y aprobaciones
-- [ ] **Historial de Actividad**: Registro detallado de cambios
-
-## E. Integraciones y Funcionalidades Avanzadas
-
-### E.1 Integraciones de Terceros
-- [ ] **Integración con Redes Sociales**: Mostrar feeds de redes sociales
-- [ ] **Integración con CRM**: Formularios conectados con sistemas CRM
-- [ ] **Integración con Email Marketing**: Formularios de suscripción
-- [ ] **Integración con Analytics**: Eventos y seguimiento personalizado
-- [ ] **Integración con Pagos**: Botones de pago y donación
-- [ ] **Integración con Calendarios**: Mostrar eventos y disponibilidad
-- [ ] **Integración con Chats**: Incorporar sistemas de chat en vivo
-
-### E.2 Funcionalidades Avanzadas
-- [ ] **Lógica Condicional**: Mostrar contenido según condiciones
-- [ ] **Personalización Dinámica**: Contenido adaptado al usuario
-- [ ] **Generación con IA**: Sugerencias de contenido inteligentes
-- [ ] **Optimizador de Imágenes**: Compresión y formato automáticos
-- [ ] **Sistema de Traducciones**: Gestión de contenido multilingüe
-- [ ] **Efectos 3D**: Transformaciones y efectos tridimensionales
-- [ ] **Interactividad Avanzada**: Elementos que responden a acciones del usuario
-
-### E.3 Rendimiento y Optimización
-- [ ] **Carga Diferida**: Carga de recursos solo cuando son necesarios
-- [ ] **Optimización de Recursos**: Minificación y compresión automáticas
-- [ ] **Rendimiento Responsivo**: Ajustes específicos por dispositivo
-- [ ] **Optimización SEO**: Análisis y sugerencias automáticas
-- [ ] **Optimización de Accesibilidad**: Cumplimiento de estándares WCAG
-- [ ] **Estadísticas de Rendimiento**: Análisis de métricas de carga
-- [ ] **Optimización de Vitalweb**: Mejoras para Core Web Vitals
+### C.3 Colaboración y Workflow
+- [ ] **Sistema de Comentarios**: Anotaciones en el editor
+  - Comentarios asociados a bloques específicos
+  - Notificaciones de respuestas
+  - Estado de revisión/resolución
+  - Historial de conversaciones
+  
+- [ ] **Flujo de Aprobación**: Sistema de revisiones
+  - Solicitudes de revisión
+  - Aprobación multinivel
+  - Notificaciones automáticas
+  - Historial de cambios y aprobaciones
+  
+- [ ] **Control de Acceso Granular**: Permisos específicos
+  - Permisos por sección o bloque
+  - Roles personalizados
+  - Edición simultánea segura
+  - Registro de actividad por usuario
