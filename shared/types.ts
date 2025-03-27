@@ -152,6 +152,20 @@ export interface HistoryEntry {
   label: string;
   state: PageData;
   type: HistoryActionType;
+  // Metadatos adicionales para la interfaz
+  preview?: {
+    thumbnail?: string;    // Una vista previa en miniatura (base64)
+    blocksChanged?: number; // Número de bloques afectados
+    blockTypes?: BlockType[]; // Tipos de bloques afectados
+    changeDescription?: string; // Descripción detallada del cambio
+  };
+  metadata?: {
+    userId?: number;    // Usuario que realizó el cambio
+    userName?: string;  // Nombre del usuario
+    device?: string;    // Dispositivo desde donde se hizo
+    important?: boolean; // Marcar como cambio importante
+    tags?: string[];    // Etiquetas asociadas al cambio
+  };
 }
 
 export enum HistoryActionType {
