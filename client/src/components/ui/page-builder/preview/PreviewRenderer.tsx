@@ -9,6 +9,7 @@ import AccordionBlock from '../blocks/AccordionBlock';
 import TabsBlock from '../blocks/TabsBlock';
 import TableBlock from '../blocks/TableBlock';
 import GalleryBlock from '../blocks/GalleryBlock';
+import CTABlock from '../blocks/CTABlock';
 
 export interface PreviewRendererProps {
   blocks: Block[];
@@ -54,6 +55,8 @@ const PreviewRenderer: React.FC<PreviewRendererProps> = ({
         return <TableBlock block={block} onClick={handleClick} isPreview={true} />;
       case BlockType.GALLERY:
         return <GalleryBlock block={block} onClick={handleClick} isPreview={true} />;
+      case BlockType.CTA:
+        return <CTABlock block={block} />;
       default:
         return <div>Bloque no soportado: {block.type}</div>;
     }

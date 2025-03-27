@@ -18,6 +18,41 @@ interface BlockTemplate {
 
 const blockTemplates: BlockTemplate[] = [
   {
+    type: BlockType.CTA,
+    title: 'Call to action',
+    description: 'Añade un elemento que invite al usuario a realizar una acción específica',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+      </svg>
+    ),
+    defaultContent: {},
+    defaultSettings: {},
+    data: {
+      title: "¡Empieza ahora mismo!",
+      subtitle: "Hazlo realidad con nosotros",
+      description: "Descubre todo lo que podemos ofrecerte para impulsar tu negocio al siguiente nivel.",
+      primaryButtonText: "Comenzar ahora",
+      primaryButtonUrl: "#",
+      primaryButtonVariant: "default",
+      secondaryButtonText: "Más información",
+      secondaryButtonUrl: "#",
+      secondaryButtonVariant: "outline",
+      settings: {
+        style: "basic",
+        position: "center",
+        size: "medium",
+        colorScheme: "primary",
+        showIcon: true,
+        iconPosition: "right",
+        rounded: true,
+        shadow: false,
+        spacing: "normal",
+        animation: "none"
+      }
+    }
+  },
+  {
     type: BlockType.TABLE,
     title: 'Tabla',
     description: 'Muestra información tabular con opciones de formato y funcionalidades',

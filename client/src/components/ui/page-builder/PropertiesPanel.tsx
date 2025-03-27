@@ -73,6 +73,30 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ blockId, onClose }) =
     
     setLocalContent(newContent);
   };
+  
+  // Manejar cambios en los datos del bloque
+  const handleDataChange = (path: string[], value: any) => {
+    if (!block || !block.data) return;
+    
+    // Crear una copia profunda de los datos
+    const newData = { ...(block.data || {}) };
+    
+    // Navegar a la propiedad anidada
+    let current = newData;
+    for (let i = 0; i < path.length - 1; i++) {
+      if (!current[path[i]]) current[path[i]] = {};
+      current = current[path[i]];
+    }
+    
+    // Establecer el valor
+    current[path[path.length - 1]] = value;
+    
+    // Actualizar el bloque en el store
+    if (block) {
+      const updatedBlock = { ...block, data: newData };
+      updateBlock(updatedBlock.id, updatedBlock);
+    }
+  };
 
   const handleApply = () => {
     if (block && localSettings && localContent) {
@@ -317,9 +341,357 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ blockId, onClose }) =
     );
   };
 
+  // Renderizar propiedades del bloque CTA
+  const renderCTAProperties = () => {
+    return (
+      <>
+        <div>
+          <Label htmlFor="cta-title">Título</Label>
+          <Input
+            id="cta-title"
+            value={block.data?.title || ''}
+            onChange={(e) => handleDataChange(['title'], e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-subtitle">Subtítulo</Label>
+          <Input
+            id="cta-subtitle"
+            value={block.data?.subtitle || ''}
+            onChange={(e) => handleDataChange(['subtitle'], e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-description">Descripción</Label>
+          <Textarea
+            id="cta-description"
+            value={block.data?.description || ''}
+            onChange={(e) => handleDataChange(['description'], e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <Separator className="my-4" />
+        <div className="mt-4">
+          <Label htmlFor="cta-primary-text">Texto del botón principal</Label>
+          <Input
+            id="cta-primary-text"
+            value={block.data?.primaryButtonText || 'Acción Principal'}
+            onChange={(e) => handleDataChange(['primaryButtonText'], e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-primary-url">URL del botón principal</Label>
+          <Input
+            id="cta-primary-url"
+            value={block.data?.primaryButtonUrl || '#'}
+            onChange={(e) => handleDataChange(['primaryButtonUrl'], e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-primary-variant">Variante del botón principal</Label>
+          <Select
+            value={block.data?.primaryButtonVariant || 'default'}
+            onValueChange={(value) => handleDataChange(['primaryButtonVariant'], value)}
+          >
+            <SelectTrigger id="cta-primary-variant" className="mt-1">
+              <SelectValue placeholder="Seleccionar variante" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Por defecto</SelectItem>
+              <SelectItem value="outline">Contorno</SelectItem>
+              <SelectItem value="ghost">Fantasma</SelectItem>
+              <SelectItem value="link">Enlace</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-secondary-text">Texto del botón secundario</Label>
+          <Input
+            id="cta-secondary-text"
+            value={block.data?.secondaryButtonText || ''}
+            onChange={(e) => handleDataChange(['secondaryButtonText'], e.target.value)}
+            className="mt-1"
+            placeholder="Opcional"
+          />
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-secondary-url">URL del botón secundario</Label>
+          <Input
+            id="cta-secondary-url"
+            value={block.data?.secondaryButtonUrl || '#'}
+            onChange={(e) => handleDataChange(['secondaryButtonUrl'], e.target.value)}
+            className="mt-1"
+            placeholder="Opcional"
+          />
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-secondary-variant">Variante del botón secundario</Label>
+          <Select
+            value={block.data?.secondaryButtonVariant || 'outline'}
+            onValueChange={(value) => handleDataChange(['secondaryButtonVariant'], value)}
+          >
+            <SelectTrigger id="cta-secondary-variant" className="mt-1">
+              <SelectValue placeholder="Seleccionar variante" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Por defecto</SelectItem>
+              <SelectItem value="outline">Contorno</SelectItem>
+              <SelectItem value="ghost">Fantasma</SelectItem>
+              <SelectItem value="link">Enlace</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Separator className="my-4" />
+        <div className="mt-4">
+          <Label htmlFor="cta-style">Estilo del CTA</Label>
+          <Select
+            value={block.data?.settings?.style || 'basic'}
+            onValueChange={(value) => handleDataChange(['settings', 'style'], value)}
+          >
+            <SelectTrigger id="cta-style" className="mt-1">
+              <SelectValue placeholder="Seleccionar estilo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="basic">Básico</SelectItem>
+              <SelectItem value="outlined">Con borde</SelectItem>
+              <SelectItem value="full-width">Ancho completo</SelectItem>
+              <SelectItem value="card">Tarjeta</SelectItem>
+              <SelectItem value="banner">Banner</SelectItem>
+              <SelectItem value="split">Dividido</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-position">Posición del contenido</Label>
+          <Select
+            value={block.data?.settings?.position || 'center'}
+            onValueChange={(value) => handleDataChange(['settings', 'position'], value)}
+          >
+            <SelectTrigger id="cta-position" className="mt-1">
+              <SelectValue placeholder="Seleccionar posición" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="left">Izquierda</SelectItem>
+              <SelectItem value="center">Centro</SelectItem>
+              <SelectItem value="right">Derecha</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="cta-color">Esquema de color</Label>
+          <Select
+            value={block.data?.settings?.colorScheme || 'primary'}
+            onValueChange={(value) => handleDataChange(['settings', 'colorScheme'], value)}
+          >
+            <SelectTrigger id="cta-color" className="mt-1">
+              <SelectValue placeholder="Seleccionar color" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="primary">Primario</SelectItem>
+              <SelectItem value="secondary">Secundario</SelectItem>
+              <SelectItem value="accent">Acento</SelectItem>
+              <SelectItem value="neutral">Neutro</SelectItem>
+              <SelectItem value="success">Éxito</SelectItem>
+              <SelectItem value="warning">Advertencia</SelectItem>
+              <SelectItem value="destructive">Destructivo</SelectItem>
+              <SelectItem value="custom">Personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {block.data?.settings?.colorScheme === 'custom' && (
+          <>
+            <div className="mt-4">
+              <Label htmlFor="cta-custom-bg">Color de fondo personalizado</Label>
+              <Input
+                id="cta-custom-bg"
+                type="color"
+                value={block.data?.settings?.customBgColor || '#ffffff'}
+                onChange={(e) => handleDataChange(['settings', 'customBgColor'], e.target.value)}
+                className="mt-1 h-10 w-full"
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="cta-custom-text">Color de texto personalizado</Label>
+              <Input
+                id="cta-custom-text"
+                type="color"
+                value={block.data?.settings?.customTextColor || '#000000'}
+                onChange={(e) => handleDataChange(['settings', 'customTextColor'], e.target.value)}
+                className="mt-1 h-10 w-full"
+              />
+            </div>
+            <div className="mt-4">
+              <Label htmlFor="cta-custom-button">Color del botón personalizado</Label>
+              <Input
+                id="cta-custom-button"
+                type="color"
+                value={block.data?.settings?.customButtonColor || '#0284c7'}
+                onChange={(e) => handleDataChange(['settings', 'customButtonColor'], e.target.value)}
+                className="mt-1 h-10 w-full"
+              />
+            </div>
+          </>
+        )}
+        <div className="mt-4">
+          <Label htmlFor="cta-size">Tamaño de botones</Label>
+          <Select
+            value={block.data?.settings?.size || 'medium'}
+            onValueChange={(value) => handleDataChange(['settings', 'size'], value)}
+          >
+            <SelectTrigger id="cta-size" className="mt-1">
+              <SelectValue placeholder="Seleccionar tamaño" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="small">Pequeño</SelectItem>
+              <SelectItem value="medium">Mediano</SelectItem>
+              <SelectItem value="large">Grande</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.showIcon || false}
+                onChange={(e) => handleDataChange(['settings', 'showIcon'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Mostrar icono
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.rounded || true}
+                onChange={(e) => handleDataChange(['settings', 'rounded'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Bordes redondeados
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.shadow || false}
+                onChange={(e) => handleDataChange(['settings', 'shadow'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Sombra
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.fullHeight || false}
+                onChange={(e) => handleDataChange(['settings', 'fullHeight'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Altura completa
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.showBorder || false}
+                onChange={(e) => handleDataChange(['settings', 'showBorder'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Mostrar borde
+            </Label>
+          </div>
+        </div>
+        {block.data?.settings?.style === 'banner' || block.data?.settings?.style === 'split' ? (
+          <div className="mt-4">
+            <Label htmlFor="cta-bgimage">URL de imagen de fondo</Label>
+            <Input
+              id="cta-bgimage"
+              value={block.data?.settings?.bgImage || ''}
+              onChange={(e) => handleDataChange(['settings', 'bgImage'], e.target.value)}
+              className="mt-1"
+              placeholder="https://ejemplo.com/imagen.jpg"
+            />
+          </div>
+        ) : null}
+        <div className="mt-4">
+          <Label htmlFor="cta-animation">Animación</Label>
+          <Select
+            value={block.data?.settings?.animation || 'none'}
+            onValueChange={(value) => handleDataChange(['settings', 'animation'], value)}
+          >
+            <SelectTrigger id="cta-animation" className="mt-1">
+              <SelectValue placeholder="Seleccionar animación" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Ninguna</SelectItem>
+              <SelectItem value="fade">Desvanecer</SelectItem>
+              <SelectItem value="slideUp">Deslizar hacia arriba</SelectItem>
+              <SelectItem value="pulse">Pulso</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {['card', 'outlined', 'basic'].includes(block.data?.settings?.style || 'basic') && (
+          <div className="mt-4">
+            <Label htmlFor="cta-maxwidth">Ancho máximo</Label>
+            <Input
+              id="cta-maxwidth"
+              value={block.data?.settings?.maxWidth || ''}
+              onChange={(e) => handleDataChange(['settings', 'maxWidth'], e.target.value)}
+              className="mt-1"
+              placeholder="ej: 800px, 50%, etc."
+            />
+          </div>
+        )}
+        <div className="mt-4">
+          <Label htmlFor="cta-spacing">Espaciado</Label>
+          <Select
+            value={block.data?.settings?.spacing || 'normal'}
+            onValueChange={(value) => handleDataChange(['settings', 'spacing'], value)}
+          >
+            <SelectTrigger id="cta-spacing" className="mt-1">
+              <SelectValue placeholder="Seleccionar espaciado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="compact">Compacto</SelectItem>
+              <SelectItem value="normal">Normal</SelectItem>
+              <SelectItem value="loose">Amplio</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {block.data?.settings?.showIcon && (
+          <div className="mt-4">
+            <Label htmlFor="cta-icon-position">Posición del icono</Label>
+            <Select
+              value={block.data?.settings?.iconPosition || 'right'}
+              onValueChange={(value) => handleDataChange(['settings', 'iconPosition'], value)}
+            >
+              <SelectTrigger id="cta-icon-position" className="mt-1">
+                <SelectValue placeholder="Seleccionar posición" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Izquierda</SelectItem>
+                <SelectItem value="right">Derecha</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </>
+    );
+  };
+
   // Render different property fields based on block type
   const renderBlockProperties = () => {
     switch (block.type) {
+      case BlockType.CTA:
+        return renderCTAProperties();
       case BlockType.GALLERY:
         return renderGalleryProperties();
       case BlockType.HEADER:
