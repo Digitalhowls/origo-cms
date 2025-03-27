@@ -1,5 +1,6 @@
-/* Importar estilos de animaciones */
+/* Importar estilos de animaciones y estilos globales para bloques */
 @import './styles/animations.css';
+@import './styles/global-block-styles.css';
 
 @tailwind base;
 @tailwind components;

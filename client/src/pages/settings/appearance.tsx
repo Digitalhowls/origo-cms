@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardFooter 
 } from '@/components/ui/card';
+import BlockStylesPanel from '@/components/ui/page-builder/settings/BlockStylesPanel';
 import { Label } from '@/components/ui/label';
 import { 
   Tabs, 
@@ -26,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -227,6 +229,10 @@ const AppearanceSettings: React.FC = () => {
                   <Globe className="h-4 w-4 mr-2" />
                   Web
                 </TabsTrigger>
+                <TabsTrigger value="blocks">
+                  <Box className="h-4 w-4 mr-2" />
+                  Bloques
+                </TabsTrigger>
               </TabsList>
               
               {/* General Settings */}
@@ -295,7 +301,7 @@ const AppearanceSettings: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <RadioGroup
                           value={settings.radius.toString()}
-                          onValueChange={(value) => handleSettingChange('radius', parseFloat(value))}
+                          onValueChange={(value: string) => handleSettingChange('radius', parseFloat(value))}
                           className="flex space-x-2"
                         >
                           <div className="flex items-center space-x-2">
@@ -1032,6 +1038,21 @@ const AppearanceSettings: React.FC = () => {
                     </CardContent>
                   </Card>
                 </div>
+              </TabsContent>
+              
+              {/* Block Styles Settings */}
+              <TabsContent value="blocks">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Estilos de bloques</CardTitle>
+                    <CardDescription>
+                      Personaliza el estilo global para los bloques del constructor de páginas.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <BlockStylesPanel />
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           )}

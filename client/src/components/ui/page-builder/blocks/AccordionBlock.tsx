@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Block, BlockType } from '@shared/types';
 import { PlusCircle, MinusCircle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { useBlockStyles } from '@/hooks/use-block-styles';
 
 // Exportamos el componente como default para que pueda ser importado fácilmente
 export default AccordionBlock;
@@ -65,9 +66,10 @@ export function AccordionBlock({
   isEditing = false, 
   onBlockChange 
 }: AccordionBlockProps) {
+  const { styles } = useBlockStyles();
   const items = block.data?.items || [];
   const settings = block.data?.settings || {};
-  const style = settings.style || 'basic';
+  const style = settings.style || styles.defaultAccordionStyle;
   const allowMultiple = settings.allowMultiple !== false; // Por defecto permitir múltiples abiertos
   const showControls = settings.showControls || false;
   
@@ -181,77 +183,75 @@ export function AccordionBlock({
   }
 
   return (
-    <div className={`accordion-block accordion-style-${style} ${isSelected ? 'is-selected' : ''}`}>
+    <div className={`origo-block origo-block-style-${style} ${isSelected ? 'is-selected' : ''}`}>
       {/* Título y descripción opcional del bloque */}
       {block.data?.title && (
         <h3 className="text-xl font-semibold mb-3">{block.data.title}</h3>
       )}
       {block.data?.description && (
-        <p className="text-gray-600 mb-4">{block.data.description}</p>
+        <p className="text-muted mb-4">{block.data.description}</p>
       )}
       
       {/* Controles para expandir/contraer todo */}
       {showControls && (
         <div className="flex justify-end mb-3 gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleExpandAll} 
-            className="text-sm"
+          <button 
+            onClick={handleExpandAll}
+            className="origo-button origo-button-outline text-sm"
           >
             <PlusCircle className="h-4 w-4 mr-1" />
             Expandir todo
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          </button>
+          <button 
             onClick={handleCollapseAll}
-            className="text-sm"
+            className="origo-button origo-button-outline text-sm"
           >
             <MinusCircle className="h-4 w-4 mr-1" />
             Contraer todo
-          </Button>
+          </button>
         </div>
       )}
       
       {/* Componente Acordeón */}
-      {allowMultiple ? (
-        <Accordion 
-          type="multiple"
-          value={openItems}
-          onValueChange={handleValueChange}
-          className={`w-full rounded-md ${style === 'bordered' ? 'border border-border p-1' : ''} ${style === 'shadowed' ? 'shadow-lg' : ''}`}
-        >
-          {items.map((item) => (
-            <AccordionItem key={item.id} value={item.id} className={`${style === 'faq' ? 'bg-muted/50 mb-2 rounded-md overflow-hidden' : ''}`}>
-              <AccordionTrigger className={`px-4 ${style === 'faq' ? 'hover:bg-muted/80' : ''}`}>
-                {item.title}
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <div dangerouslySetInnerHTML={{ __html: item.content }} />
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      ) : (
-        <Accordion 
-          type="single"
-          value={openItems.length > 0 ? openItems[0] : ''}
-          onValueChange={(val: string) => handleValueChange([val])}
-          className={`w-full rounded-md ${style === 'bordered' ? 'border border-border p-1' : ''} ${style === 'shadowed' ? 'shadow-lg' : ''}`}
-        >
-          {items.map((item) => (
-            <AccordionItem key={item.id} value={item.id} className={`${style === 'faq' ? 'bg-muted/50 mb-2 rounded-md overflow-hidden' : ''}`}>
-              <AccordionTrigger className={`px-4 ${style === 'faq' ? 'hover:bg-muted/80' : ''}`}>
-                {item.title}
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <div dangerouslySetInnerHTML={{ __html: item.content }} />
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      )}
+      <div className={`origo-accordion origo-accordion-style-${style}`}>
+        {allowMultiple ? (
+          <Accordion 
+            type="multiple"
+            value={openItems}
+            onValueChange={handleValueChange}
+            className="w-full origo-accordion"
+          >
+            {items.map((item) => (
+              <AccordionItem key={item.id} value={item.id} className="origo-accordion-item">
+                <AccordionTrigger className="origo-accordion-header">
+                  {item.title}
+                </AccordionTrigger>
+                <AccordionContent className="origo-accordion-content">
+                  <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        ) : (
+          <Accordion 
+            type="single"
+            value={openItems.length > 0 ? openItems[0] : ''}
+            onValueChange={(val: string) => handleValueChange([val])}
+            className="w-full origo-accordion"
+          >
+            {items.map((item) => (
+              <AccordionItem key={item.id} value={item.id} className="origo-accordion-item">
+                <AccordionTrigger className="origo-accordion-header">
+                  {item.title}
+                </AccordionTrigger>
+                <AccordionContent className="origo-accordion-content">
+                  <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
+      </div>
     </div>
   );
 }
@@ -264,17 +264,18 @@ export function AccordionBlockProperties({
   block: Block;
   onUpdate: (block: Block) => void;
 }) {
+  const { styles, applyTheme } = useBlockStyles();
   const items = block.data?.items || [];
   const settings = block.data?.settings || {};
   const title = block.data?.title || '';
   const description = block.data?.description || '';
   
-  // Estilos disponibles para el acordeón
+  // Estilos disponibles para el acordeón basados en nuestro sistema de estilos globales
   const styleOptions = [
-    { value: 'basic', label: 'Básico' },
+    { value: 'default', label: 'Predeterminado' },
     { value: 'bordered', label: 'Con bordes' },
-    { value: 'shadowed', label: 'Con sombras' },
-    { value: 'faq', label: 'Estilo FAQ' }
+    { value: 'minimal', label: 'Minimalista' },
+    { value: 'boxed', label: 'Cuadro' }
   ];
   
   // Manejar cambios en el título
@@ -307,7 +308,7 @@ export function AccordionBlockProperties({
         ...block.data,
         settings: {
           ...settings,
-          style: e.target.value as 'basic' | 'bordered' | 'shadowed' | 'faq'
+          style: e.target.value as 'default' | 'bordered' | 'minimal' | 'boxed'
         }
       }
     });
@@ -465,7 +466,7 @@ export function AccordionBlockProperties({
           </label>
           <select
             id="accordion-style"
-            value={settings.style || 'basic'}
+            value={settings.style || styles.defaultAccordionStyle}
             onChange={handleStyleChange}
             className="w-full rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm"
           >

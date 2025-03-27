@@ -1,0 +1,211 @@
+/* 
+  Estilos globales para los bloques del constructor de páginas
+  Estos estilos se aplican a todos los bloques y pueden ser personalizados
+  a través del panel de configuración de estilos de bloques.
+*/
+
+:root {
+  --block-spacing-inner: 1.5rem;
+  --block-spacing-outer: 2rem;
+  --block-spacing-elements: 1rem;
+  --block-border-radius: 0.5rem;
+  --block-font-scale: 1;
+  
+  /* Paleta de colores para bloques */
+  --block-color-primary: var(--primary);
+  --block-color-secondary: var(--secondary);
+  --block-color-accent: var(--accent);
+  --block-color-background: var(--background);
+  --block-color-foreground: var(--foreground);
+  --block-color-muted: var(--muted);
+  --block-color-border: var(--border);
+}
+
+/* Estilos base para todos los bloques */
+.block {
+  margin-bottom: var(--block-spacing-outer);
+  font-size: calc(1em * var(--block-font-scale));
+}
+
+.block-inner {
+  padding: var(--block-spacing-inner);
+}
+
+.block-elements > * + * {
+  margin-top: var(--block-spacing-elements);
+}
+
+/* Variantes de estilo para bloques */
+.block-style-default {
+  background-color: transparent;
+}
+
+.block-style-bordered {
+  border: 1px solid var(--block-color-border);
+  border-radius: var(--block-border-radius);
+}
+
+.block-style-shadowed {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: var(--block-border-radius);
+}
+
+.block-style-card {
+  background-color: var(--block-color-background);
+  border-radius: var(--block-border-radius);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.block-style-boxed {
+  background-color: var(--block-color-muted);
+  border-radius: var(--block-border-radius);
+  padding: var(--block-spacing-inner);
+}
+
+.block-style-underline {
+  border-bottom: 2px solid var(--block-color-primary);
+  padding-bottom: 0.5rem;
+}
+
+.block-style-highlight {
+  background-color: var(--block-color-accent);
+  color: white;
+  border-radius: var(--block-border-radius);
+}
+
+.block-style-minimal {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+/* Variantes de estilo para acordeones */
+.accordion-style-default {
+  /* Estilo por defecto */
+}
+
+.accordion-style-bordered .accordion-item {
+  border: 1px solid var(--block-color-border);
+  border-radius: var(--block-border-radius);
+  margin-bottom: 0.5rem;
+}
+
+.accordion-style-boxed .accordion-item {
+  background-color: var(--block-color-muted);
+  border-radius: var(--block-border-radius);
+  margin-bottom: 0.5rem;
+}
+
+.accordion-style-minimal .accordion-trigger {
+  background: transparent;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--block-color-border);
+}
+
+/* Variantes de estilo para pestañas */
+.tabs-style-default {
+  /* Estilo por defecto */
+}
+
+.tabs-style-pills .tab-trigger {
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+}
+
+.tabs-style-pills .tab-trigger[data-state="active"] {
+  background-color: var(--block-color-primary);
+  color: white;
+}
+
+.tabs-style-boxed .tab-list {
+  background-color: var(--block-color-muted);
+  border-radius: var(--block-border-radius);
+  padding: 0.25rem;
+}
+
+.tabs-style-boxed .tab-trigger {
+  border-radius: var(--block-border-radius);
+}
+
+.tabs-style-boxed .tab-trigger[data-state="active"] {
+  background-color: var(--block-color-background);
+}
+
+.tabs-style-underline .tab-trigger {
+  padding: 0.75rem 1rem;
+}
+
+.tabs-style-underline .tab-trigger[data-state="active"] {
+  border-bottom: 2px solid var(--block-color-primary);
+}
+
+/* Variantes de estilo para tablas */
+.table-style-default {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-style-striped tbody tr:nth-child(odd) {
+  background-color: var(--block-color-muted);
+}
+
+.table-style-bordered th, 
+.table-style-bordered td {
+  border: 1px solid var(--block-color-border);
+}
+
+.table-style-compact th,
+.table-style-compact td {
+  padding: 0.5rem;
+}
+
+/* Variantes de estilo para botones */
+.button-style-primary {
+  background-color: var(--block-color-primary);
+  color: white;
+  border-radius: var(--block-border-radius);
+}
+
+.button-style-secondary {
+  background-color: var(--block-color-secondary);
+  color: white;
+  border-radius: var(--block-border-radius);
+}
+
+.button-style-accent {
+  background-color: var(--block-color-accent);
+  color: white;
+  border-radius: var(--block-border-radius);
+}
+
+.button-style-outline {
+  background-color: transparent;
+  border: 1px solid var(--block-color-primary);
+  color: var(--block-color-primary);
+  border-radius: var(--block-border-radius);
+}
+
+/* Estilos para temas oscuros */
+.dark-mode .block-style-card,
+.dark-mode .tabs-style-boxed .tab-trigger[data-state="active"] {
+  background-color: hsl(var(--card));
+}
+
+.dark-mode .block-style-shadowed {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .block-style-boxed,
+.dark-mode .accordion-style-boxed .accordion-item,
+.dark-mode .tabs-style-boxed .tab-list {
+  background-color: hsl(var(--muted));
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+  :root {
+    --block-spacing-inner: 1rem;
+    --block-spacing-outer: 1.5rem;
+    --block-spacing-elements: 0.75rem;
+  }
+}
