@@ -14,7 +14,7 @@ import HeaderBlock from './blocks/HeaderBlock';
 import FeaturesBlock from './blocks/FeaturesBlock';
 import TextMediaBlock from './blocks/TextMediaBlock';
 import TestimonialBlock from './blocks/TestimonialBlock';
-import AccordionBlock from './blocks/AccordionBlock';
+import * as AccordionComponent from './blocks/AccordionBlock';
 import TabsBlock from './blocks/TabsBlock';
 import TableBlock from './blocks/TableBlock';
 import GalleryBlock from './blocks/GalleryBlock';
@@ -87,10 +87,10 @@ export const renderBlock = (block: Block, options?: { isPreview?: boolean; isSel
       />;
       break;
     case BlockType.ACCORDION:
-      blockComponent = <AccordionBlock 
+      blockComponent = <AccordionComponent.AccordionBlock
         block={block} 
-        onClick={handleClick} 
-        isPreview={isPreview}
+        isSelected={isSelected}
+        isEditing={!isPreview}
       />;
       break;
     case BlockType.TABS:

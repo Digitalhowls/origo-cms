@@ -10,6 +10,7 @@ import { X, Wand, LayoutIcon, SlidersHorizontal } from 'lucide-react';
 import { usePageStore } from '@/lib/store';
 import { Block, BlockType } from '@shared/types';
 import AnimationPanel from './AnimationPanel';
+import { AccordionBlockProperties } from './blocks/AccordionBlock';
 
 interface PropertiesPanelProps {
   blockId: string | null;
@@ -96,7 +97,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ blockId, onClose }) =
     // Actualizar el bloque en el store
     if (block) {
       const updatedBlock = { ...block, data: newData };
-      updateBlock(updatedBlock.id, updatedBlock);
+      updateBlock(updatedBlock);
     }
   };
 
@@ -696,6 +697,13 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ blockId, onClose }) =
         return renderCTAProperties();
       case BlockType.GALLERY:
         return renderGalleryProperties();
+      case BlockType.ACCORDION:
+        return (
+          <AccordionBlockProperties 
+            block={block} 
+            onUpdate={updateBlock} 
+          />
+        );
       case BlockType.HEADER:
         return (
           <>
