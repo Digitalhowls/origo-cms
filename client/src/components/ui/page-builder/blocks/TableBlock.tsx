@@ -18,6 +18,8 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import { v4 as uuidv4 } from 'uuid';
+import { useBlockStyles, TableStyleVariant } from '@/hooks/use-block-styles';
 import { 
   ArrowUpDown, 
   ChevronDown, 
@@ -43,8 +45,13 @@ interface TableBlockProps {
 }
 
 // Configuración por defecto para la tabla
+// TableSettings extiende los campos de settings del bloque base definido en shared/types.ts
 interface TableSettings {
+  // Campo style presente en Block.data.settings
   style: 'basic' | 'bordered' | 'striped' | 'compact' | 'modern' | 'minimal';
+  // Variante de estilo global para integrarse con el sistema de estilos
+  styleVariant: TableStyleVariant;
+  // Campos específicos para tablas según shared/types.ts
   isResponsive: boolean;
   hasFixedHeader: boolean;
   enableSorting: boolean;
@@ -55,14 +62,9 @@ interface TableSettings {
   showAlternatingRows: boolean;
   tableWidth: 'auto' | 'full';
   captionPosition: 'top' | 'bottom';
-  enableExport: boolean;
-  enablePrint: boolean;
-  enableCopy: boolean;
-  enableColumnVisibility: boolean;
-  enableColumnFilter: boolean;
-  enableRowSelection: boolean;
-  enableMultiSort: boolean;
-  enableDensityToggle: boolean;
+  // Campos adicionales para la funcionalidad de tablas
+  // Estos no están en shared/types.ts pero los mantenemos aquí
+  // para la funcionalidad del componente
   theme: 'light' | 'dark' | 'auto';
   borderStyle: 'none' | 'thin' | 'medium' | 'thick';
   headerStyle: 'default' | 'bold' | 'filled' | 'underlined';
@@ -70,6 +72,15 @@ interface TableSettings {
   cellAlignment: 'left' | 'center' | 'right';
   showRowNumbers: boolean;
   stickyFirstColumn: boolean;
+  // Controles adicionales (opcionales)
+  enableExport?: boolean;
+  enablePrint?: boolean;
+  enableCopy?: boolean;
+  enableColumnVisibility?: boolean;
+  enableColumnFilter?: boolean;
+  enableRowSelection?: boolean;
+  enableMultiSort?: boolean;
+  enableDensityToggle?: boolean;
 }
 
 interface TableHeader {
@@ -96,14 +107,21 @@ const TableBlock: React.FC<TableBlockProps> = ({
   onClick = () => {},
   isPreview = false
 }) => {
+  // Obtener los estilos globales de bloques
+  const { styles } = useBlockStyles();
+  
   // Asegurar que tenemos la estructura correcta de datos
   const data = block.data || {};
   const title = data.title || 'Tabla de Datos';
   const description = data.description || 'Información organizada en formato tabular';
   
+  // Usar la variante de estilo de tabla predeterminada del sistema
+  const globalTableStyle = styles.defaultTableStyle;
+  
   // Establecer configuraciones por defecto
   const defaultSettings: TableSettings = {
     style: 'basic',
+    styleVariant: 'default', // Para sistema de estilos global
     isResponsive: true,
     hasFixedHeader: false,
     enableSorting: true,
@@ -297,11 +315,13 @@ const TableBlock: React.FC<TableBlockProps> = ({
     return (
       <div className={cn(
         'relative',
+        'table-container',
         settings.isResponsive && 'overflow-x-auto'
       )}>
         <Table className={cn(
           getTableStyleClass(),
           getBorderStyleClass(),
+          `table-style-${globalTableStyle}`,
           settings.tableWidth === 'full' ? 'w-full' : 'w-auto',
           settings.theme === 'dark' ? 'dark' : '',
         )}>
@@ -581,10 +601,24 @@ const TableBlock: React.FC<TableBlockProps> = ({
     return headers.filter(header => visibleColumns[header.id]);
   };
 
+  // Obtener clases de tabla basadas en el estilo global
+  const getTableGlobalClasses = () => {
+    // Aplicar las clases comunes a todos los bloques
+    return cn(
+      'block', // Clase base para todos los bloques
+      `table-style-${globalTableStyle}`, // Estilo específico de tabla
+      // Clases adicionales específicas a tablas
+      'overflow-x-auto',
+      settings.isResponsive && 'responsive-table'
+    );
+  };
+
   return (
     <Card 
       className={cn(
         'w-full overflow-hidden',
+        getTableGlobalClasses(),
+        'block-inner',
         isPreview ? 'cursor-default' : 'cursor-pointer hover:shadow-md transition-shadow'
       )}
       onClick={isPreview ? undefined : onClick}
@@ -753,3 +787,85 @@ const TableBlock: React.FC<TableBlockProps> = ({
 };
 
 export default TableBlock;
+
+/**
+ * Crea un nuevo bloque de tabla con una configuración predeterminada
+ * @returns Un objeto de bloque para el bloque de tabla, que cumple con la interfaz Block
+ */
+export function createTableBlock(): Block {
+  // Crear algunos datos de ejemplo para la tabla
+  const sampleHeaders: TableHeader[] = [
+    { id: uuidv4(), label: 'Nombre', key: 'name', align: 'left', sortable: true },
+    { id: uuidv4(), label: 'Categoría', key: 'category', align: 'center' },
+    { id: uuidv4(), label: 'Precio', key: 'price', align: 'right', sortable: true },
+    { id: uuidv4(), label: 'Stock', key: 'stock', align: 'center', sortable: true },
+    { id: uuidv4(), label: 'Disponible', key: 'available', align: 'center' }
+  ];
+  
+  const sampleRows: TableRow[] = [
+    { 
+      id: uuidv4(), 
+      cells: { 
+        name: 'Producto 1', 
+        category: 'Electrónica', 
+        price: 1299.99, 
+        stock: 45, 
+        available: true 
+      },
+      isHighlighted: false
+    },
+    { 
+      id: uuidv4(), 
+      cells: { 
+        name: 'Producto 2', 
+        category: 'Hogar', 
+        price: 89.99, 
+        stock: 12, 
+        available: true 
+      },
+      isHighlighted: true
+    },
+    { 
+      id: uuidv4(), 
+      cells: { 
+        name: 'Producto 3', 
+        category: 'Electrónica', 
+        price: 349.50, 
+        stock: 0, 
+        available: false 
+      },
+      isHighlighted: false
+    }
+  ];
+  
+  // Crear el bloque con los campos correctos según la interfaz Block en shared/types.ts
+  const block: Block = {
+    id: uuidv4(),
+    type: BlockType.TABLE,
+    content: "", // No necesitamos este campo para tablas pero es requerido por la interfaz
+    settings: {}, // Campo requerido por la interfaz Block pero vacío
+    data: {
+      title: 'Tabla de Productos',
+      description: 'Listado de productos disponibles',
+      headers: sampleHeaders,
+      rows: sampleRows,
+      settings: {
+        // Solo usar propiedades definidas en Block.data.settings
+        style: 'basic',
+        styleVariant: 'default', // Para sistema de estilos global
+        isResponsive: true,
+        hasFixedHeader: true,
+        enableSorting: true,
+        enablePagination: true,
+        rowsPerPage: 5,
+        enableSearch: true,
+        enableRowHighlight: true,
+        showAlternatingRows: true,
+        tableWidth: 'full',
+        captionPosition: 'bottom'
+      }
+    }
+  };
+
+  return block;
+}
