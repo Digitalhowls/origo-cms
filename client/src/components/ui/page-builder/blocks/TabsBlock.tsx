@@ -1,14 +1,59 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Block, BlockType } from '@shared/types';
 import { LayoutGrid, Smartphone } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
+import { useBlockStyles } from '@/hooks/use-block-styles';
+
+// Función para crear un nuevo bloque de pestañas
+export function createTabsBlock(): Block {
+  // Usamos un valor por defecto para el estilo de pestañas
+  const defaultTabsStyle = 'default';
+
+  const tabId1 = uuidv4();
+  const tabId2 = uuidv4();
+
+  return {
+    id: uuidv4(),
+    type: BlockType.TABS,
+    content: {},
+    settings: {},
+    data: {
+      title: 'Información organizada en pestañas',
+      description: 'Accede a todo el contenido con un clic',
+      settings: {
+        style: defaultTabsStyle,
+        orientation: 'horizontal',
+        defaultTab: tabId1,
+        showIcons: false,
+        fullWidth: true,
+        animationType: 'fade'
+      },
+      items: [
+        {
+          id: tabId1,
+          title: 'Características',
+          content: '<p>Origo CMS ofrece una flexibilidad sin precedentes para la creación de contenido digital. Su arquitectura modular permite adaptar cada elemento a tus necesidades específicas.</p>'
+        },
+        {
+          id: tabId2,
+          title: 'Beneficios',
+          content: '<p>Con nuestro CMS, disfrutarás de un flujo de trabajo simplificado, una interfaz intuitiva y herramientas potentes para gestionar tu contenido de manera eficiente.</p>'
+        }
+      ]
+    }
+  };
+}
 
 interface TabsBlockProps {
   block: Block;
   onClick?: () => void;
   isPreview?: boolean;
+  isSelected?: boolean;
+  isEditing?: boolean;
+  onBlockChange?: (block: Block) => void;
 }
 
 interface TabItemData {
@@ -35,8 +80,14 @@ interface TabsSettings {
 const TabsBlock: React.FC<TabsBlockProps> = ({ 
   block, 
   onClick = () => {}, 
-  isPreview = false 
+  isPreview = false,
+  isSelected = false,
+  isEditing = false,
+  onBlockChange
 }) => {
+  // Acceder a los estilos globales
+  const { styles } = useBlockStyles();
+  
   // Asegurar que se tenga la estructura correcta de datos
   const data = block.data || {};
   const title = data.title || 'Pestañas';
@@ -63,19 +114,20 @@ const TabsBlock: React.FC<TabsBlockProps> = ({
   // Estado para la pestaña activa
   const [activeTab, setActiveTab] = useState<string>(settings.defaultTab || '');
 
-  // Obtener las clases según el estilo seleccionado
+  // Obtener las clases según el estilo seleccionado usando el sistema global de estilos
   const getStyleClasses = () => {
-    switch (settings.style) {
+    const styleValue = settings.style || styles.defaultTabsStyle;
+    switch (styleValue) {
       case 'boxed':
-        return 'tabs-boxed bg-gray-50 p-4 rounded-lg';
+        return 'tabs-style-boxed';
       case 'underline':
-        return 'tabs-underline border-b';
+        return 'tabs-style-underline';
       case 'pills':
-        return 'tabs-pills';
+        return 'tabs-style-pills';
       case 'minimal':
-        return 'tabs-minimal';
+        return 'tabs-style-minimal';
       default:
-        return 'tabs-default';
+        return 'tabs-style-default';
     }
   };
 
@@ -98,38 +150,27 @@ const TabsBlock: React.FC<TabsBlockProps> = ({
     );
   };
 
-  // Obtener clases para TabsTrigger según el estilo
+  // Obtener clases para TabsTrigger según el estilo utilizando el sistema global
   const getTriggerClasses = () => {
-    const baseClasses = 'transition-all duration-200';
+    const baseClasses = 'tab-trigger';
+    const styleValue = settings.style || styles.defaultTabsStyle;
     
-    switch (settings.style) {
-      case 'boxed':
-        return cn(baseClasses, 'bg-white shadow-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground');
-      case 'underline':
-        return cn(baseClasses, 'border-b-2 border-transparent rounded-none data-[state=active]:border-primary');
-      case 'pills':
-        return cn(baseClasses, 'rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground');
-      case 'minimal':
-        return cn(baseClasses, 'text-muted-foreground data-[state=active]:text-foreground data-[state=active]:font-medium');
-      default:
-        return baseClasses;
-    }
+    return cn(
+      baseClasses,
+      `tab-trigger-${styleValue}`
+    );
   };
 
-  // Obtener clases para TabsContent según la animación
+  // Obtener clases para TabsContent según la animación utilizando el sistema global
   const getContentClasses = () => {
-    const baseClasses = 'focus-visible:ring-0 focus-visible:ring-offset-0';
+    const baseClasses = 'tab-content focus-visible:ring-0 focus-visible:ring-offset-0';
+    const animation = settings.animationType || 'fade';
     
-    switch (settings.animationType) {
-      case 'slide':
-        return cn(baseClasses, 'tab-slide-animation');
-      case 'fade':
-        return cn(baseClasses, 'tab-fade-animation');
-      case 'scale':
-        return cn(baseClasses, 'tab-scale-animation');
-      default:
-        return baseClasses;
-    }
+    return cn(
+      baseClasses,
+      `tab-animation-${animation}`,
+      'block-elements' // Clase para aplicar estilos globales al contenido
+    );
   };
 
   // Generar el contenido de las pestañas
@@ -172,20 +213,17 @@ const TabsBlock: React.FC<TabsBlockProps> = ({
   );
 
   return (
-    <Card
-      className={cn(
-        'w-full overflow-hidden',
-        isPreview ? 'cursor-default' : 'cursor-pointer hover:shadow-md transition-shadow'
-      )}
-      onClick={isPreview ? undefined : onClick}
-    >
-      <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-bold">{title}</CardTitle>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+    <div className={`block block-style-${styles.defaultBlockStyle} ${isSelected ? 'is-selected' : ''}`} onClick={isPreview ? undefined : onClick}>
+      <div className="block-inner">
+        {/* Título y descripción */}
+        {title && (
+          <h3 className="text-xl font-semibold mb-3">{title}</h3>
         )}
-      </CardHeader>
-      <CardContent>
+        {description && (
+          <p className="text-muted-foreground mb-4">{description}</p>
+        )}
+        
+        {/* Contenido de las pestañas */}
         {items.length > 0 ? (
           renderTabs()
         ) : (
@@ -193,8 +231,8 @@ const TabsBlock: React.FC<TabsBlockProps> = ({
             No hay pestañas configuradas. Añade pestañas en las propiedades del bloque.
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
