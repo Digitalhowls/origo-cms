@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Redirect } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
@@ -26,10 +26,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 
 const loginSchema = z.object({
-  email: z.string().email("Correo electrónico inválido"),
+  username: z.string().min(1, "El nombre de usuario es requerido"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
 });
 
@@ -42,33 +41,22 @@ const registerSchema = insertUserSchema
     path: ["confirmPassword"],
   });
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Correo electrónico inválido"),
-});
-
-const resetPasswordSchema = z.object({
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  confirmPassword: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
-  token: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Las contraseñas no coinciden",
-  path: ["confirmPassword"],
-});
-
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
-type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
-type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
-  const { user, loginMutation, registerMutation, forgotPasswordMutation, resetPasswordMutation } = useAuth();
-  const [resetToken, setResetToken] = useState("");
+  const { user, loginMutation, registerMutation } = useAuth();
+
+  // Redirigir al dashboard si el usuario ya inició sesión
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -84,22 +72,6 @@ export default function AuthPage() {
       role: "editor",
     },
   });
-  
-  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
-    resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
-  
-  const resetPasswordForm = useForm<ResetPasswordFormValues>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      password: "",
-      confirmPassword: "",
-      token: resetToken,
-    },
-  });
 
   const onLoginSubmit = (data: LoginFormValues) => {
     loginMutation.mutate(data);
@@ -109,43 +81,16 @@ export default function AuthPage() {
     const { confirmPassword, ...userData } = data;
     registerMutation.mutate(userData);
   };
-  
-  const onForgotPasswordSubmit = (data: ForgotPasswordFormValues) => {
-    forgotPasswordMutation.mutate(data, {
-      onSuccess: (response) => {
-        if (response.token) {
-          setResetToken(response.token);
-          setActiveTab("reset-password");
-        }
-      }
-    });
-  };
-  
-  const onResetPasswordSubmit = (data: ResetPasswordFormValues) => {
-    const { confirmPassword, ...resetData } = data;
-    resetPasswordMutation.mutate(resetData, {
-      onSuccess: () => {
-        // Redirigir a login después de restablecer exitosamente
-        setActiveTab("login");
-      }
-    });
-  };
-
-  // Redirect to dashboard if user is already logged in
-  if (user) {
-    return <Redirect to="/" />;
-  }
 
   return (
-    <div className="flex min-h-screen bg-muted/40">
-      <div className="flex flex-col items-center justify-center flex-1 px-6 py-12">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground">
-              Origo CMS
-            </h1>
-            <p className="mt-2 text-lg text-muted-foreground">
-              Sistema de gestión de contenidos modular y headless
+    <div className="flex min-h-screen">
+      {/* Columna izquierda: Formulario de autenticación */}
+      <div className="flex flex-col items-center justify-center w-full px-6 py-12 lg:w-1/2">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold">Origo CMS</h1>
+            <p className="text-muted-foreground">
+              Plataforma de gestión de contenidos modular y headless
             </p>
           </div>
 
@@ -153,12 +98,6 @@ export default function AuthPage() {
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Iniciar sesión</TabsTrigger>
               <TabsTrigger value="register">Crear cuenta</TabsTrigger>
-            </TabsList>
-            
-            {/* Estas pestañas están ocultas pero son accesibles programáticamente */}
-            <TabsList className="hidden">
-              <TabsTrigger value="forgot-password">Olvidé mi contraseña</TabsTrigger>
-              <TabsTrigger value="reset-password">Restablecer contraseña</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="mt-4">
@@ -177,14 +116,13 @@ export default function AuthPage() {
                     >
                       <FormField
                         control={loginForm.control}
-                        name="email"
+                        name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Correo electrónico</FormLabel>
+                            <FormLabel>Usuario</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="correo@ejemplo.com"
-                                type="email"
+                                placeholder="ejemplo"
                                 {...field}
                               />
                             </FormControl>
@@ -222,20 +160,12 @@ export default function AuthPage() {
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter className="flex flex-col space-y-2">
+                <CardFooter className="flex justify-center">
                   <Button
                     variant="link"
-                    className="px-0"
                     onClick={() => setActiveTab("register")}
                   >
                     ¿No tienes cuenta? Regístrate
-                  </Button>
-                  <Button
-                    variant="link"
-                    className="px-0"
-                    onClick={() => setActiveTab("forgot-password")}
-                  >
-                    ¿Olvidaste tu contraseña?
                   </Button>
                 </CardFooter>
               </Card>
@@ -348,140 +278,9 @@ export default function AuthPage() {
                 <CardFooter className="flex justify-center">
                   <Button
                     variant="link"
-                    className="px-0"
                     onClick={() => setActiveTab("login")}
                   >
                     ¿Ya tienes cuenta? Inicia sesión
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="forgot-password" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recupera tu contraseña</CardTitle>
-                  <CardDescription>
-                    Ingresa tu correo electrónico para recibir un enlace de recuperación
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...forgotPasswordForm}>
-                    <form
-                      onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={forgotPasswordForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Correo electrónico</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="correo@ejemplo.com"
-                                type="email"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={forgotPasswordMutation.isPending}
-                      >
-                        {forgotPasswordMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : null}
-                        Enviar enlace de recuperación
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <Button
-                    variant="link"
-                    className="px-0"
-                    onClick={() => setActiveTab("login")}
-                  >
-                    Volver a inicio de sesión
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="reset-password" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Establece una nueva contraseña</CardTitle>
-                  <CardDescription>
-                    Crea una nueva contraseña segura para tu cuenta
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...resetPasswordForm}>
-                    <form
-                      onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)}
-                      className="space-y-4"
-                    >
-                      <FormField
-                        control={resetPasswordForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nueva contraseña</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="••••••••"
-                                type="password"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={resetPasswordForm.control}
-                        name="confirmPassword"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Confirmar nueva contraseña</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="••••••••"
-                                type="password"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <input type="hidden" name="token" value={resetToken} />
-                      <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={resetPasswordMutation.isPending}
-                      >
-                        {resetPasswordMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : null}
-                        Cambiar contraseña
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <Button
-                    variant="link"
-                    className="px-0"
-                    onClick={() => setActiveTab("login")}
-                  >
-                    Volver a inicio de sesión
                   </Button>
                 </CardFooter>
               </Card>
@@ -490,41 +289,42 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <div className="relative hidden w-1/2 bg-gradient-to-br from-primary/10 to-primary/30 lg:block">
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-12">
-          <div className="w-full max-w-lg space-y-8">
-            <h2 className="text-4xl font-bold text-primary">
-              Potencia tu contenido con Origo CMS
+      {/* Columna derecha: Imagen hero y descripción */}
+      <div className="hidden w-1/2 bg-muted lg:block">
+        <div className="flex flex-col items-center justify-center h-full p-12 space-y-6 text-center">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+              Gestiona tu contenido
             </h2>
-            <Separator className="bg-primary/20" />
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">
-                  Sistema modular
-                </h3>
-                <p className="text-muted-foreground">
-                  Diseñado para adaptarse a tus necesidades con una arquitectura
-                  flexible y extensible.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">
-                  Headless por diseño
-                </h3>
-                <p className="text-muted-foreground">
-                  Entrega tu contenido a cualquier plataforma con una API robusta
-                  y escalable.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold text-foreground">
-                  Editor visual de páginas
-                </h3>
-                <p className="text-muted-foreground">
-                  Crea páginas impactantes con un editor de bloques intuitivo y
-                  potente.
-                </p>
-              </div>
+            <p className="mx-auto max-w-[600px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+              Origo CMS te brinda todas las herramientas para crear, administrar y publicar contenido digital de forma eficiente y flexible.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 w-full max-w-4xl">
+            <div className="p-4 border rounded-lg shadow-sm">
+              <h3 className="font-semibold">Bloques modulares</h3>
+              <p className="text-sm text-muted-foreground">Construye páginas mediante bloques personalizables</p>
+            </div>
+            <div className="p-4 border rounded-lg shadow-sm">
+              <h3 className="font-semibold">Plantillas reutilizables</h3>
+              <p className="text-sm text-muted-foreground">Crea y reutiliza plantillas para ahorrar tiempo</p>
+            </div>
+            <div className="p-4 border rounded-lg shadow-sm">
+              <h3 className="font-semibold">Vista previa en tiempo real</h3>
+              <p className="text-sm text-muted-foreground">Visualiza cambios mientras editas</p>
+            </div>
+            <div className="p-4 border rounded-lg shadow-sm">
+              <h3 className="font-semibold">API headless</h3>
+              <p className="text-sm text-muted-foreground">Conecta con cualquier frontend o aplicación</p>
+            </div>
+            <div className="p-4 border rounded-lg shadow-sm">
+              <h3 className="font-semibold">Gestión multilenguaje</h3>
+              <p className="text-sm text-muted-foreground">Administra contenido en varios idiomas</p>
+            </div>
+            <div className="p-4 border rounded-lg shadow-sm">
+              <h3 className="font-semibold">Multi-tenant</h3>
+              <p className="text-sm text-muted-foreground">Gestiona múltiples sitios desde una plataforma</p>
             </div>
           </div>
         </div>

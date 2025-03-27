@@ -221,6 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/templates/:id', authMiddleware, templatesService.updateBlockTemplate);
   app.delete('/api/templates/:id', authMiddleware, templatesService.deleteBlockTemplate);
   app.post('/api/templates/:id/usage', authMiddleware, templatesService.incrementTemplateUsage);
+  app.post('/api/templates/:id/use', authMiddleware, templatesService.useTemplate);
   
   // Smart Areas routes
   app.get('/api/smart-areas', authMiddleware, requireOrganizationContext, smartAreasService.getSmartAreas);

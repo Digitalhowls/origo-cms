@@ -160,3 +160,29 @@ export async function incrementTemplateUsage(req: Request, res: Response) {
     return res.status(500).json({ message: 'Error al incrementar uso de plantilla' });
   }
 }
+
+/**
+ * Usa una plantilla de bloque y la convierte en un bloque para la página actual.
+ * Incrementa el contador de uso de la plantilla.
+ */
+export async function useTemplate(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    // Verificar que la plantilla existe
+    const template = await storage.getBlockTemplate(Number(id));
+    if (!template) {
+      return res.status(404).json({ message: 'Plantilla no encontrada' });
+    }
+    
+    // Incrementar el contador de uso
+    await storage.incrementBlockTemplateUsage(Number(id));
+    
+    // Devolver el bloque contenido en la plantilla
+    // Esto permite al cliente usarlo directamente sin necesidad de modificarlo en el servidor
+    return res.status(200).json(template.block);
+  } catch (error) {
+    console.error('Error al usar plantilla de bloque:', error);
+    return res.status(500).json({ message: 'Error al usar plantilla de bloque' });
+  }
+}
