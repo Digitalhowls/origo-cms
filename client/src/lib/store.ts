@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { PageData, Block, BlockType } from '@shared/types';
+import { PageData, Block, BlockType, HistoryActionType } from '@shared/types';
+import { historyService } from './history-service';
 import { v4 as uuidv4 } from 'uuid';
 
 interface PageState {
@@ -23,57 +24,109 @@ export const usePageStore = create<PageState>((set) => ({
   
   setCurrentPage: (page) => set({ currentPage: page }),
   
-  updatePageTitle: (title) => set((state) => ({
-    currentPage: state.currentPage 
-      ? { ...state.currentPage, title } 
-      : null
-  })),
+  updatePageTitle: (title) => set((state) => {
+    if (!state.currentPage) return { currentPage: null };
+    
+    const updatedPage = { ...state.currentPage, title };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.UPDATE_PAGE_META,
+      'Título de página actualizado'
+    );
+    
+    return { currentPage: updatedPage };
+  }),
   
-  updatePageSlug: (slug) => set((state) => ({
-    currentPage: state.currentPage 
-      ? { ...state.currentPage, slug } 
-      : null
-  })),
+  updatePageSlug: (slug) => set((state) => {
+    if (!state.currentPage) return { currentPage: null };
+    
+    const updatedPage = { ...state.currentPage, slug };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.UPDATE_PAGE_META,
+      'URL de página actualizada'
+    );
+    
+    return { currentPage: updatedPage };
+  }),
   
-  updatePageStatus: (status) => set((state) => ({
-    currentPage: state.currentPage 
-      ? { ...state.currentPage, status } 
-      : null
-  })),
+  updatePageStatus: (status) => set((state) => {
+    if (!state.currentPage) return { currentPage: null };
+    
+    const updatedPage = { ...state.currentPage, status };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.UPDATE_PAGE_META,
+      'Estado de página actualizado'
+    );
+    
+    return { currentPage: updatedPage };
+  }),
   
   addBlock: (block) => set((state) => {
     if (!state.currentPage) return { currentPage: null };
     
-    return {
-      currentPage: {
-        ...state.currentPage,
-        blocks: [...(state.currentPage.blocks || []), block],
-      }
+    const updatedPage = {
+      ...state.currentPage,
+      blocks: [...(state.currentPage.blocks || []), block],
     };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.ADD_BLOCK,
+      `Bloque ${block.type} añadido`
+    );
+    
+    return { currentPage: updatedPage };
   }),
   
   updateBlock: (updatedBlock) => set((state) => {
     if (!state.currentPage) return { currentPage: null };
     
-    return {
-      currentPage: {
-        ...state.currentPage,
-        blocks: state.currentPage.blocks.map((block) => 
-          block.id === updatedBlock.id ? updatedBlock : block
-        ),
-      }
+    const updatedPage = {
+      ...state.currentPage,
+      blocks: state.currentPage.blocks.map((block) => 
+        block.id === updatedBlock.id ? updatedBlock : block
+      ),
     };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.UPDATE_BLOCK,
+      `Bloque ${updatedBlock.type} actualizado`
+    );
+    
+    return { currentPage: updatedPage };
   }),
   
   removeBlock: (blockId) => set((state) => {
     if (!state.currentPage) return { currentPage: null };
     
-    return {
-      currentPage: {
-        ...state.currentPage,
-        blocks: state.currentPage.blocks.filter((block) => block.id !== blockId),
-      }
+    // Obtenemos el bloque que será eliminado para registrar su tipo en el historial
+    const blockToRemove = state.currentPage.blocks.find(block => block.id === blockId);
+    if (!blockToRemove) return { currentPage: state.currentPage };
+    
+    const updatedPage = {
+      ...state.currentPage,
+      blocks: state.currentPage.blocks.filter((block) => block.id !== blockId),
     };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.REMOVE_BLOCK,
+      `Bloque ${blockToRemove.type} eliminado`
+    );
+    
+    return { currentPage: updatedPage };
   }),
   
   moveBlockUp: (blockId) => set((state) => {
@@ -87,12 +140,19 @@ export const usePageStore = create<PageState>((set) => ({
     // Swap with previous block
     [blocks[index - 1], blocks[index]] = [blocks[index], blocks[index - 1]];
     
-    return {
-      currentPage: {
-        ...state.currentPage,
-        blocks,
-      }
+    const updatedPage = {
+      ...state.currentPage,
+      blocks,
     };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.MOVE_BLOCK,
+      `Bloque ${blocks[index-1].type} movido hacia arriba`
+    );
+    
+    return { currentPage: updatedPage };
   }),
   
   moveBlockDown: (blockId) => set((state) => {
@@ -108,12 +168,19 @@ export const usePageStore = create<PageState>((set) => ({
     // Swap with next block
     [blocks[index], blocks[index + 1]] = [blocks[index + 1], blocks[index]];
     
-    return {
-      currentPage: {
-        ...state.currentPage,
-        blocks,
-      }
+    const updatedPage = {
+      ...state.currentPage,
+      blocks,
     };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.MOVE_BLOCK,
+      `Bloque ${blocks[index+1].type} movido hacia abajo`
+    );
+    
+    return { currentPage: updatedPage };
   }),
   
   duplicateBlock: (blockId) => set((state) => {
@@ -134,12 +201,19 @@ export const usePageStore = create<PageState>((set) => ({
     // Insert duplicated block after the original
     blocks.splice(index + 1, 0, duplicatedBlock);
     
-    return {
-      currentPage: {
-        ...state.currentPage,
-        blocks,
-      }
+    const updatedPage = {
+      ...state.currentPage,
+      blocks,
     };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.ADD_BLOCK,
+      `Bloque ${duplicatedBlock.type} duplicado`
+    );
+    
+    return { currentPage: updatedPage };
   }),
   
   // Reordenar bloques durante el arrastre y soltar
@@ -158,24 +232,38 @@ export const usePageStore = create<PageState>((set) => ({
     const [movedBlock] = blocks.splice(activeIndex, 1);
     blocks.splice(overIndex, 0, movedBlock);
     
-    return {
-      currentPage: {
-        ...state.currentPage,
-        blocks,
-      }
+    const updatedPage = {
+      ...state.currentPage,
+      blocks,
     };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.MOVE_BLOCK,
+      `Bloques reordenados por arrastre`
+    );
+    
+    return { currentPage: updatedPage };
   }),
   
   // Establecer un nuevo orden completo de bloques
   setBlocksOrder: (blocks) => set((state) => {
     if (!state.currentPage) return { currentPage: null };
     
-    return {
-      currentPage: {
-        ...state.currentPage,
-        blocks,
-      }
+    const updatedPage = {
+      ...state.currentPage,
+      blocks,
     };
+    
+    // Registrar cambio en historial
+    historyService.addEntry(
+      updatedPage,
+      HistoryActionType.MOVE_BLOCK,
+      `Orden de bloques actualizado`
+    );
+    
+    return { currentPage: updatedPage };
   }),
 }));
 

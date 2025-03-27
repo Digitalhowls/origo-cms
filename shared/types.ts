@@ -114,6 +114,28 @@ export interface PageData {
     metaDescription?: string;
     ogImage?: string;
   };
+  lastModified?: string; // Fecha de última modificación
+}
+
+// History Related Types
+export interface HistoryEntry {
+  id: string;
+  timestamp: string;
+  label: string;
+  state: PageData;
+  type: HistoryActionType;
+}
+
+export enum HistoryActionType {
+  INITIAL = 'initial',
+  ADD_BLOCK = 'add_block',
+  UPDATE_BLOCK = 'update_block',
+  REMOVE_BLOCK = 'remove_block',
+  MOVE_BLOCK = 'move_block',
+  UPDATE_PAGE_META = 'update_page_meta',
+  SAVED_SNAPSHOT = 'saved_snapshot',
+  IMPORTED = 'imported',
+  AUTO_SAVED = 'auto_saved'
 }
 
 // Media Types

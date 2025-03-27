@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Check, GripVertical, X, Split, RefreshCw } from 'lucide-react';
+import { Eye, Check, GripVertical, X, Split, RefreshCw, History } from 'lucide-react';
 import { usePageStore } from '@/lib/store';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { PageData, Block, BlockType } from '@shared/types';
+import { PageData, Block, BlockType, HistoryActionType } from '@shared/types';
 import HeaderBlock from './blocks/HeaderBlock';
 import FeaturesBlock from './blocks/FeaturesBlock';
 import TextMediaBlock from './blocks/TextMediaBlock';
@@ -19,6 +19,8 @@ import TableBlock from './blocks/TableBlock';
 import GalleryBlock from './blocks/GalleryBlock';
 import SortableBlockWrapper from './SortableBlockWrapper';
 import { PreviewContainer } from './preview';
+import HistoryPanel from './HistoryPanel';
+import { historyService } from '@/lib/history-service';
 import { v4 as uuidv4 } from 'uuid';
 import { TransitionList, AOSElement } from '@/lib/animation-service';
 import { 
@@ -146,13 +148,20 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   useEffect(() => {
     if (pageId && pageData) {
       setCurrentPage(pageData as PageData);
+      
+      // Inicializar el historial de versiones con la página cargada
+      historyService.init(pageData as PageData);
     } else if (!pageId) {
-      setCurrentPage({
+      const newPage = {
         title: 'Nueva página',
         slug: 'nueva-pagina',
         status: 'draft',
         blocks: [],
-      });
+      };
+      setCurrentPage(newPage);
+      
+      // Inicializar el historial de versiones con la nueva página
+      historyService.init(newPage);
     }
   }, [pageId, pageData, setCurrentPage]);
 
