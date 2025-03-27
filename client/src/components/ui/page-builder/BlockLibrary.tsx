@@ -144,6 +144,71 @@ const blockTemplates: BlockTemplate[] = [
     },
   },
   {
+    type: BlockType.GALLERY,
+    title: 'Galería',
+    description: 'Muestra colecciones de imágenes en distintos formatos: carrusel, grid o masonry',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+    defaultContent: {},
+    defaultSettings: {
+      spacing: {
+        marginTop: 10,
+        marginBottom: 10,
+      },
+      appearance: {
+        textColor: '#1F2937',
+        backgroundColor: 'white',
+      },
+    },
+    data: {
+      title: 'Galería de Imágenes',
+      description: 'Explora nuestra colección de imágenes',
+      images: [
+        {
+          id: uuidv4(),
+          url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1000',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=200',
+          title: 'Producto Premium',
+          caption: 'Diseño elegante y funcional',
+          altText: 'Imagen de producto premium'
+        },
+        {
+          id: uuidv4(),
+          url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1000',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200',
+          title: 'Tecnología',
+          caption: 'Soluciones innovadoras',
+          altText: 'Imagen de tecnología moderna'
+        },
+        {
+          id: uuidv4(),
+          url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000',
+          thumbnailUrl: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=200',
+          title: 'Estilo',
+          caption: 'Diseño atemporal',
+          altText: 'Imagen de producto estilizado'
+        }
+      ],
+      settings: {
+        style: 'basic',
+        autoplay: true,
+        autoplaySpeed: 3000,
+        showDots: true,
+        showArrows: true,
+        infinite: true,
+        enableLightbox: true,
+        enableCaptions: true,
+        enableFullscreen: false,
+        aspectRatio: '16:9',
+        animation: 'slide',
+        imgFit: 'cover'
+      }
+    },
+  },
+  {
     type: BlockType.TABS,
     title: 'Pestañas',
     description: 'Organiza contenido en pestañas navegables con diferentes estilos',

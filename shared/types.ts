@@ -28,6 +28,15 @@ export interface Block {
       cells: Record<string, string | number | boolean>;
       isHighlighted?: boolean;
     }>;
+    // Para el bloque de galería
+    images?: Array<{
+      id: string;
+      url: string;
+      thumbnailUrl?: string;
+      title?: string;
+      caption?: string;
+      altText?: string;
+    }>;
     settings?: {
       // Estilos comunes y configuraciones para todos los bloques
       style?: 'basic' | 'bordered' | 'shadowed' | 'faq' | 'default' | 'boxed' | 'underline' | 'pills' | 'minimal' | 'striped' | 'compact';
@@ -56,6 +65,19 @@ export interface Block {
       showAlternatingRows?: boolean;
       tableWidth?: 'auto' | 'full';
       captionPosition?: 'top' | 'bottom';
+      
+      // Configuraciones específicas para el bloque de galería
+      autoplay?: boolean;
+      autoplaySpeed?: number;
+      showDots?: boolean;
+      showArrows?: boolean;
+      infinite?: boolean;
+      enableLightbox?: boolean;
+      enableCaptions?: boolean;
+      enableFullscreen?: boolean;
+      aspectRatio?: '1:1' | '4:3' | '16:9' | 'auto';
+      animation?: 'slide' | 'fade' | 'zoom';
+      imgFit?: 'cover' | 'contain' | 'fill';
     };
   };
 }

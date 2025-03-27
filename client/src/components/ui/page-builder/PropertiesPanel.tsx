@@ -95,9 +95,233 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ blockId, onClose }) =
     return null;
   }
 
+  // Renderizar propiedades de la galería
+  const renderGalleryProperties = () => {
+    return (
+      <>
+        <div>
+          <Label htmlFor="gallery-title">Título de la galería</Label>
+          <Input
+            id="gallery-title"
+            value={block.data?.title || ''}
+            onChange={(e) => handleDataChange(['title'], e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="gallery-description">Descripción</Label>
+          <Textarea
+            id="gallery-description"
+            value={block.data?.description || ''}
+            onChange={(e) => handleDataChange(['description'], e.target.value)}
+            className="mt-1"
+          />
+        </div>
+        <Separator className="my-4" />
+        <div className="mt-4">
+          <Label htmlFor="gallery-style">Estilo</Label>
+          <Select
+            value={block.data?.settings?.style || 'basic'}
+            onValueChange={(value) => handleDataChange(['settings', 'style'], value)}
+          >
+            <SelectTrigger id="gallery-style" className="mt-1">
+              <SelectValue placeholder="Seleccionar estilo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="basic">Básico (Carrusel)</SelectItem>
+              <SelectItem value="thumbnails">Con miniaturas</SelectItem>
+              <SelectItem value="grid">Cuadrícula</SelectItem>
+              <SelectItem value="masonry">Masonry</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.autoplay || false}
+                onChange={(e) => handleDataChange(['settings', 'autoplay'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Reproducción automática
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.showDots || false}
+                onChange={(e) => handleDataChange(['settings', 'showDots'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Mostrar puntos
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.showArrows || false}
+                onChange={(e) => handleDataChange(['settings', 'showArrows'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Mostrar flechas
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.infinite || false}
+                onChange={(e) => handleDataChange(['settings', 'infinite'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Carrusel infinito
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.enableLightbox || false}
+                onChange={(e) => handleDataChange(['settings', 'enableLightbox'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Habilitar lightbox
+            </Label>
+          </div>
+          <div>
+            <Label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={block.data?.settings?.enableCaptions || false}
+                onChange={(e) => handleDataChange(['settings', 'enableCaptions'], e.target.checked)}
+                className="mr-2 h-4 w-4"
+              />
+              Mostrar pies de foto
+            </Label>
+          </div>
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="gallery-aspectratio">Relación de aspecto</Label>
+          <Select
+            value={block.data?.settings?.aspectRatio || '16:9'}
+            onValueChange={(value) => handleDataChange(['settings', 'aspectRatio'], value)}
+          >
+            <SelectTrigger id="gallery-aspectratio" className="mt-1">
+              <SelectValue placeholder="Seleccionar relación" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1:1">Cuadrado (1:1)</SelectItem>
+              <SelectItem value="4:3">Estándar (4:3)</SelectItem>
+              <SelectItem value="16:9">Panorámico (16:9)</SelectItem>
+              <SelectItem value="auto">Automático</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="gallery-animation">Tipo de animación</Label>
+          <Select
+            value={block.data?.settings?.animation || 'slide'}
+            onValueChange={(value) => handleDataChange(['settings', 'animation'], value)}
+          >
+            <SelectTrigger id="gallery-animation" className="mt-1">
+              <SelectValue placeholder="Seleccionar animación" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="slide">Deslizar</SelectItem>
+              <SelectItem value="fade">Desvanecer</SelectItem>
+              <SelectItem value="zoom">Zoom</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4">
+          <Label htmlFor="gallery-imgfit">Ajuste de imagen</Label>
+          <Select
+            value={block.data?.settings?.imgFit || 'cover'}
+            onValueChange={(value) => handleDataChange(['settings', 'imgFit'], value)}
+          >
+            <SelectTrigger id="gallery-imgfit" className="mt-1">
+              <SelectValue placeholder="Seleccionar ajuste" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cover">Cubrir (recortar)</SelectItem>
+              <SelectItem value="contain">Contener (completa)</SelectItem>
+              <SelectItem value="fill">Llenar (estirar)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Separator className="my-4" />
+        <div className="mt-4">
+          <Label className="block mb-2">Imágenes de la galería</Label>
+          <div className="space-y-4 max-h-60 overflow-y-auto p-2 border rounded">
+            {block.data?.images?.map((image: any, index: number) => (
+              <div key={image.id} className="flex items-center space-x-3 p-2 bg-gray-50 rounded">
+                {image.thumbnailUrl || image.url ? (
+                  <img 
+                    src={image.thumbnailUrl || image.url} 
+                    alt={image.title} 
+                    className="w-12 h-12 object-cover rounded" 
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                    <span className="text-gray-400">Sin imagen</span>
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{image.title || `Imagen ${index + 1}`}</p>
+                  <p className="text-xs text-gray-500 truncate">{image.caption || 'Sin descripción'}</p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-destructive" 
+                  onClick={() => {
+                    const updatedImages = [...(block.data?.images || [])];
+                    updatedImages.splice(index, 1);
+                    handleDataChange(['images'], updatedImages);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            {(!block.data?.images || block.data.images.length === 0) && (
+              <p className="text-sm text-gray-500 text-center py-4">No hay imágenes en la galería</p>
+            )}
+          </div>
+          <div className="mt-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full"
+              onClick={() => {
+                const newImage = {
+                  id: Math.random().toString(36).substring(2, 11),
+                  url: 'https://images.unsplash.com/photo-1682685797507-d44d838b0ac7?q=80&w=1000',
+                  thumbnailUrl: 'https://images.unsplash.com/photo-1682685797507-d44d838b0ac7?q=80&w=200',
+                  title: `Nueva imagen ${(block.data?.images?.length || 0) + 1}`,
+                  caption: '',
+                  altText: ''
+                };
+                const updatedImages = [...(block.data?.images || []), newImage];
+                handleDataChange(['images'], updatedImages);
+              }}
+            >
+              Añadir imagen
+            </Button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   // Render different property fields based on block type
   const renderBlockProperties = () => {
     switch (block.type) {
+      case BlockType.GALLERY:
+        return renderGalleryProperties();
       case BlockType.HEADER:
         return (
           <>

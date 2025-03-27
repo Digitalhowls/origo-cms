@@ -16,6 +16,7 @@ import TestimonialBlock from './blocks/TestimonialBlock';
 import AccordionBlock from './blocks/AccordionBlock';
 import TabsBlock from './blocks/TabsBlock';
 import TableBlock from './blocks/TableBlock';
+import GalleryBlock from './blocks/GalleryBlock';
 import SortableBlockWrapper from './SortableBlockWrapper';
 import { PreviewContainer } from './preview';
 import { v4 as uuidv4 } from 'uuid';
@@ -89,6 +90,13 @@ export const renderBlock = (block: Block, options?: { isPreview?: boolean; isSel
       break;
     case BlockType.TABLE:
       blockComponent = <TableBlock 
+        block={block} 
+        onClick={handleClick} 
+        isPreview={isPreview}
+      />;
+      break;
+    case BlockType.GALLERY:
+      blockComponent = <GalleryBlock 
         block={block} 
         onClick={handleClick} 
         isPreview={isPreview}
