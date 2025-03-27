@@ -7,6 +7,7 @@ import TextMediaBlock from '../blocks/TextMediaBlock';
 import TestimonialBlock from '../blocks/TestimonialBlock';
 import AccordionBlock from '../blocks/AccordionBlock';
 import TabsBlock from '../blocks/TabsBlock';
+import TableBlock from '../blocks/TableBlock';
 
 export interface PreviewRendererProps {
   blocks: Block[];
@@ -48,6 +49,8 @@ const PreviewRenderer: React.FC<PreviewRendererProps> = ({
         return <AccordionBlock block={block} onClick={handleClick} isPreview={true} />;
       case BlockType.TABS:
         return <TabsBlock block={block} onClick={handleClick} isPreview={true} />;
+      case BlockType.TABLE:
+        return <TableBlock block={block} onClick={handleClick} isPreview={true} />;
       default:
         return <div>Bloque no soportado: {block.type}</div>;
     }

@@ -18,6 +18,132 @@ interface BlockTemplate {
 
 const blockTemplates: BlockTemplate[] = [
   {
+    type: BlockType.TABLE,
+    title: 'Tabla',
+    description: 'Muestra información tabular con opciones de formato y funcionalidades',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18M3 6h18M3 18h18" />
+      </svg>
+    ),
+    defaultContent: {},
+    defaultSettings: {
+      spacing: {
+        marginTop: 10,
+        marginBottom: 10,
+      },
+      appearance: {
+        textColor: '#1F2937',
+        backgroundColor: 'white',
+      },
+    },
+    data: {
+      title: 'Tabla de Datos',
+      description: 'Información organizada en formato tabular',
+      headers: [
+        {
+          id: uuidv4(),
+          label: 'Nombre',
+          key: 'name',
+          align: 'left',
+          width: '30%',
+          sortable: true
+        },
+        {
+          id: uuidv4(),
+          label: 'Categoría',
+          key: 'category',
+          align: 'center',
+          sortable: true
+        },
+        {
+          id: uuidv4(),
+          label: 'Precio',
+          key: 'price',
+          align: 'right',
+          sortable: true
+        },
+        {
+          id: uuidv4(),
+          label: 'En Stock',
+          key: 'inStock',
+          align: 'center',
+          sortable: true
+        }
+      ],
+      rows: [
+        {
+          id: uuidv4(),
+          cells: {
+            name: 'Portátil XPS 15',
+            category: 'Electrónica',
+            price: 1299.99,
+            inStock: true
+          }
+        },
+        {
+          id: uuidv4(),
+          cells: {
+            name: 'Monitor UltraSharp 27"',
+            category: 'Periféricos',
+            price: 499.50,
+            inStock: true
+          }
+        },
+        {
+          id: uuidv4(),
+          cells: {
+            name: 'Teclado Mecánico Pro',
+            category: 'Periféricos',
+            price: 129.99,
+            inStock: false
+          },
+          isHighlighted: true
+        },
+        {
+          id: uuidv4(),
+          cells: {
+            name: 'Ratón Ergonómico',
+            category: 'Periféricos',
+            price: 59.99,
+            inStock: true
+          }
+        },
+        {
+          id: uuidv4(),
+          cells: {
+            name: 'Impresora Láser Color',
+            category: 'Oficina',
+            price: 349.99,
+            inStock: true
+          }
+        },
+        {
+          id: uuidv4(),
+          cells: {
+            name: 'Disco SSD 1TB',
+            category: 'Almacenamiento',
+            price: 129.99,
+            inStock: true
+          }
+        }
+      ],
+      settings: {
+        style: 'bordered',
+        isResponsive: true,
+        hasFixedHeader: true,
+        enableSorting: true,
+        enablePagination: true,
+        rowsPerPage: 5,
+        enableSearch: true,
+        enableRowHighlight: true,
+        showAlternatingRows: true,
+        tableWidth: 'full',
+        captionPosition: 'bottom'
+      }
+    },
+  },
+  {
     type: BlockType.TABS,
     title: 'Pestañas',
     description: 'Organiza contenido en pestañas navegables con diferentes estilos',

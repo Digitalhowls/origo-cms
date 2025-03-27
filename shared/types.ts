@@ -14,9 +14,23 @@ export interface Block {
       isOpen?: boolean;
       icon?: string;  // Para pestañas con ícono
     }>;
+    // Para el bloque de tabla
+    headers?: Array<{
+      id: string;
+      label: string;
+      key: string;
+      align?: 'left' | 'center' | 'right';
+      width?: string;
+      sortable?: boolean;
+    }>;
+    rows?: Array<{
+      id: string;
+      cells: Record<string, string | number | boolean>;
+      isHighlighted?: boolean;
+    }>;
     settings?: {
       // Estilos comunes y configuraciones para todos los bloques
-      style?: 'basic' | 'bordered' | 'shadowed' | 'faq' | 'default' | 'boxed' | 'underline' | 'pills' | 'minimal';
+      style?: 'basic' | 'bordered' | 'shadowed' | 'faq' | 'default' | 'boxed' | 'underline' | 'pills' | 'minimal' | 'striped' | 'compact';
       
       // Configuraciones específicas para el bloque acordeón
       allowMultiple?: boolean;
@@ -30,6 +44,18 @@ export interface Block {
       showIcons?: boolean;
       fullWidth?: boolean;
       animationType?: 'fade' | 'slide' | 'scale' | 'none';
+      
+      // Configuraciones específicas para el bloque de tabla
+      isResponsive?: boolean;
+      hasFixedHeader?: boolean;
+      enableSorting?: boolean;
+      enablePagination?: boolean;
+      rowsPerPage?: number;
+      enableSearch?: boolean;
+      enableRowHighlight?: boolean;
+      showAlternatingRows?: boolean;
+      tableWidth?: 'auto' | 'full';
+      captionPosition?: 'top' | 'bottom';
     };
   };
 }
@@ -52,6 +78,7 @@ export enum BlockType {
   STATS = 'stats',
   ACCORDION = 'accordion',
   TABS = 'tabs',
+  TABLE = 'table',
 }
 
 export interface PageData {
