@@ -399,3 +399,33 @@ export const insertBlockTemplateSchema = createInsertSchema(blockTemplates).omit
 });
 export type BlockTemplate = typeof blockTemplates.$inferSelect;
 export type InsertBlockTemplate = z.infer<typeof insertBlockTemplateSchema>;
+
+// Smart Areas (componentes globales reutilizables como headers, footers, etc.)
+export const smartAreas = pgTable("smart_areas", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull().default("component"), // component, header, footer, sidebar
+  content: jsonb("content").notNull(), // Contenido del área inteligente (bloques)
+  isGlobal: boolean("is_global").default(false), // Si es true, aparece en todas las páginas del tipo correspondiente
+  displayConditions: jsonb("display_conditions").$type<{
+    pageTypes?: string[]; // Tipos de página donde se muestra (all, home, blog, etc.)
+    specificPages?: number[]; // IDs de páginas específicas donde se muestra
+    excludedPages?: number[]; // IDs de páginas donde no se muestra
+    devices?: string[]; // Dispositivos donde se muestra (desktop, tablet, mobile)
+    userRoles?: string[]; // Roles de usuario a los que se muestra
+  }>(),
+  status: text("status").default("draft").notNull(),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  createdById: integer("created_by_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSmartAreaSchema = createInsertSchema(smartAreas).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type SmartArea = typeof smartAreas.$inferSelect;
+export type InsertSmartArea = z.infer<typeof insertSmartAreaSchema>;

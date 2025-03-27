@@ -1,0 +1,69 @@
+<template>
+	<PageTemplate>
+		<h3>{{ i18n.__('Allowed Post types', 'zionbuilder') }}</h3>
+		<div class="znpb-admin-posts-wrapper">
+			<div v-for="post in dataSets.post_types" :key="post.id" class="znpb-admin-post-types-tab">
+				<span class="znpb-admin-post-types-tab__title">{{ post.name }}</span>
+				<InputCheckbox
+					v-model="allowedPostTypes"
+					class="znpb-admin-checkbox-wrapper"
+					:rounded="true"
+					:option-value="post.id"
+				/>
+			</div>
+		</div>
+		<template #right>
+			<p class="znpb-admin-info-p">
+				{{ i18n.__('You can set from here the allowed post types', 'zionbuilder') }}
+			</p>
+		</template>
+	</PageTemplate>
+</template>
+
+<script setup lang="ts">
+import * as i18n from '@wordpress/i18n';
+import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
+const { useBuilderOptionsStore, useDataSetsStore } = window.zb.store;
+
+const { dataSets } = storeToRefs(useDataSetsStore());
+const { getOptionValue, updateOptionValue } = useBuilderOptionsStore();
+
+const allowedPostTypes = computed({
+	get: () => getOptionValue('allowed_post_types'),
+	set: newValue => updateOptionValue('allowed_post_types', newValue),
+});
+</script>
+<style lang="scss">
+@import '/@/common/scss/_mixins.scss';
+
+.znpb-admin-posts-wrapper {
+	display: grid;
+
+	grid-column-gap: 20px;
+	grid-template-columns: 1fr 1fr;
+
+	@media (max-width: 991px) {
+		grid-template-columns: 1fr;
+	}
+}
+
+.znpb-admin-post-types-tab {
+	@extend %list-item-helper;
+	padding: 17px 20px;
+
+	&__title {
+		color: var(--zb-surface-text-active-color);
+		font-weight: 500;
+	}
+
+	.znpb-checkbox-wrapper {
+		margin: 0;
+	}
+}
+
+.znpb-admin-checkbox-wrapper {
+	width: 24px;
+	height: 24px;
+}
+</style>

@@ -1,0 +1,13 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+parameters:
+    level: 5
+    inferPrivatePropertyTypeFromConstructor: true
+    checkMissingIterableValueType: false
+    bootstrapFiles:
+        - tests/phpstan/bootstrap.php
+    paths:
+        - zionbuilder.php
+        - includes/
+    scanFiles:
+        - vendor/woocommerce/action-scheduler/functions.php

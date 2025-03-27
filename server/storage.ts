@@ -17,7 +17,8 @@ import {
   userPermissions, type UserPermission, type InsertUserPermission,
   customRoles, type CustomRole, type InsertCustomRole,
   rolePermissions, type RolePermission, type InsertRolePermission,
-  blockTemplates, type BlockTemplate, type InsertBlockTemplate
+  blockTemplates, type BlockTemplate, type InsertBlockTemplate,
+  smartAreas, type SmartArea, type InsertSmartArea
 } from "@shared/schema";
 import { RolePermissions, CustomRoleDefinition } from "@shared/types";
 import { eq, like, and, or, desc, sql, asc } from "drizzle-orm";
@@ -126,6 +127,14 @@ export interface IStorage {
   updateBlockTemplate(id: number, templateData: Partial<BlockTemplate>): Promise<BlockTemplate | undefined>;
   deleteBlockTemplate(id: number): Promise<boolean>;
   incrementBlockTemplateUsage(id: number): Promise<boolean>;
+  
+  // Smart Areas methods
+  getSmartAreas(organizationId: number, options?: { type?: string, search?: string }): Promise<{ items: SmartArea[], totalItems: number }>;
+  getSmartArea(id: number): Promise<SmartArea | undefined>;
+  createSmartArea(smartArea: InsertSmartArea): Promise<SmartArea>;
+  updateSmartArea(id: number, smartAreaData: Partial<SmartArea>): Promise<SmartArea | undefined>;
+  deleteSmartArea(id: number): Promise<boolean>;
+  getGlobalSmartAreas(organizationId: number, options?: { pageId?: number, pageType?: string }): Promise<SmartArea[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1172,6 +1181,102 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return !!updatedTemplate;
+  }
+
+  // === Smart Areas methods ===
+  async getSmartAreas(organizationId: number, options?: { type?: string, search?: string }): Promise<{ items: SmartArea[], totalItems: number }> {
+    let query = db.select().from(smartAreas).where(eq(smartAreas.organizationId, organizationId));
+    
+    // Apply filters
+    if (options?.search) {
+      query = query.where(
+        or(
+          like(smartAreas.name, `%${options.search}%`),
+          like(smartAreas.description || '', `%${options.search}%`)
+        )
+      );
+    }
+    
+    if (options?.type && options.type !== 'all') {
+      query = query.where(eq(smartAreas.type, options.type));
+    }
+    
+    const items = await query.orderBy(desc(smartAreas.updatedAt));
+    
+    return {
+      items,
+      totalItems: items.length
+    };
+  }
+  
+  async getSmartArea(id: number): Promise<SmartArea | undefined> {
+    const [smartArea] = await db.select().from(smartAreas).where(eq(smartAreas.id, id));
+    return smartArea;
+  }
+  
+  async createSmartArea(smartAreaData: InsertSmartArea): Promise<SmartArea> {
+    const [smartArea] = await db.insert(smartAreas).values(smartAreaData).returning();
+    return smartArea;
+  }
+  
+  async updateSmartArea(id: number, smartAreaData: Partial<SmartArea>): Promise<SmartArea | undefined> {
+    const [updatedSmartArea] = await db
+      .update(smartAreas)
+      .set({ ...smartAreaData, updatedAt: new Date() })
+      .where(eq(smartAreas.id, id))
+      .returning();
+    return updatedSmartArea;
+  }
+  
+  async deleteSmartArea(id: number): Promise<boolean> {
+    const result = await db.delete(smartAreas).where(eq(smartAreas.id, id));
+    return !!result;
+  }
+  
+  async getGlobalSmartAreas(organizationId: number, options?: { pageId?: number, pageType?: string }): Promise<SmartArea[]> {
+    let query = db
+      .select()
+      .from(smartAreas)
+      .where(
+        and(
+          eq(smartAreas.organizationId, organizationId),
+          eq(smartAreas.isGlobal, true),
+          eq(smartAreas.status, "published")
+        )
+      );
+    
+    const smartAreas = await query;
+    
+    // Filtrar según las condiciones de visualización
+    return smartAreas.filter(area => {
+      // Si no hay condiciones de visualización, mostrar siempre
+      if (!area.displayConditions) return true;
+      
+      const conditions = area.displayConditions;
+      
+      // Verificar si hay páginas específicas y si la página actual está incluida
+      if (options?.pageId && conditions.specificPages?.length) {
+        if (!conditions.specificPages.includes(options.pageId)) {
+          return false;
+        }
+      }
+      
+      // Verificar si la página actual está excluida
+      if (options?.pageId && conditions.excludedPages?.length) {
+        if (conditions.excludedPages.includes(options.pageId)) {
+          return false;
+        }
+      }
+      
+      // Verificar el tipo de página
+      if (options?.pageType && conditions.pageTypes?.length) {
+        if (!conditions.pageTypes.includes('all') && !conditions.pageTypes.includes(options.pageType)) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
   }
 }
 

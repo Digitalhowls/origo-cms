@@ -1,0 +1,1 @@
+{"appName":"zionbuilder","outputDir":"dist","debug":true,"devScripts":{"znpb_editor":"//127.0.0.1:5173/src/main.js","gutenberg_integration":"//127.0.0.1:5173/src/gutenberg","znpb_frontend":"//127.0.0.1:5173/src/frontend-js/app.js"}}

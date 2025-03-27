@@ -1,0 +1,71 @@
+.zb-el-iconList {
+	display: flex;
+
+	&.-layout--row {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
+
+	&.-layout--column {
+		flex-direction: column;
+	}
+
+	&__item {
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+		padding: 10px;
+		text-decoration: none;
+
+		&Icon {
+			display: inline-flex;
+			justify-content: center;
+			align-items: center;
+			margin-right: 10px;
+			color: #006dd2;
+			font-size: 18px;
+			line-height: 1;
+
+			&:before {
+				width: 1em;
+				height: 1em;
+				text-align: center;
+			}
+		}
+
+		&--iconLeft .zb-el-iconList__item {
+			flex-direction: row;
+		}
+
+		&--iconRight {
+			.zb-el-iconList__item {
+				flex-direction: row-reverse;
+			}
+
+			.zb-el-iconList__itemIcon {
+				margin-right: 0;
+				margin-left: 10px;
+			}
+		}
+
+		&--iconTop {
+			.zb-el-iconList__item {
+				flex-direction: column;
+			}
+
+			.zb-el-iconList__itemIcon {
+				margin: 0;
+			}
+		}
+
+		&--iconBottom {
+			.zb-el-iconList__item {
+				flex-direction: column-reverse;
+			}
+
+			.zb-el-iconList__itemIcon {
+				margin: 0;
+			}
+		}
+	}
+}

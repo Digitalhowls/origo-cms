@@ -1,0 +1,28 @@
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# IDE
+.cache/
+Debug/
+debug/
+Release/
+release/
+.vscode/launch.json
+
+# Stats
+/stats/
+
+# Package managers
+.turbo/
+/composer.lock
+/vendor/
+/**/node_modules/
+
+# Build
+*.zip
+/dist/
+**/dist/

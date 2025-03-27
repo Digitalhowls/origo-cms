@@ -13,6 +13,8 @@ import * as permissionsService from './services/permissions.service';
 import * as rolesService from './services/roles.service';
 import * as tenantService from './services/tenant.service';
 import * as templatesService from './services/templates.service';
+import * as smartAreasService from './services/smart-areas.service';
+import * as exportImportService from './services/export-import.service';
 import { authMiddleware } from './middleware/auth.middleware';
 import { organizationContextMiddleware, requireOrganizationContext } from './middleware/organization.middleware';
 import { customDomainMiddleware } from './middleware/custom-domain.middleware';
@@ -218,6 +220,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/templates/:id', authMiddleware, templatesService.deleteBlockTemplate);
   app.post('/api/templates/:id/usage', authMiddleware, templatesService.incrementTemplateUsage);
   
+  // Smart Areas routes
+  app.get('/api/smart-areas', authMiddleware, requireOrganizationContext, smartAreasService.getSmartAreas);
+  app.get('/api/smart-areas/:id', authMiddleware, smartAreasService.getSmartArea);
+  app.post('/api/smart-areas', authMiddleware, requireOrganizationContext, validateResourceMiddleware('smartAreas'), smartAreasService.createSmartArea);
+  app.patch('/api/smart-areas/:id', authMiddleware, smartAreasService.updateSmartArea);
+  app.delete('/api/smart-areas/:id', authMiddleware, smartAreasService.deleteSmartArea);
+  app.get('/api/global-smart-areas', smartAreasService.getGlobalSmartAreas);
+  
+  // Export/Import routes
+  app.get('/api/export/:type/:id', authMiddleware, exportImportService.exportTemplate);
+  app.post('/api/import', authMiddleware, exportImportService.uploadZipMiddleware, exportImportService.importTemplate);
+
   // Create HTTP server
   const httpServer = createServer(app);
   
