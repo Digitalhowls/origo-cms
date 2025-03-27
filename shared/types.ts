@@ -295,6 +295,105 @@ export interface PermissionSet {
 }
 
 // Predefined permission sets for standard roles
+// Agrupaciones de recursos para la interfaz de usuario
+export const ResourceGroups = {
+  'Contenido': [Resource.PAGE, Resource.BLOG, Resource.COURSE],
+  'Medios': [Resource.MEDIA],
+  'Taxonomía': [Resource.CATEGORY, Resource.TAG],
+  'Usuarios': [Resource.USER, Resource.ORGANIZATION],
+  'Sistema': [Resource.SETTING, Resource.ANALYTICS, Resource.API_KEY]
+};
+
+// Etiquetas para los recursos (traducciones amigables)
+export const resourceLabels: Record<Resource, string> = {
+  [Resource.PAGE]: 'Páginas',
+  [Resource.BLOG]: 'Blog',
+  [Resource.MEDIA]: 'Medios',
+  [Resource.COURSE]: 'Cursos',
+  [Resource.USER]: 'Usuarios',
+  [Resource.ORGANIZATION]: 'Organización',
+  [Resource.SETTING]: 'Configuración',
+  [Resource.ANALYTICS]: 'Analíticas',
+  [Resource.API_KEY]: 'Claves API',
+  [Resource.CATEGORY]: 'Categorías',
+  [Resource.TAG]: 'Etiquetas'
+};
+
+// Etiquetas para las acciones (traducciones amigables)
+export const actionLabels: Record<string, string> = {
+  // Acciones genéricas
+  'create': 'Crear',
+  'read': 'Ver',
+  'update': 'Editar',
+  'delete': 'Eliminar',
+  'publish': 'Publicar',
+  'unpublish': 'Despublicar',
+  'invite': 'Invitar',
+  'manage': 'Gestionar',
+  'admin': 'Administrar',
+  
+  // Acciones específicas con descripciones personalizadas
+  'page.create': 'Crear páginas',
+  'page.read': 'Ver páginas',
+  'page.update': 'Editar páginas',
+  'page.delete': 'Eliminar páginas',
+  'page.publish': 'Publicar páginas',
+  'page.unpublish': 'Despublicar páginas',
+
+  'blog.create': 'Crear artículos',
+  'blog.read': 'Ver artículos',
+  'blog.update': 'Editar artículos',
+  'blog.delete': 'Eliminar artículos',
+  'blog.publish': 'Publicar artículos',
+  'blog.unpublish': 'Despublicar artículos',
+
+  'media.create': 'Subir archivos',
+  'media.read': 'Ver archivos',
+  'media.update': 'Editar archivos',
+  'media.delete': 'Eliminar archivos',
+
+  'course.create': 'Crear cursos',
+  'course.read': 'Ver cursos',
+  'course.update': 'Editar cursos',
+  'course.delete': 'Eliminar cursos',
+  'course.publish': 'Publicar cursos',
+  'course.unpublish': 'Despublicar cursos',
+
+  'user.create': 'Crear usuarios',
+  'user.read': 'Ver usuarios',
+  'user.update': 'Editar usuarios',
+  'user.delete': 'Eliminar usuarios',
+  'user.invite': 'Invitar usuarios',
+  'user.manage': 'Gestionar permisos',
+
+  'organization.read': 'Ver detalles de organización',
+  'organization.update': 'Editar detalles de organización',
+  'organization.manage': 'Gestionar organización',
+  'organization.admin': 'Configuración avanzada',
+
+  'setting.read': 'Ver configuración',
+  'setting.update': 'Modificar configuración',
+  'setting.manage': 'Gestionar configuración',
+
+  'analytics.read': 'Ver analíticas',
+  'analytics.manage': 'Gestionar analíticas',
+
+  'api_key.create': 'Crear claves API',
+  'api_key.read': 'Ver claves API',
+  'api_key.update': 'Modificar claves API',
+  'api_key.delete': 'Eliminar claves API',
+
+  'category.create': 'Crear categorías',
+  'category.read': 'Ver categorías',
+  'category.update': 'Editar categorías',
+  'category.delete': 'Eliminar categorías',
+
+  'tag.create': 'Crear etiquetas',
+  'tag.read': 'Ver etiquetas',
+  'tag.update': 'Editar etiquetas',
+  'tag.delete': 'Eliminar etiquetas',
+};
+
 export const RolePermissions: Record<SystemRole, PermissionSet> = {
   superadmin: {
     '*': true, // Wildcard for all permissions
