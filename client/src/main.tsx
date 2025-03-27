@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import "./styles/global-block-styles.css";
 import { initializeAnimations } from "./lib/animation-service";
 
 // Función para verificar y configurar el entorno de cookies

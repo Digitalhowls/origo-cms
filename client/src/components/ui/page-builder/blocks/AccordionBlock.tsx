@@ -16,6 +16,10 @@ export default AccordionBlock;
 
 // Función para crear un bloque de acordeón
 export function createAccordionBlock(): Block {
+  // Usamos useBlockStyles fuera del componente para acceder a las configuraciones por defecto
+  // No es óptimo, pero para mantener la estructura actual
+  const defaultAccordionStyle = 'default';
+
   return {
     id: uuidv4(),
     type: BlockType.ACCORDION,
@@ -25,7 +29,7 @@ export function createAccordionBlock(): Block {
       title: 'Preguntas frecuentes',
       description: 'Respuestas a las preguntas más comunes',
       settings: {
-        style: 'basic',
+        style: defaultAccordionStyle,
         allowMultiple: true,
         showControls: true
       },
@@ -183,74 +187,76 @@ export function AccordionBlock({
   }
 
   return (
-    <div className={`origo-block origo-block-style-${style} ${isSelected ? 'is-selected' : ''}`}>
-      {/* Título y descripción opcional del bloque */}
-      {block.data?.title && (
-        <h3 className="text-xl font-semibold mb-3">{block.data.title}</h3>
-      )}
-      {block.data?.description && (
-        <p className="text-muted mb-4">{block.data.description}</p>
-      )}
-      
-      {/* Controles para expandir/contraer todo */}
-      {showControls && (
-        <div className="flex justify-end mb-3 gap-2">
-          <button 
-            onClick={handleExpandAll}
-            className="origo-button origo-button-outline text-sm"
-          >
-            <PlusCircle className="h-4 w-4 mr-1" />
-            Expandir todo
-          </button>
-          <button 
-            onClick={handleCollapseAll}
-            className="origo-button origo-button-outline text-sm"
-          >
-            <MinusCircle className="h-4 w-4 mr-1" />
-            Contraer todo
-          </button>
-        </div>
-      )}
-      
-      {/* Componente Acordeón */}
-      <div className={`origo-accordion origo-accordion-style-${style}`}>
-        {allowMultiple ? (
-          <Accordion 
-            type="multiple"
-            value={openItems}
-            onValueChange={handleValueChange}
-            className="w-full origo-accordion"
-          >
-            {items.map((item) => (
-              <AccordionItem key={item.id} value={item.id} className="origo-accordion-item">
-                <AccordionTrigger className="origo-accordion-header">
-                  {item.title}
-                </AccordionTrigger>
-                <AccordionContent className="origo-accordion-content">
-                  <div dangerouslySetInnerHTML={{ __html: item.content }} />
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        ) : (
-          <Accordion 
-            type="single"
-            value={openItems.length > 0 ? openItems[0] : ''}
-            onValueChange={(val: string) => handleValueChange([val])}
-            className="w-full origo-accordion"
-          >
-            {items.map((item) => (
-              <AccordionItem key={item.id} value={item.id} className="origo-accordion-item">
-                <AccordionTrigger className="origo-accordion-header">
-                  {item.title}
-                </AccordionTrigger>
-                <AccordionContent className="origo-accordion-content">
-                  <div dangerouslySetInnerHTML={{ __html: item.content }} />
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+    <div className={`block block-style-${styles.defaultBlockStyle} ${isSelected ? 'is-selected' : ''}`}>
+      <div className="block-inner">
+        {/* Título y descripción opcional del bloque */}
+        {block.data?.title && (
+          <h3 className="text-xl font-semibold mb-3">{block.data.title}</h3>
         )}
+        {block.data?.description && (
+          <p className="text-muted-foreground mb-4">{block.data.description}</p>
+        )}
+        
+        {/* Controles para expandir/contraer todo */}
+        {showControls && (
+          <div className="flex justify-end mb-3 gap-2">
+            <button 
+              onClick={handleExpandAll}
+              className="button-style-outline text-sm px-2 py-1 rounded flex items-center"
+            >
+              <PlusCircle className="h-4 w-4 mr-1" />
+              Expandir todo
+            </button>
+            <button 
+              onClick={handleCollapseAll}
+              className="button-style-outline text-sm px-2 py-1 rounded flex items-center"
+            >
+              <MinusCircle className="h-4 w-4 mr-1" />
+              Contraer todo
+            </button>
+          </div>
+        )}
+        
+        {/* Componente Acordeón */}
+        <div className={`accordion-style-${style}`}>
+          {allowMultiple ? (
+            <Accordion 
+              type="multiple"
+              value={openItems}
+              onValueChange={handleValueChange}
+              className="w-full"
+            >
+              {items.map((item) => (
+                <AccordionItem key={item.id} value={item.id} className="accordion-item">
+                  <AccordionTrigger className="accordion-trigger">
+                    {item.title}
+                  </AccordionTrigger>
+                  <AccordionContent className="accordion-content block-elements">
+                    <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          ) : (
+            <Accordion 
+              type="single"
+              value={openItems.length > 0 ? openItems[0] : ''}
+              onValueChange={(val: string) => handleValueChange([val])}
+              className="w-full"
+            >
+              {items.map((item) => (
+                <AccordionItem key={item.id} value={item.id} className="accordion-item">
+                  <AccordionTrigger className="accordion-trigger">
+                    {item.title}
+                  </AccordionTrigger>
+                  <AccordionContent className="accordion-content block-elements">
+                    <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </div>
       </div>
     </div>
   );
