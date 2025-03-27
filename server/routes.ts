@@ -12,6 +12,7 @@ import * as organizationService from './services/organization.service';
 import * as permissionsService from './services/permissions.service';
 import * as rolesService from './services/roles.service';
 import * as tenantService from './services/tenant.service';
+import * as templatesService from './services/templates.service';
 import { authMiddleware } from './middleware/auth.middleware';
 import { organizationContextMiddleware, requireOrganizationContext } from './middleware/organization.middleware';
 import { customDomainMiddleware } from './middleware/custom-domain.middleware';
@@ -208,6 +209,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/organization/usage', authMiddleware, requireOrganizationContext, tenantService.getOrganizationUsage);
   app.get('/api/organization/resource-quotas', authMiddleware, requireOrganizationContext, tenantService.getResourceQuotas);
   app.post('/api/organization/change-plan', authMiddleware, requireOrganizationContext, tenantService.changePlan);
+  
+  // Block Templates routes
+  app.get('/api/templates', authMiddleware, requireOrganizationContext, templatesService.getBlockTemplates);
+  app.get('/api/templates/:id', authMiddleware, templatesService.getBlockTemplate);
+  app.post('/api/templates', authMiddleware, requireOrganizationContext, validateResourceMiddleware('templates'), templatesService.createBlockTemplate);
+  app.patch('/api/templates/:id', authMiddleware, templatesService.updateBlockTemplate);
+  app.delete('/api/templates/:id', authMiddleware, templatesService.deleteBlockTemplate);
+  app.post('/api/templates/:id/usage', authMiddleware, templatesService.incrementTemplateUsage);
   
   // Create HTTP server
   const httpServer = createServer(app);

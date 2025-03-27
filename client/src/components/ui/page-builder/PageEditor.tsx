@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, Check, GripVertical, X, Split, RefreshCw, History } from 'lucide-react';
+import { Eye, Check, GripVertical, X, Split, RefreshCw, History, Save, Library } from 'lucide-react';
 import { usePageStore } from '@/lib/store';
 import { apiRequest } from '@/lib/queryClient';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -21,6 +21,8 @@ import SortableBlockWrapper from './SortableBlockWrapper';
 import { PreviewContainer } from './preview';
 import HistoryPanel from './HistoryPanel';
 import { historyService } from '@/lib/history-service';
+import { SaveTemplateDialog } from './SaveTemplateDialog';
+import { TemplatesLibrary } from './TemplatesLibrary';
 import { v4 as uuidv4 } from 'uuid';
 import { TransitionList, AOSElement } from '@/lib/animation-service';
 import { 
@@ -38,6 +40,13 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
 
 // Render appropriate block based on type - exported for use in preview
 export const renderBlock = (block: Block, options?: { isPreview?: boolean; isSelected?: boolean }) => {
@@ -130,13 +139,18 @@ interface PageEditorProps {
 
 const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   const { toast } = useToast();
-  const { setCurrentPage, currentPage, updatePageTitle, updatePageSlug } = usePageStore();
+  const { setCurrentPage, currentPage, updatePageTitle, updatePageSlug, addBlock } = usePageStore();
   const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   
   // Estado para el modo de vista previa
   const [showPreview, setShowPreview] = useState(false);
   const [previewMode, setPreviewMode] = useState<'split' | 'fullscreen'>('split');
+  
+  // Estado para los diálogos de plantillas
+  const [isTemplateLibraryOpen, setIsTemplateLibraryOpen] = useState(false);
+  const [isSaveTemplateDialogOpen, setIsSaveTemplateDialogOpen] = useState(false);
+  const [blockToSaveAsTemplate, setBlockToSaveAsTemplate] = useState<Block | null>(null);
   
   // Fetch page data if editing an existing page
   const { data: pageData, isLoading } = useQuery({
@@ -224,8 +238,57 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
   };
 
   const handleAddEmptyBlock = () => {
-    // This would typically open a block selector modal
-    alert('Esta funcionalidad estaría integrada con el BlockLibrary');
+    // Abre la biblioteca de plantillas
+    setIsTemplateLibraryOpen(true);
+  };
+  
+  // Funciones para manejar las plantillas
+  const handleSaveBlockAsTemplate = (blockId: string) => {
+    if (!currentPage) return;
+    
+    const blockToSave = currentPage.blocks.find(block => block.id === blockId);
+    if (!blockToSave) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo encontrar el bloque seleccionado.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setBlockToSaveAsTemplate(blockToSave);
+    setIsSaveTemplateDialogOpen(true);
+  };
+  
+  const handleAddTemplateBlock = (block: Block) => {
+    // Genera un nuevo ID para el bloque
+    const newBlock = {
+      ...block,
+      id: uuidv4(),
+    };
+    
+    // Agrega el bloque a la página
+    addBlock(newBlock);
+    
+    // Registra en el historial
+    historyService.addEntry({
+      id: uuidv4(),
+      timestamp: new Date().toISOString(),
+      label: `Bloque añadido desde plantilla: ${block.type}`,
+      state: currentPage as PageData,
+      type: HistoryActionType.ADD_BLOCK,
+      // Información adicional sobre la acción para cumplir con los parámetros requeridos
+      blockId: newBlock.id,
+      previousValue: null,
+    });
+    
+    // Cierra el diálogo
+    setIsTemplateLibraryOpen(false);
+    
+    toast({
+      title: 'Plantilla aplicada',
+      description: 'El bloque se ha añadido a la página correctamente.',
+    });
   };
 
   // Configure DnD sensors
@@ -472,6 +535,33 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
       {/* Page Builder Canvas */}
       <Card className="bg-white mb-6 min-h-[500px]">
         <CardContent className="p-4 md:p-6">
+          {/* Barra de herramientas del editor */}
+          <div className="flex justify-between items-center mb-4 border-b pb-3">
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={handleAddEmptyBlock}>
+                <Library className="h-4 w-4 mr-1" />
+                Elegir plantilla
+              </Button>
+              
+              {selectedBlockId && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleSaveBlockAsTemplate(selectedBlockId)}
+                >
+                  <Save className="h-4 w-4 mr-1" />
+                  Guardar como plantilla
+                </Button>
+              )}
+            </div>
+            <div>
+              <Button variant="outline" size="sm" onClick={() => {}} title="Ver historial de cambios">
+                <History className="h-4 w-4 mr-1" />
+                Historial
+              </Button>
+            </div>
+          </div>
+          
           {currentPage?.blocks && currentPage.blocks.length > 0 ? (
             <DndContext
               sensors={sensors}
@@ -510,7 +600,8 @@ const PageEditor: React.FC<PageEditorProps> = ({ pageId }) => {
               <h3 className="text-lg font-medium text-gray-900 mb-1">Añadir nuevo bloque</h3>
               <p className="text-gray-500 mb-4">Arrastra un bloque aquí o haz clic para seleccionar</p>
               <Button variant="outline" onClick={handleAddEmptyBlock}>
-                Seleccionar bloque
+                <Library className="h-4 w-4 mr-1" />
+                Elegir plantilla
               </Button>
             </div>
           )}

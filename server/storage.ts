@@ -16,7 +16,8 @@ import {
   passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   userPermissions, type UserPermission, type InsertUserPermission,
   customRoles, type CustomRole, type InsertCustomRole,
-  rolePermissions, type RolePermission, type InsertRolePermission
+  rolePermissions, type RolePermission, type InsertRolePermission,
+  blockTemplates, type BlockTemplate, type InsertBlockTemplate
 } from "@shared/schema";
 import { RolePermissions, CustomRoleDefinition } from "@shared/types";
 import { eq, like, and, or, desc, sql, asc } from "drizzle-orm";
@@ -117,6 +118,14 @@ export interface IStorage {
   
   // Role Management helper
   getFullCustomRoleDefinition(roleId: number): Promise<CustomRoleDefinition | undefined>;
+  
+  // Block Templates methods
+  getBlockTemplates(organizationId: number, options?: { search?: string, category?: string }): Promise<{ items: BlockTemplate[], totalItems: number }>;
+  getBlockTemplate(id: number): Promise<BlockTemplate | undefined>;
+  createBlockTemplate(template: InsertBlockTemplate): Promise<BlockTemplate>;
+  updateBlockTemplate(id: number, templateData: Partial<BlockTemplate>): Promise<BlockTemplate | undefined>;
+  deleteBlockTemplate(id: number): Promise<boolean>;
+  incrementBlockTemplateUsage(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1097,6 +1106,72 @@ export class DatabaseStorage implements IStorage {
   async deleteUserPermission(id: number): Promise<boolean> {
     const result = await db.delete(userPermissions).where(eq(userPermissions.id, id));
     return !!result;
+  }
+  
+  // === Block Templates methods ===
+  async getBlockTemplates(organizationId: number, options?: { search?: string, category?: string }): Promise<{ items: BlockTemplate[], totalItems: number }> {
+    let query = db.select().from(blockTemplates).where(eq(blockTemplates.organizationId, organizationId));
+    
+    // Apply filters
+    if (options?.search) {
+      query = query.where(
+        or(
+          like(blockTemplates.name, `%${options.search}%`),
+          like(blockTemplates.description || '', `%${options.search}%`)
+        )
+      );
+    }
+    
+    if (options?.category && options.category !== 'all') {
+      query = query.where(eq(blockTemplates.category, options.category));
+    }
+    
+    const items = await query.orderBy(desc(blockTemplates.createdAt));
+    
+    return {
+      items,
+      totalItems: items.length
+    };
+  }
+  
+  async getBlockTemplate(id: number): Promise<BlockTemplate | undefined> {
+    const [template] = await db.select().from(blockTemplates).where(eq(blockTemplates.id, id));
+    return template;
+  }
+  
+  async createBlockTemplate(templateData: InsertBlockTemplate): Promise<BlockTemplate> {
+    const [template] = await db.insert(blockTemplates).values(templateData).returning();
+    return template;
+  }
+  
+  async updateBlockTemplate(id: number, templateData: Partial<BlockTemplate>): Promise<BlockTemplate | undefined> {
+    const [updatedTemplate] = await db
+      .update(blockTemplates)
+      .set({ ...templateData, updatedAt: new Date() })
+      .where(eq(blockTemplates.id, id))
+      .returning();
+    return updatedTemplate;
+  }
+  
+  async deleteBlockTemplate(id: number): Promise<boolean> {
+    const result = await db.delete(blockTemplates).where(eq(blockTemplates.id, id));
+    return !!result;
+  }
+  
+  async incrementBlockTemplateUsage(id: number): Promise<boolean> {
+    const template = await this.getBlockTemplate(id);
+    if (!template) return false;
+    
+    const [updatedTemplate] = await db
+      .update(blockTemplates)
+      .set({ 
+        usageCount: (template.usageCount || 0) + 1,
+        updatedAt: new Date()
+      })
+      .where(eq(blockTemplates.id, id))
+      .returning();
+    
+    return !!updatedTemplate;
   }
 }
 

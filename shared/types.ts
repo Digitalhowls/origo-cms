@@ -135,7 +135,8 @@ export enum HistoryActionType {
   UPDATE_PAGE_META = 'update_page_meta',
   SAVED_SNAPSHOT = 'saved_snapshot',
   IMPORTED = 'imported',
-  AUTO_SAVED = 'auto_saved'
+  AUTO_SAVED = 'auto_saved',
+  SAVED_TEMPLATE = 'saved_template'
 }
 
 // Media Types
@@ -345,4 +346,20 @@ export interface AnalyticsData {
     url: string;
     views: number;
   }>;
+}
+
+// Templates/Block Reutilizables
+export interface BlockTemplate {
+  id: string;
+  name: string;
+  description: string;
+  preview?: string; // URL de imagen de vista previa
+  category: string;
+  organizationId: number;
+  createdById: number;
+  createdAt: string;
+  updatedAt: string;
+  block: Block; // El bloque que se puede reutilizar
+  usageCount?: number; // Contador de cuántas veces se ha usado
+  tags?: string[]; // Etiquetas para categorizar y buscar
 }

@@ -374,3 +374,28 @@ export const insertUserPermissionSchema = createInsertSchema(userPermissions).om
   updatedAt: true
 });
 export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
+
+// Block Templates (elementos reutilizables)
+export const blockTemplates = pgTable("block_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  preview: text("preview"),
+  category: text("category").notNull(),
+  tags: text("tags").array(),
+  block: jsonb("block").notNull(),
+  usageCount: integer("usage_count").default(0),
+  organizationId: integer("organization_id").references(() => organizations.id).notNull(),
+  createdById: integer("created_by_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertBlockTemplateSchema = createInsertSchema(blockTemplates).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type BlockTemplate = typeof blockTemplates.$inferSelect;
+export type InsertBlockTemplate = z.infer<typeof insertBlockTemplateSchema>;
